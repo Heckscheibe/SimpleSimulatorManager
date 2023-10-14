@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		373A36C72AD98A9A0086CCE0 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373A36C62AD98A9A0086CCE0 /* Device.swift */; };
+		373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373A36CA2AD995260086CCE0 /* DeviceManager.swift */; };
 		37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */; };
 		37F1DA592AD6E48F00C059DB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA582AD6E48F00C059DB /* ContentView.swift */; };
 		37F1DA5B2AD6E49000C059DB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5A2AD6E49000C059DB /* Assets.xcassets */; };
@@ -34,6 +36,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		373A36C62AD98A9A0086CCE0 /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
+		373A36CA2AD995260086CCE0 /* DeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceManager.swift; sourceTree = "<group>"; };
 		37F1DA532AD6E48F00C059DB /* SimulatorManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimulatorManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerApp.swift; sourceTree = "<group>"; };
 		37F1DA582AD6E48F00C059DB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -72,6 +76,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		373A36C52AD98A8C0086CCE0 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				373A36C62AD98A9A0086CCE0 /* Device.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		37F1DA4A2AD6E48E00C059DB = {
 			isa = PBXGroup;
 			children = (
@@ -95,11 +107,13 @@
 		37F1DA552AD6E48F00C059DB /* SimulatorManager */ = {
 			isa = PBXGroup;
 			children = (
+				373A36C52AD98A8C0086CCE0 /* Models */,
 				37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */,
 				37F1DA582AD6E48F00C059DB /* ContentView.swift */,
 				37F1DA5A2AD6E49000C059DB /* Assets.xcassets */,
 				37F1DA5F2AD6E49000C059DB /* SimulatorManager.entitlements */,
 				37F1DA5C2AD6E49000C059DB /* Preview Content */,
+				373A36CA2AD995260086CCE0 /* DeviceManager.swift */,
 			);
 			path = SimulatorManager;
 			sourceTree = "<group>";
@@ -136,6 +150,8 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 37F1DA782AD6E49000C059DB /* Build configuration list for PBXNativeTarget "SimulatorManager" */;
 			buildPhases = (
+				373A36C82AD991EA0086CCE0 /* Swift Format */,
+				373A36C92AD992A00086CCE0 /* Swift Lint */,
 				37F1DA4F2AD6E48F00C059DB /* Sources */,
 				37F1DA502AD6E48F00C059DB /* Frameworks */,
 				37F1DA512AD6E48F00C059DB /* Resources */,
@@ -254,11 +270,52 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		373A36C82AD991EA0086CCE0 /* Swift Format */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Swift Format";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if which swiftformat >/dev/null; then\n  swiftformat .\nelse\n  echo \"warning: SwiftFormat not installed, download from https://github.com/nicklockwood/SwiftFormat\"\nfi\n";
+		};
+		373A36C92AD992A00086CCE0 /* Swift Lint */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Swift Lint";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if which swiftformat >/dev/null; then\n  swiftlint\nelse\n  echo \"warning: SwiftLint not installed\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		37F1DA4F2AD6E48F00C059DB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				373A36C72AD98A9A0086CCE0 /* Device.swift in Sources */,
+				373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */,
 				37F1DA592AD6E48F00C059DB /* ContentView.swift in Sources */,
 				37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */,
 			);
@@ -421,12 +478,16 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SimulatorManager/SimulatorManager.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
+				DEVELOPMENT_TEAM = C26VF67R9C;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -446,12 +507,16 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SimulatorManager/SimulatorManager.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
+				DEVELOPMENT_TEAM = C26VF67R9C;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
