@@ -8,8 +8,6 @@
 import Foundation
 import os
 
-struct Runtime: Decodable {}
-
 enum DeviceState: Int, Decodable {
     case off = 1
     case running = 3
@@ -41,6 +39,7 @@ struct Device: Decodable {
     let lastBootedAt: Date?
     let runtime: String
     let state: DeviceState
+    var folderPath: URL?
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -49,9 +48,7 @@ struct Device: Decodable {
         self.lastBootedAt = try container.decodeIfPresent(Date.self, forKey: .lastBootedAt)
         
         let rawRuntimeString = try container.decode(String.self, forKey: .runtime)
-        
         let osPart = rawRuntimeString.components(separatedBy: ".").last?.components(separatedBy: "-")
-        
         let osVersion = osPart?
             .enumerated()
             .reduce(into: "") { partialResult, osVersion in

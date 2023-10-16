@@ -29,21 +29,20 @@ class DeviceManager {
 private extension DeviceManager {
     func loadDevices() {
         let urls = getDeviceUrls()
-        var devices = [Device]()
-        urls.forEach {
-            let path = $0.appendingPathComponent(devicePlistName)
-            
+        self.devices = urls.reduce(into: []) { devices, folderPath in
+            let path = folderPath.appendingPathComponent(devicePlistName)
+                
             do {
                 let data = try Data(contentsOf: path)
                 let decoder = PropertyListDecoder()
-                let device = try decoder.decode(Device.self, from: data)
+                var device = try decoder.decode(Device.self, from: data)
+                device.folderPath = folderPath
                 devices.append(device)
                 os_log("Did load device: \(device.name)")
             } catch {
                 os_log("Failed to load device due to error: \(error) at path: \(path)")
             }
         }
-        self.devices = devices
     }
     
     func bindDevices() {
