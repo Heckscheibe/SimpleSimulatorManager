@@ -8,27 +8,19 @@
 import SwiftUI
 
 @main struct SimulatorManagerApp: App {
-    // 1
     @State var currentNumber: String = "1"
     let manager = DeviceManager()
     
     var body: some Scene {
-        // 2
         MenuBarExtra(currentNumber, systemImage: "iphone.gen3") {
-            // 3
-            Button("One") {
-                currentNumber = "1"
-            }
-            Button("Two") {
-                currentNumber = "2"
-            }
-            Button("Three") {
-                currentNumber = "3"
+            ForEach(manager.deviceTypes) { deviceType in
+                Menu(deviceType.name) {}
             }
             Divider()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }.keyboardShortcut("q")
         }
+//        .menuBarExtraStyle(.window)
     }
 }

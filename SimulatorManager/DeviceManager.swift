@@ -13,16 +13,27 @@ protocol DeviceProviding {
     var devices: AnyPublisher<[Device], Never> { get }
 }
 
-struct DeviceManager {
+class DeviceManager {
     private var simulatorFolderPath: URL? {
         let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
         return libraryPath.first?.appending(path: "Developer/CoreSimulator/Devices")
     }
     
+    @Published var deviceTypes: [DeviceType] = []
+    
+    private let devicesSubject = CurrentValueSubject<[Device], Never>([])
+    
     private let devicePlistName = "device.plist"
     
     init() {
-        load()
+        loadDevices()
+        bindDevices()
+    }
+}
+
+extension DeviceManager: DeviceProviding {
+    var devices: AnyPublisher<[Device], Never> {
+        devicesSubject.eraseToAnyPublisher()
     }
 }
 
@@ -42,8 +53,14 @@ private extension DeviceManager {
         }
     }
     
-    func load() {
+    func bindDevices() {
+        devices.map { Set($0.map { DeviceType(id: $0.name) }).sorted() }
+            .assign(to: &$deviceTypes)
+    }
+    
+    func loadDevices() {
         let urls = getDeviceUrls()
+        var devices = [Device]()
         urls.forEach {
             let path = $0.appendingPathComponent(devicePlistName)
             
@@ -51,10 +68,12 @@ private extension DeviceManager {
                 let data = try Data(contentsOf: path)
                 let decoder = PropertyListDecoder()
                 let device = try decoder.decode(Device.self, from: data)
+                devices.append(device)
                 os_log("Did load device: \(device.name)")
             } catch {
                 os_log("Failed to load device due to error: \(error) at path: \(path)")
             }
         }
+        devicesSubject.send(devices)
     }
 }
