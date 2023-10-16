@@ -68,3 +68,9 @@ struct Device: Decodable {
         self.state = try container.decode(DeviceState.self, forKey: .state)
     }
 }
+
+extension Device: Identifiable {
+    var id: String {
+        udid
+    }
+}

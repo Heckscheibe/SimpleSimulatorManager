@@ -14,13 +14,16 @@ import SwiftUI
     var body: some Scene {
         MenuBarExtra(currentNumber, systemImage: "iphone.gen3") {
             ForEach(manager.deviceTypes) { deviceType in
-                Menu(deviceType.name) {}
+                Menu(deviceType.name) {
+                    ForEach(manager.devices.filter { $0.name == deviceType.name }) {
+                        Menu($0.runtime) {}
+                    }
+                }
             }
             Divider()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }.keyboardShortcut("q")
         }
-//        .menuBarExtraStyle(.window)
     }
 }
