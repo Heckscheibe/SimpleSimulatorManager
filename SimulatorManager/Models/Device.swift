@@ -38,10 +38,19 @@ struct Device: Decodable {
         
         let rawRuntimeString = try container.decode(String.self, forKey: .runtime)
         
-        let lastComponent = rawRuntimeString.lastIndex(of: ".") ?? rawRuntimeString.endIndex
-        let startingIndexOfOSVersion = rawRuntimeString.index(after: lastComponent)
-        let osVersion = rawRuntimeString.suffix(from: startingIndexOfOSVersion).replacingOccurrences(of: "-", with: " ")
+        let osPart = rawRuntimeString.components(separatedBy: ".").last?.components(separatedBy: "-")
         
+        let osVersion = osPart?
+            .enumerated()
+            .reduce(into: "") { partialResult, osVersion in
+                if osVersion.offset == 0 {
+                    partialResult = osVersion.element
+                } else if osVersion.offset == 1 {
+                    partialResult.append(" \(osVersion.element)")
+                } else if osVersion.offset == 2 {
+                    partialResult.append(".\(osVersion.element)")
+                }
+            } ?? ""
         os_log("OSVersion: \(osVersion)")
         self.runtime = String(osVersion)
         self.state = try container.decode(DeviceState.self, forKey: .state)
