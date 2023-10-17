@@ -31,12 +31,12 @@ private extension DeviceManager {
         guard let path = simulatorFolderPath else { return }
         let urls = getContentOfDirectoryAt(path: path)
 
-        self.devices = urls.reduce(into: []) { devices, folderPath in
-            let path = folderPath.appendingPathComponent(devicePlistName)
+        self.devices = urls.reduce(into: []) { devices, url in
+            let path = url.appendingPathComponent(devicePlistName)
                 
             do {
                 var device: Device = try decodePlistsFile(at: path)
-                device.folderPath = folderPath
+                device.folderURL = url
                 devices.append(device)
                 os_log("Did load device: \(device.name)")
             } catch {
@@ -53,7 +53,12 @@ private extension DeviceManager {
     }
     
     func loadApps(for device: Device) {
-        guard let appFolderPath = device.folderPath?
+        guard device.hasAppsInstalled else {
+            os_log("\(device.name) does not have any apps installed.")
+            
+            return
+        }
+        guard let appFolderPath = device.folderURL?
             .appendingPathComponent(SimulatorApp.appsPath) else {
             return
         }
@@ -61,6 +66,10 @@ private extension DeviceManager {
     }
     
     func getContentOfDirectoryAt(path: URL) -> [URL] {
+        guard FileManager.default.directoryExistsAtURL(path.path) else {
+            return []
+        }
+        
         do {
             let urls = try FileManager.default
                 .contentsOfDirectory(at: path, includingPropertiesForKeys: nil)

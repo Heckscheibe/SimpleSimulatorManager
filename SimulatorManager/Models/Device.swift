@@ -22,7 +22,12 @@ struct Device: Decodable {
     let lastBootedAt: Date?
     let runtime: String
     let state: DeviceState
-    var folderPath: URL?
+    var folderURL: URL?
+    
+    var hasAppsInstalled: Bool {
+        guard let url = folderURL else { return false }
+        return FileManager.default.directoryExistsAtURL(url.appending(path: "data/Containers").path)
+    }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)

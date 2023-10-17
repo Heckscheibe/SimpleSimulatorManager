@@ -1,5 +1,5 @@
 //
-//  App.swift
+//  SimulatorApp.swift
 //  SimulatorManager
 //
 //  Created by Nicolas Hiller on 17.10.23.
