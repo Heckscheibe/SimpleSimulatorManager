@@ -54,7 +54,7 @@ private extension DeviceManager {
     
     func loadApps(for device: Device) {
         guard device.hasAppsInstalled else {
-            os_log("\(device.name) does not have any apps installed.")
+            os_log("\(device.name) with \(device.runtime) does not have any apps installed.")
             
             return
         }
