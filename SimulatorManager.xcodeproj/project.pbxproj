@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		373A36C72AD98A9A0086CCE0 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373A36C62AD98A9A0086CCE0 /* Device.swift */; };
 		373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373A36CA2AD995260086CCE0 /* DeviceManager.swift */; };
+		37CAA9CD2ADEEA4A00A7F2CB /* DeviceState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CAA9CC2ADEEA4A00A7F2CB /* DeviceState.swift */; };
+		37CAA9CF2ADEEA6000A7F2CB /* DeviceType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CAA9CE2ADEEA6000A7F2CB /* DeviceType.swift */; };
+		37CAA9D12ADEEE6C00A7F2CB /* SimulatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CAA9D02ADEEE6C00A7F2CB /* SimulatorApp.swift */; };
+		37CAA9D32ADEF07900A7F2CB /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CAA9D22ADEF07900A7F2CB /* AppGroup.swift */; };
 		37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */; };
 		37F1DA592AD6E48F00C059DB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA582AD6E48F00C059DB /* ContentView.swift */; };
 		37F1DA5B2AD6E49000C059DB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5A2AD6E49000C059DB /* Assets.xcassets */; };
@@ -38,6 +42,10 @@
 /* Begin PBXFileReference section */
 		373A36C62AD98A9A0086CCE0 /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
 		373A36CA2AD995260086CCE0 /* DeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceManager.swift; sourceTree = "<group>"; };
+		37CAA9CC2ADEEA4A00A7F2CB /* DeviceState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceState.swift; sourceTree = "<group>"; };
+		37CAA9CE2ADEEA6000A7F2CB /* DeviceType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceType.swift; sourceTree = "<group>"; };
+		37CAA9D02ADEEE6C00A7F2CB /* SimulatorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorApp.swift; sourceTree = "<group>"; };
+		37CAA9D22ADEF07900A7F2CB /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
 		37F1DA532AD6E48F00C059DB /* SimulatorManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimulatorManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerApp.swift; sourceTree = "<group>"; };
 		37F1DA582AD6E48F00C059DB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -80,6 +88,10 @@
 			isa = PBXGroup;
 			children = (
 				373A36C62AD98A9A0086CCE0 /* Device.swift */,
+				37CAA9CE2ADEEA6000A7F2CB /* DeviceType.swift */,
+				37CAA9CC2ADEEA4A00A7F2CB /* DeviceState.swift */,
+				37CAA9D02ADEEE6C00A7F2CB /* SimulatorApp.swift */,
+				37CAA9D22ADEF07900A7F2CB /* AppGroup.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -315,9 +327,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				373A36C72AD98A9A0086CCE0 /* Device.swift in Sources */,
+				37CAA9CD2ADEEA4A00A7F2CB /* DeviceState.swift in Sources */,
 				373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */,
+				37CAA9CF2ADEEA6000A7F2CB /* DeviceType.swift in Sources */,
 				37F1DA592AD6E48F00C059DB /* ContentView.swift in Sources */,
+				37CAA9D12ADEEE6C00A7F2CB /* SimulatorApp.swift in Sources */,
 				37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */,
+				37CAA9D32ADEF07900A7F2CB /* AppGroup.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

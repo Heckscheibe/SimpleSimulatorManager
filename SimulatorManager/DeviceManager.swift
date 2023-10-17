@@ -22,20 +22,20 @@ class DeviceManager {
     
     init() {
         loadDevices()
-        bindDevices()
+        bindDeviceTypes()
     }
 }
 
 private extension DeviceManager {
     func loadDevices() {
-        let urls = getDeviceUrls()
+        guard let path = simulatorFolderPath else { return }
+        let urls = getContentOfDirectoryAt(path: path)
+
         self.devices = urls.reduce(into: []) { devices, folderPath in
             let path = folderPath.appendingPathComponent(devicePlistName)
                 
             do {
-                let data = try Data(contentsOf: path)
-                let decoder = PropertyListDecoder()
-                var device = try decoder.decode(Device.self, from: data)
+                var device: Device = try decodePlistsFile(at: path)
                 device.folderPath = folderPath
                 devices.append(device)
                 os_log("Did load device: \(device.name)")
@@ -43,27 +43,40 @@ private extension DeviceManager {
                 os_log("Failed to load device due to error: \(error) at path: \(path)")
             }
         }
+        
+        devices.forEach { loadApps(for: $0) }
     }
     
-    func bindDevices() {
+    func bindDeviceTypes() {
         $devices.map { Set($0.map { DeviceType(id: $0.name) }).sorted() }
             .assign(to: &$deviceTypes)
     }
     
-    func getDeviceUrls() -> [URL] {
-        guard let path = simulatorFolderPath else {
-            return []
+    func loadApps(for device: Device) {
+        guard let appFolderPath = device.folderPath?
+            .appendingPathComponent(SimulatorApp.appsPath) else {
+            return
         }
+        let urls = getContentOfDirectoryAt(path: appFolderPath)
+    }
+    
+    func getContentOfDirectoryAt(path: URL) -> [URL] {
         do {
             let urls = try FileManager.default
                 .contentsOfDirectory(at: path, includingPropertiesForKeys: nil)
                 .filter { $0.lastPathComponent != ".DS_Store" }
             os_log("did load content: \(urls)")
-                
             return urls
         } catch {
-            os_log("Failed to load content due to error \(error)")
+            os_log("Failed to get content at path \(path) due to error \(error)")
             return []
         }
+    }
+    
+    func decodePlistsFile<T: Decodable>(at path: URL) throws -> T {
+        let decoder = PropertyListDecoder()
+        let data = try Data(contentsOf: path)
+        let object = try decoder.decode(T.self, from: data)
+        return object
     }
 }

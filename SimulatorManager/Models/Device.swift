@@ -8,23 +8,6 @@
 import Foundation
 import os
 
-enum DeviceState: Int, Decodable {
-    case off = 1
-    case running = 3
-}
-
-struct DeviceType: Comparable, Hashable, Identifiable {
-    let id: String
-    
-    var name: String {
-        id
-    }
-    
-    static func < (lhs: DeviceType, rhs: DeviceType) -> Bool {
-        return lhs.id < rhs.id
-    }
-}
-
 struct Device: Decodable {
     enum CodingKeys: String, CodingKey {
         case udid = "UDID"
