@@ -53,7 +53,7 @@ private extension DeviceManager {
     
     func loadApps(for device: Device) {
         guard device.hasAppsInstalled else {
-            os_log("\(device.name) with \(device.runtime) does not have any apps installed.")
+            os_log("\(device.name) with \(device.osVersion) does not have any apps installed.")
             
             return
         }
@@ -61,9 +61,9 @@ private extension DeviceManager {
             .appendingPathComponent(SimulatorApp.appsPath) else {
             return
         }
-        let urls = getContentOfDirectoryAt(url: appFolderPath)
+        let appFolderURLs = getContentOfDirectoryAt(url: appFolderPath)
         
-        let infoPlists = urls.compactMap { url -> AppInfoPlist? in
+        let infoPlists = appFolderURLs.compactMap { url -> AppInfoPlist? in
             let appFolderContent = getContentOfDirectoryAt(url: url)
             guard let appBundle = appFolderContent.filter({ $0.path.hasSuffix(".app") }).first else {
                 return nil
@@ -78,6 +78,13 @@ private extension DeviceManager {
                 os_log("Failed to decode plist due to error: \(error)")
                 return nil
             }
+        }
+        .map { _ in
+            guard let dataFolderURL = device.url?
+                .appendingPathComponent("data/Containers/Data/Application") else {
+                return
+            }
+            let dataFolderURLs = getContentOfDirectoryAt(url: dataFolderURL)
         }
     }
     
