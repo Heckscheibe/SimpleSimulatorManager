@@ -26,7 +26,7 @@ struct Device: Decodable {
     
     var hasAppsInstalled: Bool {
         guard let url = folderURL else { return false }
-        return FileManager.default.directoryExistsAtURL(url.appending(path: "data/Containers").path)
+        return FileManager.default.directoryExistsAtURL(url.appending(path: "data/Containers"))
     }
     
     init(from decoder: Decoder) throws {

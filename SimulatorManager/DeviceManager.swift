@@ -10,7 +10,7 @@ import Combine
 import os
 
 class DeviceManager {
-    private var simulatorFolderPath: URL? {
+    private var simulatorFolderURL: URL? {
         let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
         return libraryPath.first?.appending(path: "Developer/CoreSimulator/Devices")
     }
@@ -28,8 +28,8 @@ class DeviceManager {
 
 private extension DeviceManager {
     func loadDevices() {
-        guard let path = simulatorFolderPath else { return }
-        let urls = getContentOfDirectoryAt(path: path)
+        guard let url = simulatorFolderURL else { return }
+        let urls = getContentOfDirectoryAt(url: url)
 
         self.devices = urls.reduce(into: []) { devices, url in
             let path = url.appendingPathComponent(devicePlistName)
@@ -62,22 +62,22 @@ private extension DeviceManager {
             .appendingPathComponent(SimulatorApp.appsPath) else {
             return
         }
-        let urls = getContentOfDirectoryAt(path: appFolderPath)
+        let urls = getContentOfDirectoryAt(url: appFolderPath)
     }
     
-    func getContentOfDirectoryAt(path: URL) -> [URL] {
-        guard FileManager.default.directoryExistsAtURL(path.path) else {
+    func getContentOfDirectoryAt(url: URL) -> [URL] {
+        guard FileManager.default.directoryExistsAtURL(url) else {
             return []
         }
         
         do {
             let urls = try FileManager.default
-                .contentsOfDirectory(at: path, includingPropertiesForKeys: nil)
+                .contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
                 .filter { $0.lastPathComponent != ".DS_Store" }
             os_log("did load content: \(urls)")
             return urls
         } catch {
-            os_log("Failed to get content at path \(path) due to error \(error)")
+            os_log("Failed to get content at path \(url) due to error \(error)")
             return []
         }
     }
