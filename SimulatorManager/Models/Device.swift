@@ -8,7 +8,7 @@
 import Foundation
 import os
 
-struct Device: Decodable {
+struct Device: DecodableURLContainer {
     enum CodingKeys: String, CodingKey {
         case udid = "UDID"
         case name
@@ -22,22 +22,16 @@ struct Device: Decodable {
     let lastBootedAt: Date?
     let runtime: String
     let state: DeviceState
-    var folderURL: URL?
+    var url: URL?
     
     var hasAppsInstalled: Bool {
-        guard let url = folderURL else { return false }
+        guard let url else { return false }
         return FileManager.default.directoryExistsAtURL(url.appending(path: "data/Containers"))
     }
     
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.udid = try container.decode(String.self, forKey: .udid)
-        self.name = try container.decode(String.self, forKey: .name)
-        self.lastBootedAt = try container.decodeIfPresent(Date.self, forKey: .lastBootedAt)
-        
-        let rawRuntimeString = try container.decode(String.self, forKey: .runtime)
-        let osPart = rawRuntimeString.components(separatedBy: ".").last?.components(separatedBy: "-")
-        let osVersion = osPart?
+    var osVersion: String {
+        runtime.components(separatedBy: ".").last?
+            .components(separatedBy: "-")
             .enumerated()
             .reduce(into: "") { partialResult, osVersion in
                 if osVersion.offset == 0 {
@@ -48,9 +42,6 @@ struct Device: Decodable {
                     partialResult.append(".\(osVersion.element)")
                 }
             } ?? ""
-        os_log("OSVersion: \(osVersion)")
-        self.runtime = String(osVersion)
-        self.state = try container.decode(DeviceState.self, forKey: .state)
     }
 }
 

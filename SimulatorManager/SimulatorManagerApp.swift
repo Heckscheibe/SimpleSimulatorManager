@@ -16,7 +16,7 @@ import SwiftUI
             ForEach(manager.deviceTypes) { deviceType in
                 Menu(deviceType.name) {
                     ForEach(manager.devices.filter { $0.name == deviceType.name }) {
-                        Menu($0.runtime) {}
+                        Menu($0.osVersion) {}
                     }
                 }
             }

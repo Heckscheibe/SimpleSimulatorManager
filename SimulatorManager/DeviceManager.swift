@@ -32,15 +32,14 @@ private extension DeviceManager {
         let urls = getContentOfDirectoryAt(url: url)
 
         self.devices = urls.reduce(into: []) { devices, url in
-            let path = url.appendingPathComponent(devicePlistName)
+            let url = url.appendingPathComponent(devicePlistName)
                 
             do {
-                var device: Device = try decodePlistsFile(at: path)
-                device.folderURL = url
+                let device = try CustomPropertyListDecoder().decode(Device.self, at: url)
                 devices.append(device)
                 os_log("Did load device: \(device.name)")
             } catch {
-                os_log("Failed to load device due to error: \(error) at path: \(path)")
+                os_log("Failed to load device due to error: \(error) at path: \(url)")
             }
         }
         
@@ -58,11 +57,28 @@ private extension DeviceManager {
             
             return
         }
-        guard let appFolderPath = device.folderURL?
+        guard let appFolderPath = device.url?
             .appendingPathComponent(SimulatorApp.appsPath) else {
             return
         }
         let urls = getContentOfDirectoryAt(url: appFolderPath)
+        
+        let infoPlists = urls.compactMap { url -> AppInfoPlist? in
+            let appFolderContent = getContentOfDirectoryAt(url: url)
+            guard let appBundle = appFolderContent.filter({ $0.path.hasSuffix(".app") }).first else {
+                return nil
+            }
+            os_log("\(appBundle.path)")
+            do {
+                let infoPlist: AppInfoPlist = try CustomPropertyListDecoder()
+                    .decode(AppInfoPlist.self, at: appBundle.appendingPathComponent("/\(AppInfoPlist.infoPlistFileName)"))
+                os_log("Did load plist of app called \(infoPlist.cfBundleDisplayName)")
+                return infoPlist
+            } catch {
+                os_log("Failed to decode plist due to error: \(error)")
+                return nil
+            }
+        }
     }
     
     func getContentOfDirectoryAt(url: URL) -> [URL] {
@@ -74,7 +90,6 @@ private extension DeviceManager {
             let urls = try FileManager.default
                 .contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
                 .filter { $0.lastPathComponent != ".DS_Store" }
-            os_log("did load content: \(urls)")
             return urls
         } catch {
             os_log("Failed to get content at path \(url) due to error \(error)")
@@ -82,10 +97,20 @@ private extension DeviceManager {
         }
     }
     
-    func decodePlistsFile<T: Decodable>(at path: URL) throws -> T {
-        let decoder = PropertyListDecoder()
-        let data = try Data(contentsOf: path)
-        let object = try decoder.decode(T.self, from: data)
+    func decodePlistsFile<T: DecodableURLContainer>(at url: URL) throws -> T {
+        try CustomPropertyListDecoder().decode(T.self, at: url)
+    }
+}
+
+class CustomPropertyListDecoder: PropertyListDecoder {
+    func decode<T>(_ type: T.Type, at url: URL) throws -> T where T: DecodableURLContainer {
+        let data = try Data(contentsOf: url)
+        var object = try decode(T.self, from: data)
+        object.url = url
         return object
     }
+}
+
+protocol DecodableURLContainer: Decodable {
+    var url: URL? { get set }
 }
