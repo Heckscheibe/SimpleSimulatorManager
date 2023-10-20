@@ -27,9 +27,20 @@ import os
                 ForEach(viewModel.devices.filter { $0.name == deviceType.name }) { device in
                     if device.hasAppsInstalled {
                         Menu(device.osVersion) {
+                            Button {
+                                viewModel.didSelectSimulatorFolder(for: device)
+                            } label: {
+                                Text("Simulator Folder")
+                            }
+                            Button {
+                                viewModel.didSelectAppsFolder(for: device)
+                            } label: {
+                                Text("Application Folder")
+                            }
+                            Divider()
                             ForEach(device.apps) { app in
                                 Button(action: {
-                                    viewModel.didSelectApp(app: app)
+                                    viewModel.didSelect(app: app)
                                 }, label: {
                                     Text(app.displayName)
                                 })

@@ -7,6 +7,7 @@
 
 import Foundation
 import os
+import AppKit
 
 class SimulatorManagerViewModel {
     @Published var deviceTypes: [DeviceType]
@@ -19,7 +20,30 @@ class SimulatorManagerViewModel {
         devices = deviceManager.devices
     }
     
-    func didSelectApp(app: SimulatorApp) {
-        os_log("Did select: \(app.displayName)")
+    func didSelect(app: SimulatorApp) {
+        guard let url = app.appDocumentsFolderURL else {
+            return
+        }
+        openFolderAt(url: url)
+    }
+    
+    func didSelectSimulatorFolder(for device: Device) {
+        guard let url = device.url else {
+            return
+        }
+        openFolderAt(url: url)
+    }
+    
+    func didSelectAppsFolder(for device: Device) {
+        guard let url = device.url?.appendingPathComponent(SimulatorApp.appDataPath) else {
+            return
+        }
+        openFolderAt(url: url)
+    }
+}
+
+private extension SimulatorManagerViewModel {
+    func openFolderAt(url: URL) {
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path)
     }
 }
