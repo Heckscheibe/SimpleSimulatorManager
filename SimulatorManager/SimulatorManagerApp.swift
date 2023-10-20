@@ -6,24 +6,46 @@
 //
 
 import SwiftUI
+import os
 
 @main struct SimulatorManagerApp: App {
-    @State var currentNumber: String = "1"
     let manager = DeviceManager()
     
     var body: some Scene {
-        MenuBarExtra(currentNumber, systemImage: "iphone.gen3") {
-            ForEach(manager.deviceTypes) { deviceType in
-                Menu(deviceType.name) {
-                    ForEach(manager.devices.filter { $0.name == deviceType.name }) {
-                        Menu($0.osVersion) {}
-                    }
-                }
-            }
+        MenuBarExtra("SimulatorManager", systemImage: "iphone.gen3") {
+            deviceTypeMenu
             Divider()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }.keyboardShortcut("q")
+        }
+    }
+    
+    var deviceTypeMenu: some View {
+        ForEach(manager.deviceTypes) { deviceType in
+            Menu(deviceType.name) {
+                ForEach(manager.devices.filter { $0.name == deviceType.name }) { device in
+                    if device.hasAppsInstalled {
+                        Menu(device.osVersion) {
+                            ForEach(device.apps) { app in
+                                Button(action: {
+                                    os_log("Tapped")
+                                }, label: {
+                                    Text(app.displayName)
+                                })
+                            }
+                        }
+                    } else {
+                        HStack(alignment: .center,
+                               spacing: 10,
+                               content: {
+                                   Text(device.osVersion)
+                                   Text("No apps installed")
+                                       .font(.system(size: 12))
+                               })
+                    }
+                }
+            }
         }
     }
 }

@@ -15,8 +15,6 @@ class DeviceManager {
         return libraryPath.first?.appending(path: "Developer/CoreSimulator/Devices")
     }
 
-    private let devicePlistName = "device.plist"
-    
     @Published var deviceTypes: [DeviceType] = []
     @Published var devices: [Device] = []
     
@@ -27,12 +25,17 @@ class DeviceManager {
 }
 
 private extension DeviceManager {
+    func bindDeviceTypes() {
+        $devices.map { Set($0.map { DeviceType(id: $0.name) }).sorted() }
+            .assign(to: &$deviceTypes)
+    }
+    
     func loadDevices() {
         guard let url = simulatorFolderURL else { return }
         let urls = getContentOfDirectoryAt(url: url)
 
         self.devices = urls.reduce(into: []) { devices, url in
-            let url = url.appendingPathComponent(devicePlistName)
+            let url = url.appendingPathComponent(Device.devicePlistName)
                 
             do {
                 let device = try CustomPropertyListDecoder().decode(Device.self, at: url)
@@ -44,11 +47,6 @@ private extension DeviceManager {
         }
         
         devices.forEach { loadApps(for: $0) }
-    }
-    
-    func bindDeviceTypes() {
-        $devices.map { Set($0.map { DeviceType(id: $0.name) }).sorted() }
-            .assign(to: &$deviceTypes)
     }
     
     func loadApps(for device: Device) {
@@ -68,7 +66,7 @@ private extension DeviceManager {
         
         var apps: [SimulatorApp] = []
         infoPlists.forEach { infoPlist in
-            
+            // using oldschool for in loop to be able to `break` and return early
             for url in appDataFolderURLs {
                 let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
                 do {
@@ -87,6 +85,7 @@ private extension DeviceManager {
             }
         }
         os_log("Device \(device.name) with \(device.osVersion) has the following apps installed: \(apps.map { $0.displayName })")
+        device.apps = apps
     }
     
     func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
@@ -131,17 +130,4 @@ private extension DeviceManager {
             return []
         }
     }
-}
-
-class CustomPropertyListDecoder: PropertyListDecoder {
-    func decode<T>(_ type: T.Type, at url: URL) throws -> T where T: DecodableURLContainer {
-        let data = try Data(contentsOf: url)
-        var object = try decode(T.self, from: data)
-        object.url = url.deletingLastPathComponent()
-        return object
-    }
-}
-
-protocol DecodableURLContainer: Decodable {
-    var url: URL? { get set }
 }

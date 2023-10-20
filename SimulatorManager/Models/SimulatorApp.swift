@@ -16,3 +16,9 @@ struct SimulatorApp {
     let appDocumentsFolderURL: URL?
     let appPackageURL: URL?
 }
+
+extension SimulatorApp: Identifiable {
+    var id: String {
+        bundleIdentifier
+    }
+}

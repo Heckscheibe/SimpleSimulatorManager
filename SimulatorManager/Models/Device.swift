@@ -8,7 +8,9 @@
 import Foundation
 import os
 
-struct Device: DecodableURLContainer {
+class Device: DecodableURLContainer {
+    static let devicePlistName = "device.plist"
+    
     enum CodingKeys: String, CodingKey {
         case udid = "UDID"
         case name
@@ -25,7 +27,7 @@ struct Device: DecodableURLContainer {
     
     // not decoded properties
     var url: URL?
-    var apps: [SimulatorApp] = []
+    @Published var apps: [SimulatorApp] = []
     var appContainerFolder: URL? {
         url?.appendingPathComponent("data/Containers")
     }
