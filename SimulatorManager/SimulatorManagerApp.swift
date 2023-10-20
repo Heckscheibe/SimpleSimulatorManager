@@ -39,11 +39,15 @@ import os
                             }
                             Divider()
                             ForEach(device.apps) { app in
-                                Button(action: {
+                                Button {
                                     viewModel.didSelect(app: app)
-                                }, label: {
+                                } label: {
                                     Text(app.displayName)
-                                })
+                                }
+                            }
+                            Divider()
+                            ForEach(device.appGroups) { appGroup in
+                                Text(appGroup.identifier)
                             }
                         }
                     } else {

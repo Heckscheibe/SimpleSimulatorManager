@@ -10,6 +10,7 @@ import os
 
 class Device: DecodableURLContainer {
     static let devicePlistName = "device.plist"
+    static let appGroupFolderPath = "data/Containers/Shared/AppGroup"
     
     enum CodingKeys: String, CodingKey {
         case udid = "UDID"
@@ -28,6 +29,7 @@ class Device: DecodableURLContainer {
     // not decoded properties
     var url: URL?
     @Published var apps: [SimulatorApp] = []
+    @Published var appGroups: [AppGroup] = []
     var appContainerFolder: URL? {
         url?.appendingPathComponent("data/Containers")
     }

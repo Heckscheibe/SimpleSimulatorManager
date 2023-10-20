@@ -46,7 +46,10 @@ private extension DeviceManager {
             }
         }
         
-        devices.forEach { loadApps(for: $0) }
+        devices.forEach {
+            loadApps(for: $0)
+            loadAppGroups(for: $0)
+        }
     }
     
     func loadApps(for device: Device) {
@@ -100,10 +103,10 @@ private extension DeviceManager {
             guard let appBundle = appFolderContent.filter({ $0.path.hasSuffix(".app") }).first else {
                 return nil
             }
-            os_log("\(appBundle.path)")
+            
             do {
                 let infoPlist = try CustomPropertyListDecoder()
-                    .decode(AppInfoPlist.self, at: appBundle.appendingPathComponent("/\(AppInfoPlist.infoPlistFileName)"))
+                    .decode(AppInfoPlist.self, at: appBundle.appendingPathComponent(AppInfoPlist.infoPlistFileName))
                 os_log("Did load plist of app called \(infoPlist.cfBundleDisplayName)")
                 return infoPlist
             } catch {
@@ -113,6 +116,32 @@ private extension DeviceManager {
         }
         
         return infoPlists
+    }
+    
+    func loadAppGroups(for device: Device) {
+        guard let appGroupsFolderURL = device.url?.appendingPathComponent(Device.appGroupFolderPath) else {
+            return
+        }
+        
+        let appGroupFolderURLs = getContentOfDirectoryAt(url: appGroupsFolderURL)
+        let appGroups = appGroupFolderURLs.compactMap { url in
+            let appGroupFilePath = url.appendingPathComponent(MetaDataPlist.fileName)
+            do {
+                let appGroup = try CustomPropertyListDecoder().decode(AppGroup.self, at: appGroupFilePath)
+                return appGroup
+                
+            } catch {
+                os_log("Failed to decode AppGroup due to error: \(error)")
+                return nil
+            }
+        }
+//            .filter { (appGroup: AppGroup) in
+//                var appGroup = appGroup
+//                let appIdentifier = appGroup.identifier.components(separatedBy: ".")
+//                device.apps.map { $0.bundleIdentifier }.contains {  }
+//        }
+        
+        device.appGroups = appGroups
     }
     
     func getContentOfDirectoryAt(url: URL) -> [URL] {

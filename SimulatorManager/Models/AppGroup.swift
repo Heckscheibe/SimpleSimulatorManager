@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct AppGroup: Decodable {
+struct AppGroup: DecodableURLContainer {
     static let appGroupsPath = "data/Containers/Shared/AppGroup"
     
     enum CodingKeys: String, CodingKey {
@@ -17,4 +17,12 @@ struct AppGroup: Decodable {
     
     let identifier: String
     let uuid: String
+    
+    var url: URL?
+}
+
+extension AppGroup: Identifiable {
+    var id: String {
+        identifier
+    }
 }
