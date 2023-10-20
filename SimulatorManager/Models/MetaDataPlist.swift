@@ -7,10 +7,13 @@
 
 import Foundation
 
-struct MetaDataPlist: Decodable {
+struct MetaDataPlist: DecodableURLContainer {
+    static let fileName = ".com.apple.mobile_container_manager.metadata.plist"
+    
     enum CodingKeys: String, CodingKey {
         case mcmMetadataIdentifier = "MCMMetadataIdentifier"
     }
     
     let mcmMetadataIdentifier: String
+    var url: URL?
 }

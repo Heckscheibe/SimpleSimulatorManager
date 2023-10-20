@@ -7,6 +7,12 @@
 
 import Foundation
 
-struct SimulatorApp: Decodable {
-    static let appsPath = "data/Containers/Bundle/Application"
+struct SimulatorApp {
+    static let appPackagePath = "data/Containers/Bundle/Application"
+    static let appDataPath = "data/Containers/Data/Application"
+    
+    let displayName: String
+    let bundleIdentifier: String
+    let appDocumentsFolderURL: URL?
+    let appPackageURL: URL?
 }

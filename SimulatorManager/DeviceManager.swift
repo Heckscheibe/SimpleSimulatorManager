@@ -57,20 +57,53 @@ private extension DeviceManager {
             
             return
         }
-        guard let appFolderPath = device.url?
-            .appendingPathComponent(SimulatorApp.appsPath) else {
+        
+        let infoPlists = loadAppInfoPlists(for: device)
+        
+        guard let appDataFolderURL = device.url?
+            .appendingPathComponent(SimulatorApp.appDataPath) else {
             return
         }
-        let appFolderURLs = getContentOfDirectoryAt(url: appFolderPath)
+        let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
         
-        let infoPlists = appFolderURLs.compactMap { url -> AppInfoPlist? in
+        var apps: [SimulatorApp] = []
+        infoPlists.forEach { infoPlist in
+            
+            for url in appDataFolderURLs {
+                let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
+                do {
+                    let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
+                    if metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier {
+                        let simulatorApp = SimulatorApp(displayName: infoPlist.cfBundleDisplayName,
+                                                        bundleIdentifier: infoPlist.cfBundleIdentifier,
+                                                        appDocumentsFolderURL: metaDataPlist.url,
+                                                        appPackageURL: infoPlist.url)
+                        apps.append(simulatorApp)
+                        break
+                    }
+                } catch {
+                    os_log("Failed to decode MetaDataPlist due to error: \(error)")
+                }
+            }
+        }
+        os_log("Device \(device.name) with \(device.osVersion) has the following apps installed: \(apps.map { $0.displayName })")
+    }
+    
+    func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
+        guard let appPackageFolderPath = device.url?
+            .appendingPathComponent(SimulatorApp.appPackagePath) else {
+            return []
+        }
+        let appPackageURLs = getContentOfDirectoryAt(url: appPackageFolderPath)
+        
+        let infoPlists = appPackageURLs.compactMap { url -> AppInfoPlist? in
             let appFolderContent = getContentOfDirectoryAt(url: url)
             guard let appBundle = appFolderContent.filter({ $0.path.hasSuffix(".app") }).first else {
                 return nil
             }
             os_log("\(appBundle.path)")
             do {
-                let infoPlist: AppInfoPlist = try CustomPropertyListDecoder()
+                let infoPlist = try CustomPropertyListDecoder()
                     .decode(AppInfoPlist.self, at: appBundle.appendingPathComponent("/\(AppInfoPlist.infoPlistFileName)"))
                 os_log("Did load plist of app called \(infoPlist.cfBundleDisplayName)")
                 return infoPlist
@@ -79,13 +112,8 @@ private extension DeviceManager {
                 return nil
             }
         }
-        .map { _ in
-            guard let dataFolderURL = device.url?
-                .appendingPathComponent("data/Containers/Data/Application") else {
-                return
-            }
-            let dataFolderURLs = getContentOfDirectoryAt(url: dataFolderURL)
-        }
+        
+        return infoPlists
     }
     
     func getContentOfDirectoryAt(url: URL) -> [URL] {
@@ -103,17 +131,13 @@ private extension DeviceManager {
             return []
         }
     }
-    
-    func decodePlistsFile<T: DecodableURLContainer>(at url: URL) throws -> T {
-        try CustomPropertyListDecoder().decode(T.self, at: url)
-    }
 }
 
 class CustomPropertyListDecoder: PropertyListDecoder {
     func decode<T>(_ type: T.Type, at url: URL) throws -> T where T: DecodableURLContainer {
         let data = try Data(contentsOf: url)
         var object = try decode(T.self, from: data)
-        object.url = url
+        object.url = url.deletingLastPathComponent()
         return object
     }
 }

@@ -22,11 +22,17 @@ struct Device: DecodableURLContainer {
     let lastBootedAt: Date?
     let runtime: String
     let state: DeviceState
+    
+    // not decoded properties
     var url: URL?
+    var apps: [SimulatorApp] = []
+    var appContainerFolder: URL? {
+        url?.appendingPathComponent("data/Containers")
+    }
     
     var hasAppsInstalled: Bool {
-        guard let url else { return false }
-        return FileManager.default.directoryExistsAtURL(url.appending(path: "data/Containers"))
+        guard let appContainerFolder else { return false }
+        return FileManager.default.directoryExistsAtURL(appContainerFolder)
     }
     
     var osVersion: String {
