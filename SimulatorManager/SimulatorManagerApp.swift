@@ -9,7 +9,7 @@ import SwiftUI
 import os
 
 @main struct SimulatorManagerApp: App {
-    let manager = DeviceManager()
+    let viewModel = SimulatorManagerViewModel()
     
     var body: some Scene {
         MenuBarExtra("SimulatorManager", systemImage: "iphone.gen3") {
@@ -22,14 +22,14 @@ import os
     }
     
     var deviceTypeMenu: some View {
-        ForEach(manager.deviceTypes) { deviceType in
+        ForEach(viewModel.deviceTypes) { deviceType in
             Menu(deviceType.name) {
-                ForEach(manager.devices.filter { $0.name == deviceType.name }) { device in
+                ForEach(viewModel.devices.filter { $0.name == deviceType.name }) { device in
                     if device.hasAppsInstalled {
                         Menu(device.osVersion) {
                             ForEach(device.apps) { app in
                                 Button(action: {
-                                    os_log("Tapped")
+                                    viewModel.didSelectApp(app: app)
                                 }, label: {
                                     Text(app.displayName)
                                 })

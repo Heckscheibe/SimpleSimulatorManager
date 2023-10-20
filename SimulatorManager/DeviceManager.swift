@@ -10,11 +10,6 @@ import Combine
 import os
 
 class DeviceManager {
-    private var simulatorFolderURL: URL? {
-        let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
-        return libraryPath.first?.appending(path: "Developer/CoreSimulator/Devices")
-    }
-
     @Published var deviceTypes: [DeviceType] = []
     @Published var devices: [Device] = []
     
@@ -25,6 +20,11 @@ class DeviceManager {
 }
 
 private extension DeviceManager {
+    var simulatorFolderURL: URL? {
+        let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
+        return libraryPath.first?.appending(path: "Developer/CoreSimulator/Devices")
+    }
+    
     func bindDeviceTypes() {
         $devices.map { Set($0.map { DeviceType(id: $0.name) }).sorted() }
             .assign(to: &$deviceTypes)
