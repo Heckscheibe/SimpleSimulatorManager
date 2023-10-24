@@ -24,26 +24,33 @@ class SimulatorManagerViewModel {
         guard let url = app.appDocumentsFolderURL else {
             return
         }
-        openFolderAt(url: url)
+        openFolderAt(url)
     }
     
     func didSelectSimulatorFolder(for device: Device) {
         guard let url = device.url else {
             return
         }
-        openFolderAt(url: url)
+        openFolderAt(url)
     }
     
     func didSelectAppsFolder(for device: Device) {
         guard let url = device.url?.appendingPathComponent(SimulatorApp.appDataPath) else {
             return
         }
-        openFolderAt(url: url)
+        openFolderAt(url)
+    }
+    
+    func didSelect(appGroup: AppGroup) {
+        guard let url = appGroup.url else {
+            return
+        }
+        openFolderAt(url)
     }
 }
 
 private extension SimulatorManagerViewModel {
-    func openFolderAt(url: URL) {
+    func openFolderAt(_ url: URL) {
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path)
     }
 }

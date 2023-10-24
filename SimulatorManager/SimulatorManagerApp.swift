@@ -47,6 +47,9 @@ import os
                             }
                             Divider()
                             ForEach(device.appGroups) { appGroup in
+                                Button {
+                                    viewModel.didSelect(appGroup: appGroup)
+                                }
                                 Text("Group \(appGroup.name)")
                             }
                         }
