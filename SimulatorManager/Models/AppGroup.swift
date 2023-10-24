@@ -15,6 +15,13 @@ struct AppGroup: DecodableURLContainer {
         case uuid = "MCMMetadataUUID"
     }
     
+    var name: String {
+        guard let index = identifier.firstIndex(of: ".") else {
+            return ""
+        }
+        return String(identifier.suffix(from: identifier.index(after: index)))
+    }
+    
     let identifier: String
     let uuid: String
     

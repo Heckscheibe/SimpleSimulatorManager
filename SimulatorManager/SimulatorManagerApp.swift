@@ -47,7 +47,7 @@ import os
                             }
                             Divider()
                             ForEach(device.appGroups) { appGroup in
-                                Text(appGroup.identifier)
+                                Text("Group \(appGroup.name)")
                             }
                         }
                     } else {

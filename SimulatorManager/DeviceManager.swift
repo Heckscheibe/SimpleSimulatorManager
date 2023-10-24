@@ -135,11 +135,13 @@ private extension DeviceManager {
                 return nil
             }
         }
-//            .filter { (appGroup: AppGroup) in
-//                var appGroup = appGroup
-//                let appIdentifier = appGroup.identifier.components(separatedBy: ".")
-//                device.apps.map { $0.bundleIdentifier }.contains {  }
-//        }
+        .filter { (appGroup: AppGroup) in
+            device.apps
+                .map { $0.bundleIdentifier }
+                .contains(where: {
+                    $0 == appGroup.name
+                })
+        }
         
         device.appGroups = appGroups
     }
