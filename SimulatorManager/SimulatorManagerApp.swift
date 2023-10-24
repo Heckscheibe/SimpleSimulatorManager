@@ -38,20 +38,9 @@ import os
                                 Text("Application Folder")
                             }
                             Divider()
-                            ForEach(device.apps) { app in
-                                Button {
-                                    viewModel.didSelect(app: app)
-                                } label: {
-                                    Text(app.displayName)
-                                }
-                            }
+                            appView(for: device)
                             Divider()
-                            ForEach(device.appGroups) { appGroup in
-                                Button {
-                                    viewModel.didSelect(appGroup: appGroup)
-                                }
-                                Text("Group \(appGroup.name)")
-                            }
+                            appGroupsView(for: device)
                         }
                     } else {
                         HStack(alignment: .center,
@@ -63,6 +52,26 @@ import os
                                })
                     }
                 }
+            }
+        }
+    }
+    
+    func appView(for device: Device) -> some View {
+        ForEach(device.apps) { app in
+            Button {
+                viewModel.didSelect(app: app)
+            } label: {
+                Text(app.displayName)
+            }
+        }
+    }
+    
+    func appGroupsView(for device: Device) -> some View {
+        ForEach(device.appGroups) { appGroup in
+            Button {
+                viewModel.didSelect(appGroup: appGroup)
+            } label: {
+                Text("Group \(appGroup.name)")
             }
         }
     }
