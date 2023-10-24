@@ -40,7 +40,6 @@ private extension DeviceManager {
             do {
                 let device = try CustomPropertyListDecoder().decode(Device.self, at: url)
                 devices.append(device)
-                os_log("Did load device: \(device.name)")
             } catch {
                 os_log("Failed to load device due to error: \(error) at path: \(url)")
             }
@@ -78,7 +77,8 @@ private extension DeviceManager {
                         let simulatorApp = SimulatorApp(displayName: infoPlist.cfBundleDisplayName,
                                                         bundleIdentifier: infoPlist.cfBundleIdentifier,
                                                         appDocumentsFolderURL: metaDataPlist.url,
-                                                        appPackageURL: infoPlist.url)
+                                                        appPackageURL: infoPlist.url,
+                                                        hasWatchApp: infoPlist.hasWatchApp)
                         apps.append(simulatorApp)
                         break
                     }
@@ -104,10 +104,14 @@ private extension DeviceManager {
                 return nil
             }
             
+            let hasWatchApp = getContentOfDirectoryAt(url: appBundle).contains { url in
+                url.pathComponents.last == "Watch"
+            }
+            
             do {
-                let infoPlist = try CustomPropertyListDecoder()
+                var infoPlist = try CustomPropertyListDecoder()
                     .decode(AppInfoPlist.self, at: appBundle.appendingPathComponent(AppInfoPlist.infoPlistFileName))
-                os_log("Did load plist of app called \(infoPlist.cfBundleDisplayName)")
+                infoPlist.hasWatchApp = hasWatchApp
                 return infoPlist
             } catch {
                 os_log("Failed to decode plist due to error: \(error)")

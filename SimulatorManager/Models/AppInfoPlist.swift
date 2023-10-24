@@ -17,5 +17,8 @@ struct AppInfoPlist: DecodableURLContainer {
     
     let cfBundleDisplayName: String
     let cfBundleIdentifier: String
+    
+    // not decodable attributes
+    var hasWatchApp = false
     var url: URL?
 }

@@ -61,7 +61,12 @@ import os
             Button {
                 viewModel.didSelect(app: app)
             } label: {
-                Text(app.displayName)
+                HStack {
+                    Text(app.displayName)
+                    if app.hasWatchApp {
+                        Image(systemName: "applewatch")
+                    }
+                }
             }
         }
     }

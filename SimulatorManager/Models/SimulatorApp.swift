@@ -15,6 +15,7 @@ struct SimulatorApp {
     let bundleIdentifier: String
     let appDocumentsFolderURL: URL?
     let appPackageURL: URL?
+    let hasWatchApp: Bool
 }
 
 extension SimulatorApp: Identifiable {
