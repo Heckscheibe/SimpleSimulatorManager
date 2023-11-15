@@ -92,7 +92,6 @@ private extension DeviceManager {
                                                        hasWatchApp: infoPlist.hasCompanionWatchApp)
                     }
                     apps.append(simulatorApp)
-                    break
                     
                 } catch {
                     os_log("Failed to decode MetaDataPlist due to error: \(error)")
