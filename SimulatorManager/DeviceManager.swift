@@ -74,15 +74,26 @@ private extension DeviceManager {
                 do {
                     let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
                     
-                    if metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier {
-                        let simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName,
+                    guard metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier else {
+                        continue
+                    }
+                    let simulatorApp: any SimulatorApp
+                    if infoPlist.isWatchApp {
+                        simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName,
                                                            bundleIdentifier: infoPlist.cfBundleIdentifier,
                                                            appDocumentsFolderURL: metaDataPlist.url,
                                                            appPackageURL: infoPlist.url,
-                                                           hasWatchApp: infoPlist.hasWatchApp)
-                        apps.append(simulatorApp)
-                        break
+                                                           companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier)
+                    } else {
+                        simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName,
+                                                       bundleIdentifier: infoPlist.cfBundleIdentifier,
+                                                       appDocumentsFolderURL: metaDataPlist.url,
+                                                       appPackageURL: infoPlist.url,
+                                                       hasWatchApp: infoPlist.hasCompanionWatchApp)
                     }
+                    apps.append(simulatorApp)
+                    break
+                    
                 } catch {
                     os_log("Failed to decode MetaDataPlist due to error: \(error)")
                 }
@@ -105,14 +116,14 @@ private extension DeviceManager {
                 return nil
             }
             
-            let hasWatchApp = getContentOfDirectoryAt(url: appBundle).contains { url in
+            let hasCompanionWatchApp = getContentOfDirectoryAt(url: appBundle).contains { url in
                 url.pathComponents.last == "Watch"
             }
             
             do {
                 var infoPlist = try CustomPropertyListDecoder()
                     .decode(AppInfoPlist.self, at: appBundle.appendingPathComponent(AppInfoPlist.infoPlistFileName))
-                infoPlist.hasWatchApp = hasWatchApp
+                infoPlist.hasCompanionWatchApp = hasCompanionWatchApp
                 return infoPlist
             } catch {
                 os_log("Failed to decode plist due to error: \(error)")

@@ -16,11 +16,15 @@ struct AppInfoPlist: DecodableURLContainer {
         case wkCompanionAppBundleIdentifier = "WKCompanionAppBundleIdentifier"
     }
     
+    var isWatchApp: Bool {
+        wkCompanionAppBundleIdentifier != nil
+    }
+    
     let cfBundleDisplayName: String
     let cfBundleIdentifier: String
     let wkCompanionAppBundleIdentifier: String?
     
     // not decodable attributes
-    var hasWatchApp = false
+    var hasCompanionWatchApp = false
     var url: URL?
 }

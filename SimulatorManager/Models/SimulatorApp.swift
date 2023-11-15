@@ -1,5 +1,5 @@
 //
-//  SimulatoriOSApp.swift
+//  SimulatorApp.swift
 //  SimulatorManager
 //
 //  Created by Nicolas Hiller on 17.10.23.
@@ -31,8 +31,9 @@ struct SimulatoriOSApp: SimulatorApp {
     let bundleIdentifier: String
     let appDocumentsFolderURL: URL?
     let appPackageURL: URL?
-    let hasWatchApp: Bool
     let iconName = "iphone.gen3"
+    
+    let hasWatchApp: Bool
 }
 
 struct SimulatorWatchOSApp: SimulatorApp {
@@ -40,6 +41,7 @@ struct SimulatorWatchOSApp: SimulatorApp {
     let bundleIdentifier: String
     let appDocumentsFolderURL: URL?
     let appPackageURL: URL?
-    let iosAppIdentifier: String?
     let iconName = "applewatch"
+    
+    let companioniOSAppBundleIdentifier: String?
 }
