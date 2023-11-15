@@ -43,13 +43,9 @@ import os
                             appGroupsView(for: device)
                         }
                     } else {
-                        HStack(alignment: .center,
-                               spacing: 10,
-                               content: {
-                                   Text(device.osVersion)
-                                   Text("No apps installed")
-                                       .font(.system(size: 12))
-                               })
+                        Text(device.osVersion)
+                        Text("No apps installed")
+                            .font(.system(size: 12))
                     }
                 }
             }
@@ -57,15 +53,13 @@ import os
     }
     
     func appView(for device: Device) -> some View {
-        ForEach(device.apps) { app in
+        ForEach(device.apps, id: \.id) { app in
             Button {
                 viewModel.didSelect(app: app)
             } label: {
                 HStack {
                     Text(app.displayName)
-                    if app.hasWatchApp {
-                        Image(systemName: "applewatch")
-                    }
+                    Image(systemName: app.iconName)
                 }
             }
         }

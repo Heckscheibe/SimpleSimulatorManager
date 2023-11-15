@@ -61,24 +61,25 @@ private extension DeviceManager {
         let infoPlists = loadAppInfoPlists(for: device)
         
         guard let appDataFolderURL = device.url?
-            .appendingPathComponent(SimulatorApp.appDataPath) else {
+            .appendingPathComponent(SimulatorPaths.appDataPath) else {
             return
         }
         let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
         
-        var apps: [SimulatorApp] = []
+        var apps: [any SimulatorApp] = []
         infoPlists.forEach { infoPlist in
             // using oldschool for in loop to be able to `break` and return early
             for url in appDataFolderURLs {
                 let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
                 do {
                     let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
+                    
                     if metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier {
-                        let simulatorApp = SimulatorApp(displayName: infoPlist.cfBundleDisplayName,
-                                                        bundleIdentifier: infoPlist.cfBundleIdentifier,
-                                                        appDocumentsFolderURL: metaDataPlist.url,
-                                                        appPackageURL: infoPlist.url,
-                                                        hasWatchApp: infoPlist.hasWatchApp)
+                        let simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName,
+                                                           bundleIdentifier: infoPlist.cfBundleIdentifier,
+                                                           appDocumentsFolderURL: metaDataPlist.url,
+                                                           appPackageURL: infoPlist.url,
+                                                           hasWatchApp: infoPlist.hasWatchApp)
                         apps.append(simulatorApp)
                         break
                     }
@@ -93,7 +94,7 @@ private extension DeviceManager {
     
     func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
         guard let appPackageFolderPath = device.url?
-            .appendingPathComponent(SimulatorApp.appPackagePath) else {
+            .appendingPathComponent(SimulatorPaths.appPackagePath) else {
             return []
         }
         let appPackageURLs = getContentOfDirectoryAt(url: appPackageFolderPath)
@@ -143,7 +144,7 @@ private extension DeviceManager {
             device.apps
                 .map { $0.bundleIdentifier }
                 .contains(where: {
-                    $0 == appGroup.name
+                    $0.contains(appGroup.name)
                 })
         }
         

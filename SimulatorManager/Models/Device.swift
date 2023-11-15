@@ -28,7 +28,7 @@ class Device: DecodableURLContainer {
     
     // not decoded properties
     var url: URL?
-    @Published var apps: [SimulatorApp] = []
+    @Published var apps: [any SimulatorApp] = []
     @Published var appGroups: [AppGroup] = []
     var appContainerFolder: URL? {
         url?.appendingPathComponent("data/Containers")

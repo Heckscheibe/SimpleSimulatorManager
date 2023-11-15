@@ -20,7 +20,7 @@ class SimulatorManagerViewModel {
         devices = deviceManager.devices
     }
     
-    func didSelect(app: SimulatorApp) {
+    func didSelect(app: any SimulatorApp) {
         guard let url = app.appDocumentsFolderURL else {
             return
         }
@@ -35,7 +35,7 @@ class SimulatorManagerViewModel {
     }
     
     func didSelectAppsFolder(for device: Device) {
-        guard let url = device.url?.appendingPathComponent(SimulatorApp.appDataPath) else {
+        guard let url = device.url?.appendingPathComponent(SimulatorPaths.appDataPath) else {
             return
         }
         openFolderAt(url)

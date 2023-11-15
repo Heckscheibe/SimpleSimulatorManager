@@ -13,10 +13,12 @@ struct AppInfoPlist: DecodableURLContainer {
     enum CodingKeys: String, CodingKey {
         case cfBundleDisplayName = "CFBundleDisplayName"
         case cfBundleIdentifier = "CFBundleIdentifier"
+        case wkCompanionAppBundleIdentifier = "WKCompanionAppBundleIdentifier"
     }
     
     let cfBundleDisplayName: String
     let cfBundleIdentifier: String
+    let wkCompanionAppBundleIdentifier: String?
     
     // not decodable attributes
     var hasWatchApp = false
