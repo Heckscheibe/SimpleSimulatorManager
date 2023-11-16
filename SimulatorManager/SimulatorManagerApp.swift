@@ -54,12 +54,20 @@ import os
     
     func appView(for device: Device) -> some View {
         ForEach(device.apps, id: \.id) { app in
-            Button {
-                viewModel.didSelect(app: app)
-            } label: {
-                HStack {
-                    Text(app.displayName)
-                    Image(systemName: app.iconName)
+            Menu(app.displayName) {
+                Button {
+                    viewModel.didSelectAppDocumentFolder(for: app)
+                } label: {
+                    HStack {
+                        Text("Documents Folder")
+                    }
+                }
+                Button {
+                    viewModel.didSelectAppPackageFolder(for: app)
+                } label: {
+                    HStack {
+                        Text("App Package")
+                    }
                 }
             }
         }

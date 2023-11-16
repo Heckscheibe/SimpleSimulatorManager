@@ -20,10 +20,16 @@ class SimulatorManagerViewModel {
         devices = deviceManager.devices
     }
     
-    func didSelect(app: any SimulatorApp) {
-        guard let url = app.appDocumentsFolderURL else {
+    func didSelectAppPackageFolder(for app: any SimulatorApp) {
+        guard let url = app.appPackageURL?.deletingLastPathComponent() else {
             return
         }
+        openFolderAt(url)
+    }
+
+    func didSelectAppDocumentFolder(for app: any SimulatorApp) {
+        guard let url = app.appDocumentsFolderURL else { return }
+        
         openFolderAt(url)
     }
     
