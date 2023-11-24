@@ -15,6 +15,8 @@ import os
         MenuBarExtra("SimulatorManager", systemImage: "iphone.gen3") {
             deviceTypeMenu
             Divider()
+            SettingsView()
+            Divider()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }.keyboardShortcut("q")
@@ -41,6 +43,7 @@ import os
                             AppsView(viewModel: DeviceViewModel(device: device))
                             Divider()
                             AppGroupsView(viewModel: DeviceViewModel(device: device))
+                            Divider()
                         }
                     } else {
                         Text(device.osVersion)

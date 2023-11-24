@@ -22,6 +22,9 @@
 		37D6FBEF2B112E8C0023F886 /* DeviceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBEE2B112E8C0023F886 /* DeviceViewModel.swift */; };
 		37D6FBF22B1130730023F886 /* AppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBF12B1130730023F886 /* AppsView.swift */; };
 		37D6FBF42B1130870023F886 /* AppGroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBF32B1130870023F886 /* AppGroupsView.swift */; };
+		37D6FBF62B11330D0023F886 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBF52B11330D0023F886 /* Settings.swift */; };
+		37D6FBF92B1134F30023F886 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBF82B1134F30023F886 /* SettingsView.swift */; };
+		37D6FBFB2B11354E0023F886 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBFA2B11354E0023F886 /* SettingsViewModel.swift */; };
 		37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */; };
 		37F1DA5B2AD6E49000C059DB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5A2AD6E49000C059DB /* Assets.xcassets */; };
 		37F1DA5E2AD6E49000C059DB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5D2AD6E49000C059DB /* Preview Assets.xcassets */; };
@@ -63,6 +66,9 @@
 		37D6FBEE2B112E8C0023F886 /* DeviceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceViewModel.swift; sourceTree = "<group>"; };
 		37D6FBF12B1130730023F886 /* AppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsView.swift; sourceTree = "<group>"; };
 		37D6FBF32B1130870023F886 /* AppGroupsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupsView.swift; sourceTree = "<group>"; };
+		37D6FBF52B11330D0023F886 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		37D6FBF82B1134F30023F886 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		37D6FBFA2B11354E0023F886 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		37F1DA532AD6E48F00C059DB /* SimulatorManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimulatorManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerApp.swift; sourceTree = "<group>"; };
 		37F1DA5A2AD6E49000C059DB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -123,6 +129,16 @@
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
+		37D6FBF72B1134E80023F886 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				37D6FBF52B11330D0023F886 /* Settings.swift */,
+				37D6FBF82B1134F30023F886 /* SettingsView.swift */,
+				37D6FBFA2B11354E0023F886 /* SettingsViewModel.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
 		37F1DA4A2AD6E48E00C059DB = {
 			isa = PBXGroup;
 			children = (
@@ -158,6 +174,7 @@
 				37CAA9D42ADEF97400A7F2CB /* Extensions.swift */,
 				3759873B2AE2D1670006BE45 /* CustomPropertyListDecoder.swift */,
 				37D6FBEC2B112E360023F886 /* FolderOpening.swift */,
+				37D6FBF72B1134E80023F886 /* Settings */,
 			);
 			path = SimulatorManager;
 			sourceTree = "<group>";
@@ -361,6 +378,9 @@
 				373A36C72AD98A9A0086CCE0 /* Device.swift in Sources */,
 				37CAA9D52ADEF97400A7F2CB /* Extensions.swift in Sources */,
 				37CAA9D72AE0730C00A7F2CB /* AppInfoPlist.swift in Sources */,
+				37D6FBF92B1134F30023F886 /* SettingsView.swift in Sources */,
+				37D6FBF62B11330D0023F886 /* Settings.swift in Sources */,
+				37D6FBFB2B11354E0023F886 /* SettingsViewModel.swift in Sources */,
 				37D6FBEF2B112E8C0023F886 /* DeviceViewModel.swift in Sources */,
 				37CAA9CD2ADEEA4A00A7F2CB /* DeviceState.swift in Sources */,
 				373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */,
