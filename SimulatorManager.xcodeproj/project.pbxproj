@@ -18,6 +18,10 @@
 		37CAA9D52ADEF97400A7F2CB /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CAA9D42ADEF97400A7F2CB /* Extensions.swift */; };
 		37CAA9D72AE0730C00A7F2CB /* AppInfoPlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CAA9D62AE0730C00A7F2CB /* AppInfoPlist.swift */; };
 		37CAA9D92AE0786400A7F2CB /* MetaDataPlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CAA9D82AE0786400A7F2CB /* MetaDataPlist.swift */; };
+		37D6FBED2B112E360023F886 /* FolderOpening.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBEC2B112E360023F886 /* FolderOpening.swift */; };
+		37D6FBEF2B112E8C0023F886 /* DeviceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBEE2B112E8C0023F886 /* DeviceViewModel.swift */; };
+		37D6FBF22B1130730023F886 /* AppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBF12B1130730023F886 /* AppsView.swift */; };
+		37D6FBF42B1130870023F886 /* AppGroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBF32B1130870023F886 /* AppGroupsView.swift */; };
 		37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */; };
 		37F1DA592AD6E48F00C059DB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA582AD6E48F00C059DB /* ContentView.swift */; };
 		37F1DA5B2AD6E49000C059DB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5A2AD6E49000C059DB /* Assets.xcassets */; };
@@ -56,6 +60,10 @@
 		37CAA9D42ADEF97400A7F2CB /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		37CAA9D62AE0730C00A7F2CB /* AppInfoPlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInfoPlist.swift; sourceTree = "<group>"; };
 		37CAA9D82AE0786400A7F2CB /* MetaDataPlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaDataPlist.swift; sourceTree = "<group>"; };
+		37D6FBEC2B112E360023F886 /* FolderOpening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderOpening.swift; sourceTree = "<group>"; };
+		37D6FBEE2B112E8C0023F886 /* DeviceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceViewModel.swift; sourceTree = "<group>"; };
+		37D6FBF12B1130730023F886 /* AppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsView.swift; sourceTree = "<group>"; };
+		37D6FBF32B1130870023F886 /* AppGroupsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupsView.swift; sourceTree = "<group>"; };
 		37F1DA532AD6E48F00C059DB /* SimulatorManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimulatorManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerApp.swift; sourceTree = "<group>"; };
 		37F1DA582AD6E48F00C059DB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -108,6 +116,15 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		37D6FBF02B1130310023F886 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				37D6FBEE2B112E8C0023F886 /* DeviceViewModel.swift */,
+				3759873D2AE3043E0006BE45 /* SimulatorManagerViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
 		37F1DA4A2AD6E48E00C059DB = {
 			isa = PBXGroup;
 			children = (
@@ -131,8 +148,11 @@
 		37F1DA552AD6E48F00C059DB /* SimulatorManager */ = {
 			isa = PBXGroup;
 			children = (
-				373A36C52AD98A8C0086CCE0 /* Models */,
 				37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */,
+				37D6FBF32B1130870023F886 /* AppGroupsView.swift */,
+				37D6FBF12B1130730023F886 /* AppsView.swift */,
+				373A36C52AD98A8C0086CCE0 /* Models */,
+				37D6FBF02B1130310023F886 /* ViewModels */,
 				37F1DA582AD6E48F00C059DB /* ContentView.swift */,
 				37F1DA5A2AD6E49000C059DB /* Assets.xcassets */,
 				37F1DA5F2AD6E49000C059DB /* SimulatorManager.entitlements */,
@@ -140,7 +160,7 @@
 				373A36CA2AD995260086CCE0 /* DeviceManager.swift */,
 				37CAA9D42ADEF97400A7F2CB /* Extensions.swift */,
 				3759873B2AE2D1670006BE45 /* CustomPropertyListDecoder.swift */,
-				3759873D2AE3043E0006BE45 /* SimulatorManagerViewModel.swift */,
+				37D6FBEC2B112E360023F886 /* FolderOpening.swift */,
 			);
 			path = SimulatorManager;
 			sourceTree = "<group>";
@@ -344,14 +364,18 @@
 				373A36C72AD98A9A0086CCE0 /* Device.swift in Sources */,
 				37CAA9D52ADEF97400A7F2CB /* Extensions.swift in Sources */,
 				37CAA9D72AE0730C00A7F2CB /* AppInfoPlist.swift in Sources */,
+				37D6FBEF2B112E8C0023F886 /* DeviceViewModel.swift in Sources */,
 				37CAA9CD2ADEEA4A00A7F2CB /* DeviceState.swift in Sources */,
 				373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */,
 				37CAA9CF2ADEEA6000A7F2CB /* DeviceType.swift in Sources */,
 				37F1DA592AD6E48F00C059DB /* ContentView.swift in Sources */,
+				37D6FBF22B1130730023F886 /* AppsView.swift in Sources */,
 				37CAA9D92AE0786400A7F2CB /* MetaDataPlist.swift in Sources */,
 				3759873E2AE3043E0006BE45 /* SimulatorManagerViewModel.swift in Sources */,
 				3759873C2AE2D1670006BE45 /* CustomPropertyListDecoder.swift in Sources */,
+				37D6FBED2B112E360023F886 /* FolderOpening.swift in Sources */,
 				37CAA9D12ADEEE6C00A7F2CB /* SimulatorApp.swift in Sources */,
+				37D6FBF42B1130870023F886 /* AppGroupsView.swift in Sources */,
 				37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */,
 				37CAA9D32ADEF07900A7F2CB /* AppGroup.swift in Sources */,
 			);

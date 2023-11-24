@@ -38,9 +38,9 @@ import os
                                 Text("Application Folder")
                             }
                             Divider()
-                            appView(for: device)
+                            AppsView(viewModel: DeviceViewModel(device: device))
                             Divider()
-                            appGroupsView(for: device)
+                            AppGroupsView(viewModel: DeviceViewModel(device: device))
                         }
                     } else {
                         Text(device.osVersion)
@@ -48,37 +48,6 @@ import os
                             .font(.system(size: 12))
                     }
                 }
-            }
-        }
-    }
-    
-    func appView(for device: Device) -> some View {
-        ForEach(device.apps, id: \.id) { app in
-            Menu(app.displayName) {
-                Button {
-                    viewModel.didSelectAppDocumentFolder(for: app)
-                } label: {
-                    HStack {
-                        Text("Documents Folder")
-                    }
-                }
-                Button {
-                    viewModel.didSelectAppPackageFolder(for: app)
-                } label: {
-                    HStack {
-                        Text("App Package")
-                    }
-                }
-            }
-        }
-    }
-    
-    func appGroupsView(for device: Device) -> some View {
-        ForEach(device.appGroups) { appGroup in
-            Button {
-                viewModel.didSelect(appGroup: appGroup)
-            } label: {
-                Text("Group \(appGroup.name)")
             }
         }
     }
