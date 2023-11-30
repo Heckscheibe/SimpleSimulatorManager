@@ -8,6 +8,14 @@
 import Foundation
 import os
 
+enum SimulatorPlatform {
+    case iPhone
+    case iPad
+    case watch
+    case appleTV
+    case visionPro
+}
+
 class Device: DecodableURLContainer {
     static let devicePlistName = "device.plist"
     static let appGroupFolderPath = "data/Containers/Shared/AppGroup"
@@ -18,18 +26,17 @@ class Device: DecodableURLContainer {
         case lastBootedAt
         case runtime
         case state
+        case deviceType
     }
     
     let udid: String
     let name: String
     let lastBootedAt: Date?
     let runtime: String
+    let deviceType: String
     let state: DeviceState
     
     // not decoded properties
-    var url: URL?
-    @Published var apps: [any SimulatorApp] = []
-    @Published var appGroups: [AppGroup] = []
     var appContainerFolder: URL? {
         url?.appendingPathComponent("data/Containers")
     }
@@ -53,6 +60,24 @@ class Device: DecodableURLContainer {
                 }
             } ?? ""
     }
+    
+    var simulatorPlatform: SimulatorPlatform {
+        if deviceType.contains("iPhone") {
+            return .iPhone
+        } else if deviceType.contains("iPad") {
+            return .iPad
+        } else if deviceType.contains("visionOS") {
+            return .visionPro
+        } else if deviceType.contains("appleTV") {
+            return .appleTV
+        } else {
+            return .watch
+        }
+    }
+    
+    @Published var apps: [any SimulatorApp] = []
+    @Published var appGroups: [AppGroup] = []
+    var url: URL?
 }
 
 extension Device: Identifiable {

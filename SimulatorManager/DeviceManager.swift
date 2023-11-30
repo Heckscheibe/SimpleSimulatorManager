@@ -26,7 +26,8 @@ private extension DeviceManager {
     }
     
     func bindDeviceTypes() {
-        $devices.map { Set($0.map { DeviceType(id: $0.name) }).sorted() }
+        $devices.map { Set($0.map { DeviceType(id: $0.name,
+                                               simulatorPlatform: $0.simulatorPlatform) }).sorted() }
             .assign(to: &$deviceTypes)
     }
     

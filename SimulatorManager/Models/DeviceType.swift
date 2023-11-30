@@ -9,6 +9,7 @@ import Foundation
 
 struct DeviceType: Comparable, Hashable, Identifiable {
     let id: String
+    let simulatorPlatform: SimulatorPlatform
     
     var name: String {
         id

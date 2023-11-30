@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum Platform: String, Decodable {
+enum AppTargetPlatform: String, Decodable {
     case iphonesimulator
     case watchsimulator
 }
@@ -28,7 +28,7 @@ struct AppInfoPlist: DecodableURLContainer {
     
     let cfBundleDisplayName: String
     let cfBundleIdentifier: String
-    let platform: Platform
+    let platform: AppTargetPlatform
     let wkCompanionAppBundleIdentifier: String?
     
     // not decodable attributes

@@ -13,7 +13,7 @@ struct DeviceTypeView: View {
     @ObservedObject var settings: SettingsViewModel
     
     var body: some View {
-        ForEach(viewModel.deviceTypes) { deviceType in
+        ForEach(viewModel.deviceTypes.filter { settings.visiblePlatforms.contains($0.simulatorPlatform) }) { deviceType in
             Menu(deviceType.name) {
                 ForEach(viewModel.devices.filter { $0.name == deviceType.name }) { device in
                     if device.hasAppsInstalled {
