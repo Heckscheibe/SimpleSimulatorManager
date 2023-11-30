@@ -15,31 +15,31 @@ struct SettingsView: View {
         Button(action: {
             viewModel.toggleAppleTVVisibility()
         }, label: {
-            Text(viewModel.showAppleTVButtonText)
+            Text(viewModel.showAppleTVText)
         })
         
         Button(action: {
-            viewModel.toggleIOSVisibility()
+            viewModel.toggleIPhoneVisibility()
         }, label: {
-            Text(viewModel.showIOSText)
+            Text(viewModel.showIPhoneText)
         })
         
         Button(action: {
-            viewModel.toggleIPadOSVisibility()
+            viewModel.toggleIPadVisibility()
         }, label: {
-            Text(viewModel.showIPadOSText)
+            Text(viewModel.showIPadText)
         })
         
         Button(action: {
-            viewModel.toggleVisionOSVisibility()
+            viewModel.toggleVisionProVisibility()
         }, label: {
-            Text(viewModel.showVisionOSText)
+            Text(viewModel.showVisionText)
         })
         
         Button(action: {
-            viewModel.toggleWatchOSVisibility()
+            viewModel.toggleWatchVisibility()
         }, label: {
-            Text(viewModel.showWatchOSText)
+            Text(viewModel.showWatchText)
         })
     }
 }

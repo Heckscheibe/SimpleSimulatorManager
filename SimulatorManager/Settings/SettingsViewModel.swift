@@ -10,42 +10,42 @@ import Foundation
 class SettingsViewModel: ObservableObject {
     private var settings = Settings()
     
-    @Published var showAppleTVButtonText: String
-    @Published var showVisionOSText: String
-    @Published var showIPadOSText: String
-    @Published var showIOSText: String
-    @Published var showWatchOSText: String
+    @Published var showAppleTVText: String
+    @Published var showVisionText: String
+    @Published var showIPadText: String
+    @Published var showIPhoneText: String
+    @Published var showWatchText: String
     
     init() {
-        self.showAppleTVButtonText = settings.showAppleTV ? "Hide Apple TV" : "Show Apple TV"
-        self.showVisionOSText = settings.showVisionOS ? "Hide Vision OS" : "Hide Vision OS"
-        self.showIPadOSText = settings.showIPadOS ? "Hide iPadOS" : "Show iPadOS"
-        self.showIOSText = settings.showIOS ? "Hide iOS" : "Show iOS"
-        self.showWatchOSText = settings.showWatchOS ? "Hide WatchOS" : "Show WatchOS"
+        self.showAppleTVText = settings.showAppleTV ? "Hide Apple TV" : "Show Apple TV"
+        self.showVisionText = settings.showVisionPro ? "Hide Vision OS" : "Hide Vision OS"
+        self.showIPadText = settings.showIPad ? "Hide iPadOS" : "Show iPadOS"
+        self.showIPhoneText = settings.showIPhone ? "Hide iOS" : "Show iOS"
+        self.showWatchText = settings.showWatch ? "Hide WatchOS" : "Show WatchOS"
     }
     
     func toggleAppleTVVisibility() {
         settings.showAppleTV.toggle()
-        showAppleTVButtonText = settings.showAppleTV ? "Hide Apple TV" : "Show Apple TV"
+        showAppleTVText = settings.showAppleTV ? "Hide Apple TV" : "Show Apple TV"
     }
     
-    func toggleVisionOSVisibility() {
-        settings.showVisionOS.toggle()
-        showVisionOSText = settings.showVisionOS ? "Hide Vision OS" : "Hide Vision OS"
+    func toggleVisionProVisibility() {
+        settings.showVisionPro.toggle()
+        showVisionText = settings.showVisionPro ? "Hide Vision OS" : "Hide Vision OS"
     }
     
-    func toggleIPadOSVisibility() {
-        settings.showIPadOS.toggle()
-        showIPadOSText = settings.showIPadOS ? "Hide iPadOS" : "Show iPadOS"
+    func toggleIPadVisibility() {
+        settings.showIPad.toggle()
+        showIPadText = settings.showIPad ? "Hide iPadOS" : "Show iPadOS"
     }
     
-    func toggleIOSVisibility() {
-        settings.showIOS.toggle()
-        showIOSText = settings.showIOS ? "Hide iOS" : "Show iOS"
+    func toggleIPhoneVisibility() {
+        settings.showIPhone.toggle()
+        showIPhoneText = settings.showIPhone ? "Hide iOS" : "Show iOS"
     }
     
-    func toggleWatchOSVisibility() {
-        settings.showWatchOS.toggle()
-        showWatchOSText = settings.showWatchOS ? "Hide WatchOS" : "Show WatchOS"
+    func toggleWatchVisibility() {
+        settings.showWatch.toggle()
+        showWatchText = settings.showWatch ? "Hide WatchOS" : "Show WatchOS"
     }
 }

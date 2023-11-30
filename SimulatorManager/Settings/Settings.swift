@@ -10,10 +10,10 @@ import Foundation
 struct Settings {
     private enum Keys: String {
         case showAppleTV
-        case showVisionOS
-        case showIPadOS
-        case showIOS
-        case showWatchOS
+        case showVisionPro
+        case showIPad
+        case showIPhone
+        case showWatch
     }
     
     let userDefaults = UserDefaults(suiteName: "SimulatorManager")
@@ -27,39 +27,39 @@ struct Settings {
         }
     }
 
-    var showVisionOS: Bool {
+    var showVisionPro: Bool {
         get {
-            userDefaults?.bool(forKey: Keys.showVisionOS.rawValue) ?? false
+            userDefaults?.bool(forKey: Keys.showVisionPro.rawValue) ?? false
         }
         set {
-            userDefaults?.setValue(newValue, forKey: Keys.showVisionOS.rawValue)
+            userDefaults?.setValue(newValue, forKey: Keys.showVisionPro.rawValue)
         }
     }
     
-    var showIPadOS: Bool {
+    var showIPad: Bool {
         get {
-            userDefaults?.bool(forKey: Keys.showIPadOS.rawValue) ?? false
+            userDefaults?.bool(forKey: Keys.showIPad.rawValue) ?? false
         }
         set {
-            userDefaults?.setValue(newValue, forKey: Keys.showIPadOS.rawValue)
+            userDefaults?.setValue(newValue, forKey: Keys.showIPad.rawValue)
         }
     }
     
-    var showIOS: Bool {
+    var showIPhone: Bool {
         get {
-            userDefaults?.bool(forKey: Keys.showIOS.rawValue) ?? false
+            userDefaults?.bool(forKey: Keys.showIPhone.rawValue) ?? false
         }
         set {
-            userDefaults?.setValue(newValue, forKey: Keys.showIOS.rawValue)
+            userDefaults?.setValue(newValue, forKey: Keys.showIPhone.rawValue)
         }
     }
     
-    var showWatchOS: Bool {
+    var showWatch: Bool {
         get {
-            userDefaults?.bool(forKey: Keys.showWatchOS.rawValue) ?? false
+            userDefaults?.bool(forKey: Keys.showWatch.rawValue) ?? false
         }
         set {
-            userDefaults?.setValue(newValue, forKey: Keys.showWatchOS.rawValue)
+            userDefaults?.setValue(newValue, forKey: Keys.showWatch.rawValue)
         }
     }
 }
