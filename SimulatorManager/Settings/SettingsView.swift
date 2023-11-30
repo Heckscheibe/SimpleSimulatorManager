@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct SettingsView: View {
-    let viewModel = SettingsViewModel()
+    @ObservedObject var viewModel = SettingsViewModel()
     
     var body: some View {
         Button(action: {
@@ -33,7 +33,13 @@ struct SettingsView: View {
         Button(action: {
             viewModel.toggleVisionOSVisibility()
         }, label: {
-            Text(viewModel.showVisionOSButtonText)
+            Text(viewModel.showVisionOSText)
+        })
+        
+        Button(action: {
+            viewModel.toggleWatchOSVisibility()
+        }, label: {
+            Text(viewModel.showWatchOSText)
         })
     }
 }

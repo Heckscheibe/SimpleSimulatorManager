@@ -9,7 +9,7 @@ import Foundation
 import os
 import AppKit
 
-class SimulatorManagerViewModel {
+class SimulatorManagerViewModel: ObservableObject {
     @Published var deviceTypes: [DeviceType]
     @Published var devices: [Device]
     

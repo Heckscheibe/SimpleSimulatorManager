@@ -9,49 +9,18 @@ import SwiftUI
 import os
 
 @main struct SimulatorManagerApp: App {
-    let viewModel = SimulatorManagerViewModel()
+    @StateObject var viewModel = SimulatorManagerViewModel()
+    @StateObject var settingsViewModel = SettingsViewModel()
     
     var body: some Scene {
         MenuBarExtra("SimulatorManager", systemImage: "iphone.gen3") {
-            deviceTypeMenu
+            DeviceTypeView(viewModel: viewModel, settings: settingsViewModel)
             Divider()
-            SettingsView()
+            SettingsView(viewModel: settingsViewModel)
             Divider()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }.keyboardShortcut("q")
-        }
-    }
-    
-    var deviceTypeMenu: some View {
-        ForEach(viewModel.deviceTypes) { deviceType in
-            Menu(deviceType.name) {
-                ForEach(viewModel.devices.filter { $0.name == deviceType.name }) { device in
-                    if device.hasAppsInstalled {
-                        Menu(device.osVersion) {
-                            Button {
-                                viewModel.didSelectSimulatorFolder(for: device)
-                            } label: {
-                                Text("Simulator Folder")
-                            }
-                            Button {
-                                viewModel.didSelectAppsFolder(for: device)
-                            } label: {
-                                Text("Application Folder")
-                            }
-                            Divider()
-                            AppsView(viewModel: DeviceViewModel(device: device))
-                            Divider()
-                            AppGroupsView(viewModel: DeviceViewModel(device: device))
-                            Divider()
-                        }
-                    } else {
-                        Text(device.osVersion)
-                        Text("No apps installed")
-                            .font(.system(size: 12))
-                    }
-                }
-            }
         }
     }
 }
