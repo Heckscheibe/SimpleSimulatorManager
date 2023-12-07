@@ -19,10 +19,10 @@ class SettingsViewModel: ObservableObject {
     
     init() {
         self.showAppleTVText = settings.showAppleTV ? "Hide Apple TV" : "Show Apple TV"
-        self.showVisionText = settings.showVisionPro ? "Hide Vision OS" : "Hide Vision OS"
+        self.showVisionText = settings.showVisionPro ? "Hide visionOS" : "Show visionOS"
         self.showIPadText = settings.showIPad ? "Hide iPadOS" : "Show iPadOS"
         self.showIPhoneText = settings.showIPhone ? "Hide iOS" : "Show iOS"
-        self.showWatchText = settings.showWatch ? "Hide WatchOS" : "Show WatchOS"
+        self.showWatchText = settings.showWatch ? "Hide watchOS" : "Show watchOS"
         
         updateVisiblePlatforms()
     }
@@ -35,7 +35,7 @@ class SettingsViewModel: ObservableObject {
     
     func toggleVisionProVisibility() {
         settings.showVisionPro.toggle()
-        showVisionText = settings.showVisionPro ? "Hide Vision OS" : "Hide Vision OS"
+        showVisionText = settings.showVisionPro ? "Hide visionOS" : "Show visionOS"
         updateVisiblePlatforms()
     }
     
@@ -53,7 +53,7 @@ class SettingsViewModel: ObservableObject {
     
     func toggleWatchVisibility() {
         settings.showWatch.toggle()
-        showWatchText = settings.showWatch ? "Hide WatchOS" : "Show WatchOS"
+        showWatchText = settings.showWatch ? "Hide watchOS" : "Show watchOS"
         updateVisiblePlatforms()
     }
 }

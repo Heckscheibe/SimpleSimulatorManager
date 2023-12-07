@@ -67,7 +67,7 @@ class Device: DecodableURLContainer {
             return .iPhone
         } else if deviceType.contains("iPad") {
             return .iPad
-        } else if deviceType.contains("visionOS") {
+        } else if deviceType.contains("Apple-Vision-Pro") {
             return .visionPro
         } else if deviceType.contains("Apple-TV") {
             return .appleTV
