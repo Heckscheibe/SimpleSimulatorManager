@@ -14,6 +14,7 @@ enum SimulatorPlatform {
     case watch
     case appleTV
     case visionPro
+    case iPodTouch
 }
 
 class Device: DecodableURLContainer {
@@ -70,8 +71,10 @@ class Device: DecodableURLContainer {
             return .visionPro
         } else if deviceType.contains("Apple-TV") {
             return .appleTV
-        } else {
+        } else if deviceType.contains("Apple-Watch") {
             return .watch
+        } else {
+            return .iPodTouch
         }
     }
     

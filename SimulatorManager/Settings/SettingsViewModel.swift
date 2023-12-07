@@ -15,7 +15,7 @@ class SettingsViewModel: ObservableObject {
     @Published var showIPadText: String
     @Published var showIPhoneText: String
     @Published var showWatchText: String
-    @Published var visiblePlatforms: Set<SimulatorPlatform>
+    @Published var visiblePlatforms = Set<SimulatorPlatform>()
     
     init() {
         self.showAppleTVText = settings.showAppleTV ? "Hide Apple TV" : "Show Apple TV"
@@ -24,13 +24,7 @@ class SettingsViewModel: ObservableObject {
         self.showIPhoneText = settings.showIPhone ? "Hide iOS" : "Show iOS"
         self.showWatchText = settings.showWatch ? "Hide WatchOS" : "Show WatchOS"
         
-        self.visiblePlatforms = Set([
-            settings.showAppleTV ? SimulatorPlatform.appleTV : nil,
-            settings.showVisionPro ? .visionPro : nil,
-            settings.showIPad ? .iPad : nil,
-            settings.showIPhone ? .iPhone : nil,
-            settings.showWatch ? .watch : nil
-        ].compactMap { $0 })
+        updateVisiblePlatforms()
     }
     
     func toggleAppleTVVisibility() {
@@ -71,6 +65,7 @@ private extension SettingsViewModel {
             settings.showVisionPro ? .visionPro : nil,
             settings.showIPad ? .iPad : nil,
             settings.showIPhone ? .iPhone : nil,
+            settings.showIPhone ? .iPodTouch : nil,
             settings.showWatch ? .watch : nil
         ].compactMap { $0 })
     }

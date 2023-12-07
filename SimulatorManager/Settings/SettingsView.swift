@@ -19,18 +19,6 @@ struct SettingsView: View {
         })
         
         Button(action: {
-            viewModel.toggleIPhoneVisibility()
-        }, label: {
-            Text(viewModel.showIPhoneText)
-        })
-        
-        Button(action: {
-            viewModel.toggleIPadVisibility()
-        }, label: {
-            Text(viewModel.showIPadText)
-        })
-        
-        Button(action: {
             viewModel.toggleVisionProVisibility()
         }, label: {
             Text(viewModel.showVisionText)
@@ -40,6 +28,18 @@ struct SettingsView: View {
             viewModel.toggleWatchVisibility()
         }, label: {
             Text(viewModel.showWatchText)
+        })
+        
+        Button(action: {
+            viewModel.toggleIPadVisibility()
+        }, label: {
+            Text(viewModel.showIPadText)
+        })
+        
+        Button(action: {
+            viewModel.toggleIPhoneVisibility()
+        }, label: {
+            Text(viewModel.showIPhoneText)
         })
     }
 }
