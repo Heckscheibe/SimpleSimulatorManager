@@ -8,7 +8,7 @@
 import Foundation
 
 struct Settings {
-    private enum Keys: String {
+    private enum Keys: String, CaseIterable {
         case showAppleTV
         case showVisionPro
         case showIPad
@@ -16,11 +16,19 @@ struct Settings {
         case showWatch
     }
     
+    init() {
+        Keys.allCases.forEach {
+            if userDefaults?.value(forKey: $0.rawValue) == nil {
+                userDefaults?.setValue(true, forKey: $0.rawValue)
+            }
+        }
+    }
+    
     let userDefaults = UserDefaults(suiteName: "SimulatorManager")
     
     var showAppleTV: Bool {
         get {
-            userDefaults?.bool(forKey: Keys.showAppleTV.rawValue) ?? false
+            userDefaults?.bool(forKey: Keys.showAppleTV.rawValue) ?? true
         }
         set {
             userDefaults?.setValue(newValue, forKey: Keys.showAppleTV.rawValue)
@@ -29,7 +37,7 @@ struct Settings {
 
     var showVisionPro: Bool {
         get {
-            userDefaults?.bool(forKey: Keys.showVisionPro.rawValue) ?? false
+            userDefaults?.bool(forKey: Keys.showVisionPro.rawValue) ?? true
         }
         set {
             userDefaults?.setValue(newValue, forKey: Keys.showVisionPro.rawValue)
@@ -38,7 +46,7 @@ struct Settings {
     
     var showIPad: Bool {
         get {
-            userDefaults?.bool(forKey: Keys.showIPad.rawValue) ?? false
+            userDefaults?.bool(forKey: Keys.showIPad.rawValue) ?? true
         }
         set {
             userDefaults?.setValue(newValue, forKey: Keys.showIPad.rawValue)
@@ -47,7 +55,7 @@ struct Settings {
     
     var showIPhone: Bool {
         get {
-            userDefaults?.bool(forKey: Keys.showIPhone.rawValue) ?? false
+            userDefaults?.bool(forKey: Keys.showIPhone.rawValue) ?? true
         }
         set {
             userDefaults?.setValue(newValue, forKey: Keys.showIPhone.rawValue)
@@ -56,7 +64,7 @@ struct Settings {
     
     var showWatch: Bool {
         get {
-            userDefaults?.bool(forKey: Keys.showWatch.rawValue) ?? false
+            userDefaults?.bool(forKey: Keys.showWatch.rawValue) ?? true
         }
         set {
             userDefaults?.setValue(newValue, forKey: Keys.showWatch.rawValue)
