@@ -80,13 +80,13 @@ private extension DeviceManager {
                     }
                     let simulatorApp: any SimulatorApp
                     if infoPlist.isWatchApp {
-                        simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName,
+                        simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
                                                            bundleIdentifier: infoPlist.cfBundleIdentifier,
                                                            appDocumentsFolderURL: metaDataPlist.url,
                                                            appPackageURL: infoPlist.url,
                                                            companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier)
                     } else {
-                        simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName,
+                        simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
                                                        bundleIdentifier: infoPlist.cfBundleIdentifier,
                                                        appDocumentsFolderURL: metaDataPlist.url,
                                                        appPackageURL: infoPlist.url,

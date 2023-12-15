@@ -17,6 +17,7 @@ struct AppInfoPlist: DecodableURLContainer {
     
     enum CodingKeys: String, CodingKey {
         case cfBundleDisplayName = "CFBundleDisplayName"
+        case cfBundleName = "CFBundleName"
         case cfBundleIdentifier = "CFBundleIdentifier"
         case platform = "DTPlatformName"
         case wkCompanionAppBundleIdentifier = "WKCompanionAppBundleIdentifier"
@@ -26,7 +27,8 @@ struct AppInfoPlist: DecodableURLContainer {
         platform == .watchsimulator
     }
     
-    let cfBundleDisplayName: String
+    let cfBundleDisplayName: String?
+    let cfBundleName: String
     let cfBundleIdentifier: String
     let platform: AppTargetPlatform
     let wkCompanionAppBundleIdentifier: String?
