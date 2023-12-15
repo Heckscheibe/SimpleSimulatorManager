@@ -21,7 +21,7 @@ class FolderMonitor {
     /// URL for the directory being monitored.
     let url: URL
     
-    var folderDidChange: (() -> Void)?
+    var folderDidChange: PassthroughSubject<Void, Never> = .init()
     // MARK: Initializers
     init(url: Foundation.URL) {
         self.url = url
@@ -42,7 +42,7 @@ class FolderMonitor {
                                                                         queue: folderMonitorQueue)
         // Define the block to call when a file change is detected.
         folderMonitorSource?.setEventHandler { [weak self] in
-            self?.folderDidChange?()
+            self?.folderDidChange.send(())
         }
         // Define a cancel handler to ensure the directory is closed when the source is cancelled.
         folderMonitorSource?.setCancelHandler { [weak self] in
