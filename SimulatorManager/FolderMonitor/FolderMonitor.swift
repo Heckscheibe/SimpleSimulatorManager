@@ -9,6 +9,7 @@ import Foundation
 import Combine
 
 /// This is taken from https://medium.com/over-engineering/monitoring-a-folder-for-changes-in-ios-dc3f8614f902
+/// but updated using Combine publishers as notifier
 class FolderMonitor {
     // MARK: Properties
     
