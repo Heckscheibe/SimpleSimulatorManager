@@ -17,6 +17,10 @@ class DeviceManager {
         loadDevices()
         bindDeviceTypes()
     }
+    
+    func update(device: Device) {
+        loadApps(for: device)
+    }
 }
 
 private extension DeviceManager {

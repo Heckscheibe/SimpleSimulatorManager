@@ -6,7 +6,9 @@
 //
 
 import Foundation
+import Combine
 
+/// This is taken from https://medium.com/over-engineering/monitoring-a-folder-for-changes-in-ios-dc3f8614f902
 class FolderMonitor {
     // MARK: Properties
     
@@ -36,7 +38,7 @@ class FolderMonitor {
         monitoredFolderFileDescriptor = open(url.path, O_EVTONLY)
         // Define a dispatch source monitoring the directory for additions, deletions, and renamings.
         folderMonitorSource = DispatchSource.makeFileSystemObjectSource(fileDescriptor: monitoredFolderFileDescriptor,
-                                                                        eventMask: .write, 
+                                                                        eventMask: .write,
                                                                         queue: folderMonitorQueue)
         // Define the block to call when a file change is detected.
         folderMonitorSource?.setEventHandler { [weak self] in

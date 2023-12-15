@@ -8,26 +8,33 @@
 import Foundation
 import os
 import AppKit
+import Combine
 
 class SimulatorManagerViewModel: ObservableObject {
     @Published var deviceTypes: [DeviceType]
     @Published var devices: [Device]
     
-    let deviceManager = DeviceManager()
-    let monitor: FolderMonitor
+    private let deviceManager = DeviceManager()
+    private var folderMonitors: [AppFolderMonitor] = []
+    private var cancellables: [AnyCancellable] = []
     
     init() {
         deviceTypes = deviceManager.deviceTypes
         devices = deviceManager.devices
-        monitor = FolderMonitor(url: deviceManager.devices.first!.url!)
-        observe()
+        observeDevices()
     }
     
-    func observe() {
-        monitor.folderDidChange = {
-            os_log("Folder changed")
+    func observeDevices() {
+        folderMonitors = devices.compactMap {
+            let monitor = AppFolderMonitor(device: $0)
+            monitor.appfolderDidChange
+                .sink { [weak self] device in
+                    os_log("\(device.name)'s folder did change.")
+                    self?.deviceManager.update(device: device)
+                }
+                .store(in: &cancellables)
+            return monitor
         }
-        monitor.startMonitoring()
     }
     
     func didSelectSimulatorFolder(for device: Device) {
