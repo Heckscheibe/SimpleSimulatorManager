@@ -12,6 +12,7 @@
 		373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373A36CA2AD995260086CCE0 /* DeviceManager.swift */; };
 		3759873C2AE2D1670006BE45 /* CustomPropertyListDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3759873B2AE2D1670006BE45 /* CustomPropertyListDecoder.swift */; };
 		3759873E2AE3043E0006BE45 /* SimulatorManagerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3759873D2AE3043E0006BE45 /* SimulatorManagerViewModel.swift */; };
+		3776EEDA2B2CF6720080F422 /* FolderMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3776EED92B2CF6720080F422 /* FolderMonitor.swift */; };
 		37CAA9CD2ADEEA4A00A7F2CB /* DeviceState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CAA9CC2ADEEA4A00A7F2CB /* DeviceState.swift */; };
 		37CAA9CF2ADEEA6000A7F2CB /* DeviceType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CAA9CE2ADEEA6000A7F2CB /* DeviceType.swift */; };
 		37CAA9D12ADEEE6C00A7F2CB /* SimulatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CAA9D02ADEEE6C00A7F2CB /* SimulatorApp.swift */; };
@@ -57,6 +58,7 @@
 		373A36CA2AD995260086CCE0 /* DeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceManager.swift; sourceTree = "<group>"; };
 		3759873B2AE2D1670006BE45 /* CustomPropertyListDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPropertyListDecoder.swift; sourceTree = "<group>"; };
 		3759873D2AE3043E0006BE45 /* SimulatorManagerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerViewModel.swift; sourceTree = "<group>"; };
+		3776EED92B2CF6720080F422 /* FolderMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderMonitor.swift; sourceTree = "<group>"; };
 		37CAA9CC2ADEEA4A00A7F2CB /* DeviceState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceState.swift; sourceTree = "<group>"; };
 		37CAA9CE2ADEEA6000A7F2CB /* DeviceType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceType.swift; sourceTree = "<group>"; };
 		37CAA9D02ADEEE6C00A7F2CB /* SimulatorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorApp.swift; sourceTree = "<group>"; };
@@ -122,6 +124,14 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		3776EED82B2CF6640080F422 /* FolderMonitor */ = {
+			isa = PBXGroup;
+			children = (
+				3776EED92B2CF6720080F422 /* FolderMonitor.swift */,
+			);
+			path = FolderMonitor;
+			sourceTree = "<group>";
+		};
 		37D6FBF02B1130310023F886 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -164,6 +174,7 @@
 		37F1DA552AD6E48F00C059DB /* SimulatorManager */ = {
 			isa = PBXGroup;
 			children = (
+				3776EED82B2CF6640080F422 /* FolderMonitor */,
 				37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */,
 				37D6FBF32B1130870023F886 /* AppGroupsView.swift */,
 				37D6FBF12B1130730023F886 /* AppsView.swift */,
@@ -394,6 +405,7 @@
 				3759873E2AE3043E0006BE45 /* SimulatorManagerViewModel.swift in Sources */,
 				3759873C2AE2D1670006BE45 /* CustomPropertyListDecoder.swift in Sources */,
 				37D6FBED2B112E360023F886 /* FolderOpening.swift in Sources */,
+				3776EEDA2B2CF6720080F422 /* FolderMonitor.swift in Sources */,
 				37CAA9D12ADEEE6C00A7F2CB /* SimulatorApp.swift in Sources */,
 				37D6FBF42B1130870023F886 /* AppGroupsView.swift in Sources */,
 				37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */,

@@ -14,10 +14,20 @@ class SimulatorManagerViewModel: ObservableObject {
     @Published var devices: [Device]
     
     let deviceManager = DeviceManager()
+    let monitor: FolderMonitor
     
     init() {
         deviceTypes = deviceManager.deviceTypes
         devices = deviceManager.devices
+        monitor = FolderMonitor(url: deviceManager.devices.first!.url!)
+        observe()
+    }
+    
+    func observe() {
+        monitor.folderDidChange = {
+            os_log("Folder changed")
+        }
+        monitor.startMonitoring()
     }
     
     func didSelectSimulatorFolder(for device: Device) {
