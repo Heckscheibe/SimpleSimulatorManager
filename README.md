@@ -15,3 +15,5 @@ This tool simplifies the process by offering an intuitive interface for managing
 - Option to Show/Hide platforms in the list
 
 **Note:** While Simple Simulator Manager facilitates efficient local testing, it is essential to conduct thorough testing on real devices before releasing your apps. ;)
+
+*Inspired by [XSimulatorMngr](https://github.com/wcb133/XSimulatorMngr). I have used this program before, and it helped me a lot.*

@@ -10,6 +10,7 @@
 		3713A08B2B1923150060C939 /* DeviceTypeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3713A08A2B1923150060C939 /* DeviceTypeView.swift */; };
 		373A36C72AD98A9A0086CCE0 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373A36C62AD98A9A0086CCE0 /* Device.swift */; };
 		373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373A36CA2AD995260086CCE0 /* DeviceManager.swift */; };
+		3750F9282B2D07AD00F578ED /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3750F9272B2D07AD00F578ED /* README.md */; };
 		3759873C2AE2D1670006BE45 /* CustomPropertyListDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3759873B2AE2D1670006BE45 /* CustomPropertyListDecoder.swift */; };
 		3759873E2AE3043E0006BE45 /* SimulatorManagerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3759873D2AE3043E0006BE45 /* SimulatorManagerViewModel.swift */; };
 		3776EEDA2B2CF6720080F422 /* FolderMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3776EED92B2CF6720080F422 /* FolderMonitor.swift */; };
@@ -57,6 +58,7 @@
 		3713A08A2B1923150060C939 /* DeviceTypeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceTypeView.swift; sourceTree = "<group>"; };
 		373A36C62AD98A9A0086CCE0 /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
 		373A36CA2AD995260086CCE0 /* DeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceManager.swift; sourceTree = "<group>"; };
+		3750F9272B2D07AD00F578ED /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		3759873B2AE2D1670006BE45 /* CustomPropertyListDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPropertyListDecoder.swift; sourceTree = "<group>"; };
 		3759873D2AE3043E0006BE45 /* SimulatorManagerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerViewModel.swift; sourceTree = "<group>"; };
 		3776EED92B2CF6720080F422 /* FolderMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderMonitor.swift; sourceTree = "<group>"; };
@@ -157,6 +159,7 @@
 		37F1DA4A2AD6E48E00C059DB = {
 			isa = PBXGroup;
 			children = (
+				3750F9272B2D07AD00F578ED /* README.md */,
 				37F1DA552AD6E48F00C059DB /* SimulatorManager */,
 				37F1DA672AD6E49000C059DB /* SimulatorManagerTests */,
 				37F1DA712AD6E49000C059DB /* SimulatorManagerUITests */,
@@ -327,6 +330,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3750F9282B2D07AD00F578ED /* README.md in Resources */,
 				37F1DA5E2AD6E49000C059DB /* Preview Assets.xcassets in Resources */,
 				37F1DA5B2AD6E49000C059DB /* Assets.xcassets in Resources */,
 			);
