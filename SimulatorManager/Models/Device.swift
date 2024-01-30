@@ -17,7 +17,7 @@ enum SimulatorPlatform {
     case iPodTouch
 }
 
-class Device: DecodableURLContainer {
+class Device: ObservableObject, DecodableURLContainer {
     static let devicePlistName = "device.plist"
     static let appGroupFolderPath = "data/Containers/Shared/AppGroup"
     
@@ -77,9 +77,14 @@ class Device: DecodableURLContainer {
         }
     }
     
-    @Published var apps: [any SimulatorApp] = []
-    @Published var appGroups: [AppGroup] = []
-    @Published var hasAppsInstalled: Bool = true
+    var apps: [any SimulatorApp] = [] {
+        willSet {
+            objectWillChange.send()
+        }
+    }
+
+    var appGroups: [AppGroup] = []
+    var hasAppsInstalled: Bool = true
     var url: URL?
 }
 
