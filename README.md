@@ -8,11 +8,16 @@ Developers often opt for Xcode's built-in simulators due to their swift feedback
 
 However, locating your app's folder in the local file system poses a challenge. Enter the Simple Simulator Manager, a tool crafted to assist in this aspect!
 
-This tool simplifies the process by offering an intuitive interface for managing apps installed on local simulators. Current features include:
+This tool simplifies the process by offering an intuitive interface for managing apps installed on local simulators. 
+**Current features include:**
 - Comprehensive list of installed simulators, categorized by device type and OS version
 - Swift access to simulator and application folders
 - Effortless navigation to app folders installed on simulators
 - Option to Show/Hide platforms in the list
+
+**Security and Privacy:**
+To access the local file system, Simple Simulator Manager disables the [Hardened Runtime](https://developer.apple.com/documentation/security/hardened_runtime) of macOS and turns off the app sandbox. This involves a potentially risky entitlement. The entire code of the app is openly available in this repository, allowing users to review it and ensure that none of their data is used inappropriately or sent anywhere. The app operates entirely offline, ensuring a secure and private development environment.
+
 
 **Note:** While Simple Simulator Manager facilitates efficient local testing, it is essential to conduct thorough testing on real devices before releasing your apps. ;)
 
