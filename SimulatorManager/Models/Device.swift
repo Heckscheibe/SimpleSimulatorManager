@@ -83,8 +83,18 @@ class Device: ObservableObject, DecodableURLContainer {
         }
     }
 
-    var appGroups: [AppGroup] = []
-    var hasAppsInstalled: Bool = true
+    var appGroups: [AppGroup] = [] {
+        willSet {
+            objectWillChange.send()
+        }
+    }
+
+    var hasAppsInstalled: Bool = true {
+        willSet {
+            objectWillChange.send()
+        }
+    }
+
     var url: URL?
 }
 
