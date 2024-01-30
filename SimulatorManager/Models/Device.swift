@@ -39,12 +39,11 @@ class Device: DecodableURLContainer {
     
     // not decoded properties
     var appContainerFolder: URL? {
-        url?.appendingPathComponent("data/Containers")
+        url?.appendingPathComponent("data/Containers/Data/Application")
     }
     
-    var hasAppsInstalled: Bool {
-        guard let appContainerFolder else { return false }
-        return FileManager.default.directoryExistsAtURL(appContainerFolder)
+    var appGroupsFolder: URL? {
+        url?.appendingPathComponent(Device.appGroupFolderPath)
     }
     
     var osVersion: String {
@@ -80,6 +79,7 @@ class Device: DecodableURLContainer {
     
     @Published var apps: [any SimulatorApp] = []
     @Published var appGroups: [AppGroup] = []
+    @Published var hasAppsInstalled: Bool = true
     var url: URL?
 }
 

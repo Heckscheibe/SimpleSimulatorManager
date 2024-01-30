@@ -17,7 +17,7 @@ class AppFolderMonitor {
     
     init(device: Device) {
         self.device = device
-        self.folderMonitor = FolderMonitor(url: device.url ?? URL(fileURLWithPath: ""))
+        self.folderMonitor = FolderMonitor(url: device.appContainerFolder ?? URL(fileURLWithPath: ""))
         folderMonitor.folderDidChange
             .debounce(for: 3.0, scheduler: RunLoop.main)
             .sink { [weak self] in

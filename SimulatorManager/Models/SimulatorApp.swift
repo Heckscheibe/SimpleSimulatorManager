@@ -26,7 +26,7 @@ extension SimulatorApp {
     }
 }
 
-struct SimulatoriOSApp: SimulatorApp {
+class SimulatoriOSApp: SimulatorApp {
     let displayName: String
     let bundleIdentifier: String
     let appDocumentsFolderURL: URL?
@@ -34,9 +34,17 @@ struct SimulatoriOSApp: SimulatorApp {
     let iconName = "iphone.gen3"
     
     let hasWatchApp: Bool
+    
+    init(displayName: String, bundleIdentifier: String, appDocumentsFolderURL: URL?, appPackageURL: URL?, hasWatchApp: Bool) {
+        self.displayName = displayName
+        self.bundleIdentifier = bundleIdentifier
+        self.appDocumentsFolderURL = appDocumentsFolderURL
+        self.appPackageURL = appPackageURL
+        self.hasWatchApp = hasWatchApp
+    }
 }
 
-struct SimulatorWatchOSApp: SimulatorApp {
+class SimulatorWatchOSApp: SimulatorApp {
     let displayName: String
     let bundleIdentifier: String
     let appDocumentsFolderURL: URL?
@@ -44,4 +52,12 @@ struct SimulatorWatchOSApp: SimulatorApp {
     let iconName = "applewatch"
     
     let companioniOSAppBundleIdentifier: String?
+    
+    init(displayName: String, bundleIdentifier: String, appDocumentsFolderURL: URL?, appPackageURL: URL?, companioniOSAppBundleIdentifier: String?) {
+        self.displayName = displayName
+        self.bundleIdentifier = bundleIdentifier
+        self.appDocumentsFolderURL = appDocumentsFolderURL
+        self.appPackageURL = appPackageURL
+        self.companioniOSAppBundleIdentifier = companioniOSAppBundleIdentifier
+    }
 }

@@ -20,6 +20,7 @@ class DeviceManager {
     
     func update(device: Device) {
         loadApps(for: device)
+        loadAppGroups(for: device)
     }
 }
 
@@ -105,6 +106,7 @@ private extension DeviceManager {
         }
         os_log("Device \(device.name) with \(device.osVersion) has the following apps installed: \(apps.map { $0.displayName })")
         device.apps = apps
+        device.hasAppsInstalled = !apps.isEmpty
     }
     
     func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
@@ -139,7 +141,7 @@ private extension DeviceManager {
     }
     
     func loadAppGroups(for device: Device) {
-        guard let appGroupsFolderURL = device.url?.appendingPathComponent(Device.appGroupFolderPath) else {
+        guard let appGroupsFolderURL = device.appGroupsFolder else {
             return
         }
         

@@ -12,7 +12,7 @@ struct AppsView: View {
     @ObservedObject var viewModel: DeviceViewModel
     
     var body: some View {
-        if !viewModel.device.apps.isEmpty {
+        if !viewModel.device.hasAppsInstalled {
             Text("Apps")
         }
         ForEach(viewModel.device.apps, id: \.id) { app in

@@ -26,6 +26,7 @@ class SimulatorManagerViewModel: ObservableObject {
     
     func observeDevices() {
         folderMonitors = devices.compactMap {
+            guard $0.hasAppsInstalled else { return nil }
             let monitor = AppFolderMonitor(device: $0)
             monitor.appfolderDidChange
                 .sink { [weak self] device in

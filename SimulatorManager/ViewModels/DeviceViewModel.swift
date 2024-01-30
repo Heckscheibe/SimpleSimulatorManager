@@ -8,7 +8,7 @@
 import Foundation
 
 class DeviceViewModel: ObservableObject, FolderOpening {
-    let device: Device
+    @Published var device: Device
     
     init(device: Device) {
         self.device = device

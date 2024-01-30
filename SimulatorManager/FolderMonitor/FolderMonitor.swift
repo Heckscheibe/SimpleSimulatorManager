@@ -24,7 +24,7 @@ class FolderMonitor {
     
     var folderDidChange: PassthroughSubject<Void, Never> = .init()
     // MARK: Initializers
-    init(url: Foundation.URL) {
+    init(url: URL) {
         self.url = url
     }
 
