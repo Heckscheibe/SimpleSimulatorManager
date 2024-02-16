@@ -1,4 +1,4 @@
-# Simulator Management Simplified
+# Simple Simulator Manager
 
 Streamline your development workflow with the Simple Simulator Manager, designed to enhance your experience when working with Apple's simulators.
 
