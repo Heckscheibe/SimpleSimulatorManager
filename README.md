@@ -10,13 +10,13 @@ However, locating your app's folder in the local file system poses a challenge. 
 
 This tool simplifies the process by offering an intuitive interface for managing apps installed on local simulators. 
 
-## Current features include:
+## Current features
 - Comprehensive list of installed simulators, categorized by device type and OS version
 - Swift access to simulator and application folders
 - Effortless navigation to app folders installed on simulators
 - Option to Show/Hide platforms in the list
 
-## Security and Privacy:
+## Security and Privacy
 To access the local file system, Simple Simulator Manager disables the [Hardened Runtime](https://developer.apple.com/documentation/security/hardened_runtime) of macOS and turns off the app sandbox. This involves a potentially risky entitlement. The entire code of the app is openly available in this repository, allowing users to review it and ensure that none of their data is used inappropriately or sent anywhere. The app operates entirely offline, ensuring a secure and private development environment.
 
 
