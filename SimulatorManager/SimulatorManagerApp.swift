@@ -18,6 +18,13 @@ import os
             Divider()
             SettingsView(viewModel: settingsViewModel)
             Divider()
+            Button("GitHub Project") {
+                guard let url = URL(string: "https://github.com/Heckscheibe/SimpleSimulatorManager") else {
+                    return
+                }
+                NSWorkspace.shared.open(url)
+            }
+            Divider()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }.keyboardShortcut("q")
