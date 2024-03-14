@@ -33,4 +33,18 @@ class DeviceViewModel: ObservableObject, FolderOpening {
         
         openFolderAt(url)
     }
+    
+    func didSelectUserDefaultsFolder(for appGroup: AppGroup) {
+        guard let url = appGroup.url?.appendingPathComponent(SimulatorPaths.userDefaultsPath) else {
+            return
+        }
+        openFolderAt(url)
+    }
+    
+    func didSelectUserDefaultsFolder(for simulatorApp: any SimulatorApp) {
+        guard let url = simulatorApp.appDocumentsFolderURL?.appendingPathComponent(SimulatorPaths.userDefaultsPath) else {
+            return
+        }
+        openFolderAt(url)
+    }
 }

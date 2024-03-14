@@ -20,15 +20,18 @@ struct AppsView: View {
                 Button {
                     viewModel.didSelectAppDocumentFolder(for: app)
                 } label: {
-                    HStack {
-                        Text("Documents Folder")
-                    }
+                    Text("Documents Folder")
                 }
                 Button {
                     viewModel.didSelectAppPackageFolder(for: app)
                 } label: {
-                    HStack {
-                        Text("App Package")
+                    Text("App Package")
+                }
+                if app.hasUserDefaults {
+                    Button {
+                        viewModel.didSelectUserDefaultsFolder(for: app)
+                    } label: {
+                        Text("User Defaults")
                     }
                 }
             }

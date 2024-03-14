@@ -16,10 +16,19 @@ struct AppGroupsView: View {
             Text("AppGroups")
         }
         ForEach(viewModel.device.appGroups) { appGroup in
-            Button {
-                viewModel.didSelect(appGroup: appGroup)
-            } label: {
-                Text("Group \(appGroup.name)")
+            Menu("Group \(appGroup.name)") {
+                Button {
+                    viewModel.didSelect(appGroup: appGroup)
+                } label: {
+                    Text("Group Folder")
+                }
+                if appGroup.hasUserDefaults {
+                    Button {
+                        viewModel.didSelectUserDefaultsFolder(for: appGroup)
+                    } label: {
+                        Text("Group UserDefaults")
+                    }
+                }
             }
         }
     }
