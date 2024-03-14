@@ -24,6 +24,11 @@ import os
                 }
                 NSWorkspace.shared.open(url)
             }
+            if let version = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as? String {
+                Divider()
+                Text("Version \(version)")
+                    .font(.system(size: 12))
+            }
             Divider()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
