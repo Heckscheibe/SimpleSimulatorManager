@@ -9,6 +9,12 @@ import Foundation
 import Combine
 import os
 
+enum SimulatorPaths {
+    static let appPackagePath = "data/Containers/Bundle/Application"
+    static let appDataPath = "data/Containers/Data/Application"
+    static let userDefaultsPath = "Library/Preferences"
+}
+
 class DeviceManager {
     @Published var deviceTypes: [DeviceType] = []
     @Published var devices: [Device] = []
@@ -83,19 +89,22 @@ private extension DeviceManager {
                     guard metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier else {
                         continue
                     }
+                    let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
                     let simulatorApp: any SimulatorApp
                     if infoPlist.isWatchApp {
                         simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
                                                            bundleIdentifier: infoPlist.cfBundleIdentifier,
                                                            appDocumentsFolderURL: metaDataPlist.url,
                                                            appPackageURL: infoPlist.url,
+                                                           hasUserDefaults: hasUserDefaults,
                                                            companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier)
                     } else {
                         simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
                                                        bundleIdentifier: infoPlist.cfBundleIdentifier,
                                                        appDocumentsFolderURL: metaDataPlist.url,
                                                        appPackageURL: infoPlist.url,
-                                                       hasWatchApp: infoPlist.hasCompanionWatchApp)
+                                                       hasWatchApp: infoPlist.hasCompanionWatchApp,
+                                                       hasUserDefaults: hasUserDefaults)
                     }
                     apps.append(simulatorApp)
                     
@@ -149,7 +158,13 @@ private extension DeviceManager {
         let appGroups = appGroupFolderURLs.compactMap { url in
             let appGroupFilePath = url.appendingPathComponent(MetaDataPlist.fileName)
             do {
-                let appGroup = try CustomPropertyListDecoder().decode(AppGroup.self, at: appGroupFilePath)
+                let appGroupPlist = try CustomPropertyListDecoder().decode(AppGroupPlist.self, at: appGroupFilePath)
+                
+                let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
+                let appGroup = AppGroup(identifier: appGroupPlist.identifier,
+                                        uuid: appGroupPlist.uuid,
+                                        hasUserDefaults: hasUserDefaults,
+                                        url: appGroupPlist.url)
                 return appGroup
                 
             } catch {
