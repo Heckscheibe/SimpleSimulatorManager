@@ -14,7 +14,7 @@ This tool simplifies the process by offering an intuitive interface for managing
 - Comprehensive list of installed simulators, categorized by device type and OS version
 - Swift access to
   - simulator and application folders
-  - app folders installed on simulators
+  - app's document folders and the `.app` package itself installed on simulators
   - app groups installed on simulators
   - `UserDefault` folders of apps and  app groups
 - Option to Show/Hide platforms in the list
