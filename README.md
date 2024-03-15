@@ -12,9 +12,15 @@ This tool simplifies the process by offering an intuitive interface for managing
 
 ## Current features
 - Comprehensive list of installed simulators, categorized by device type and OS version
-- Swift access to simulator and application folders
-- Effortless navigation to app folders installed on simulators
+- Swift access to
+  - simulator and application folders
+  - app folders installed on simulators
+  - app groups installed on simulators
+  - `UserDefault` folders of apps and  app groups
 - Option to Show/Hide platforms in the list
+<img width="692" alt="Screenshot 2024-03-15 at 08 45 09" src="https://github.com/Heckscheibe/SimpleSimulatorManager/assets/9963191/5dead621-5d1f-4831-8f03-a485f4e71683">
+
+
 
 ## Security and Privacy
 To access the local file system, Simple Simulator Manager disables the [Hardened Runtime](https://developer.apple.com/documentation/security/hardened_runtime) of macOS and turns off the app sandbox. This involves a potentially risky entitlement and is the reason why this tool can't be released in the official App Store. The entire code of the app is openly available in this repository, allowing users to review it and ensure that none of their data is used inappropriately or sent anywhere. The app operates entirely offline, ensuring a secure and private development environment.
