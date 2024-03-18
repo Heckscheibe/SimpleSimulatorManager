@@ -33,7 +33,7 @@ struct AppInfoPlist: DecodableURLContainer {
     let platform: AppTargetPlatform
     let wkCompanionAppBundleIdentifier: String?
     
-    // not decodable attributes
+    // not decoded attributes
     var hasCompanionWatchApp = false
     var url: URL?
 }

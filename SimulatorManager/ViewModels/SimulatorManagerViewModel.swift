@@ -11,16 +11,15 @@ import AppKit
 import Combine
 
 class SimulatorManagerViewModel: ObservableObject {
-    @Published var deviceTypes: [DeviceType]
-    @Published var devices: [Device]
+    @Published var deviceTypes: [DeviceType] = []
+    @Published var devices: [Device] = []
     
     private let deviceManager = DeviceManager()
     private var folderMonitors: [AppFolderMonitor] = []
     private var cancellables: [AnyCancellable] = []
     
     init() {
-        deviceTypes = deviceManager.deviceTypes
-        devices = deviceManager.devices
+        bind()
         observeDevices()
     }
     
@@ -54,7 +53,15 @@ class SimulatorManagerViewModel: ObservableObject {
 }
 
 private extension SimulatorManagerViewModel {
-    func openFolderAt(_ url: URL) {
-        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path)
+    func bind() {
+        deviceManager.devices
+            .assign(to: \.devices, on: self)
+            .store(in: &cancellables)
+        
+        deviceManager.deviceTypes
+            .assign(to: \.deviceTypes, on: self)
+            .store(in: &cancellables)
     }
 }
+
+extension SimulatorManagerViewModel: FolderOpening {}

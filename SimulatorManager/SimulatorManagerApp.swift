@@ -9,8 +9,8 @@ import SwiftUI
 import os
 
 @main struct SimulatorManagerApp: App {
-    @ObservedObject private var viewModel = SimulatorManagerViewModel()
-    @ObservedObject private var settingsViewModel = SettingsViewModel()
+    @StateObject private var viewModel = SimulatorManagerViewModel()
+    @StateObject private var settingsViewModel = SettingsViewModel()
     
     var body: some Scene {
         MenuBarExtra("SimulatorManager", systemImage: "iphone.gen3") {

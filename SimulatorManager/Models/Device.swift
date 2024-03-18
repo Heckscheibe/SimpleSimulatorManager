@@ -77,23 +77,9 @@ class Device: ObservableObject, DecodableURLContainer {
         }
     }
     
-    var apps: [any SimulatorApp] = [] {
-        willSet {
-            objectWillChange.send()
-        }
-    }
-
-    var appGroups: [AppGroup] = [] {
-        willSet {
-            objectWillChange.send()
-        }
-    }
-
-    var hasAppsInstalled: Bool = true {
-        willSet {
-            objectWillChange.send()
-        }
-    }
+    @Published var apps: [any SimulatorApp] = []
+    @Published var appGroups: [AppGroup] = []
+    var hasAppsInstalled: Bool = true
 
     var url: URL?
 }

@@ -16,8 +16,17 @@ enum SimulatorPaths {
 }
 
 class DeviceManager {
-    @Published var deviceTypes: [DeviceType] = []
-    @Published var devices: [Device] = []
+    var deviceTypes: AnyPublisher<[DeviceType], Never> {
+        deviceTypesPublisher.eraseToAnyPublisher()
+    }
+    
+    var devices: AnyPublisher<[Device], Never> {
+        devicesPublisher.eraseToAnyPublisher()
+    }
+    
+    private let deviceTypesPublisher: CurrentValueSubject<[DeviceType], Never> = .init([])
+    private let devicesPublisher: CurrentValueSubject<[Device], Never> = .init([])
+    private var deviceTypeBinding: AnyCancellable?
     
     init() {
         loadDevices()
@@ -37,16 +46,16 @@ private extension DeviceManager {
     }
     
     func bindDeviceTypes() {
-        $devices.map { Set($0.map { DeviceType(id: $0.name,
-                                               simulatorPlatform: $0.simulatorPlatform) }).sorted() }
-            .assign(to: &$deviceTypes)
+        deviceTypeBinding = devicesPublisher.map { Set($0.map { DeviceType(id: $0.name,
+                                                                           simulatorPlatform: $0.simulatorPlatform) }).sorted() }
+            .assign(to: \.deviceTypesPublisher.value, on: self)
     }
     
     func loadDevices() {
         guard let url = simulatorFolderURL else { return }
         let urls = getContentOfDirectoryAt(url: url)
 
-        self.devices = urls.reduce(into: []) { devices, url in
+        let newDevices: [Device] = urls.reduce(into: []) { devices, url in
             let url = url.appendingPathComponent(Device.devicePlistName)
                 
             do {
@@ -56,8 +65,9 @@ private extension DeviceManager {
                 os_log("Failed to load device due to error: \(error) at path: \(url)")
             }
         }
+        devicesPublisher.value = newDevices
         
-        devices.forEach {
+        newDevices.forEach {
             loadApps(for: $0)
             loadAppGroups(for: $0)
         }
