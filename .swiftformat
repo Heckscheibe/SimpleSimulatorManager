@@ -10,6 +10,7 @@
 --disable wrapMultilineStatementBraces
 --disable conditionalAssignment
 --disable hoistAwait
+--disable preferForLoop
 --wrapparameters after-first
 --wrapcollections before-first
 --typeattributes same-line
