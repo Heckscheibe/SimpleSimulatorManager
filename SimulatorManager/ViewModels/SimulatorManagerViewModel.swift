@@ -24,17 +24,18 @@ class SimulatorManagerViewModel: ObservableObject {
     }
     
     func observeDevices() {
-        folderMonitors = devices.compactMap {
-            guard $0.hasAppsInstalled else { return nil }
-            let monitor = AppFolderMonitor(device: $0)
-            monitor.appfolderDidChange
-                .sink { [weak self] device in
-                    os_log("\(device.name)'s folder did change.")
-                    self?.deviceManager.update(device: device)
-                }
-                .store(in: &cancellables)
-            return monitor
-        }
+        folderMonitors = devices
+            .compactMap {
+                guard $0.hasAppsInstalled else { return nil }
+                let monitor = AppFolderMonitor(device: $0)
+                monitor.appfolderDidChange
+                    .sink { [weak self] device in
+                        os_log("\(device.name)'s folder did change.")
+                        self?.deviceManager.updateDevices()
+                    }
+                    .store(in: &cancellables)
+                return monitor
+            }
     }
     
     func didSelectSimulatorFolder(for device: Device) {
