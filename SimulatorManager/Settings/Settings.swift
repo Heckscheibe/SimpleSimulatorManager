@@ -17,10 +17,8 @@ struct Settings {
     }
     
     init() {
-        Keys.allCases.forEach {
-            if userDefaults?.value(forKey: $0.rawValue) == nil {
-                userDefaults?.setValue(true, forKey: $0.rawValue)
-            }
+        for item in Keys.allCases where userDefaults?.value(forKey: item.rawValue) == nil {
+            userDefaults?.setValue(true, forKey: item.rawValue)
         }
     }
     

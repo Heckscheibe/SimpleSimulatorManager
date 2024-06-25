@@ -35,7 +35,6 @@ only_rules:
 - generic_type_name
 - identifier_name
 - implicit_getter
-- inert_defer
 - is_disjoint
 - large_tuple
 - last_where
@@ -88,7 +87,6 @@ only_rules:
 - type_body_length
 - type_name
 - unneeded_break_in_switch
-- unused_capture_list
 - unused_closure_parameter
 - unused_control_flow_label
 - unused_enumerated
@@ -183,8 +181,6 @@ function_parameter_count:
 generic_type_name:
   severity: error
 implicit_getter:
-  severity: error
-inert_defer:
   severity: error
 is_disjoint:
   severity: error
@@ -286,8 +282,6 @@ type_name:
     error: 60
   severity: error
 unneeded_break_in_switch:
-  severity: error
-unused_capture_list:
   severity: error
 unused_closure_parameter:
   severity: error

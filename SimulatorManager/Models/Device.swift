@@ -77,10 +77,13 @@ class Device: ObservableObject, DecodableURLContainer {
         }
     }
     
+    var hasAppsInstalled: Bool {
+        !apps.isEmpty
+    }
+    
     @Published var apps: [any SimulatorApp] = []
     @Published var appGroups: [AppGroup] = []
-    var hasAppsInstalled: Bool = true
-
+    
     var url: URL?
 }
 

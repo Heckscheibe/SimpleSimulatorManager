@@ -33,9 +33,8 @@ class DeviceManager {
         bindDeviceTypes()
     }
     
-    func update(device: Device) {
-        loadApps(for: device)
-        loadAppGroups(for: device)
+    func updateDevices() {
+        loadDevices()
     }
 }
 
@@ -74,12 +73,6 @@ private extension DeviceManager {
     }
     
     func loadApps(for device: Device) {
-        guard device.hasAppsInstalled else {
-            os_log("\(device.name) with \(device.osVersion) does not have any apps installed.")
-            
-            return
-        }
-        
         let infoPlists = loadAppInfoPlists(for: device)
         
         guard let appDataFolderURL = device.url?
@@ -89,7 +82,7 @@ private extension DeviceManager {
         let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
         
         var apps: [any SimulatorApp] = []
-        infoPlists.forEach { infoPlist in
+        for infoPlist in infoPlists {
             // using oldschool for in loop to be able to `break` and return early
             for url in appDataFolderURLs {
                 let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
@@ -125,7 +118,6 @@ private extension DeviceManager {
         }
         os_log("Device \(device.name) with \(device.osVersion) has the following apps installed: \(apps.map { $0.displayName })")
         device.apps = apps
-        device.hasAppsInstalled = !apps.isEmpty
     }
     
     func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
