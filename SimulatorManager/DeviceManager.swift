@@ -82,7 +82,7 @@ private extension DeviceManager {
         let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
         
         var apps: [any SimulatorApp] = []
-        for infoPlist in infoPlists {
+        infoPlists.forEach { infoPlist in
             // using oldschool for in loop to be able to `break` and return early
             for url in appDataFolderURLs {
                 let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
