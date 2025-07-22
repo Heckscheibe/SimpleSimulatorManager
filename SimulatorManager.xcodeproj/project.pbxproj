@@ -39,6 +39,7 @@
 		3C0B99842E21A249001B244D /* RecentAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0B99832E21A249001B244D /* RecentAppsView.swift */; };
 		3C472BAA2E301B3B00A33B35 /* DeviceAppMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */; };
 		3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */; };
+		3C472BAE2E30297B00A33B35 /* AppChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BAD2E30297B00A33B35 /* AppChange.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +96,7 @@
 		3C0B99832E21A249001B244D /* RecentAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentAppsView.swift; sourceTree = "<group>"; };
 		3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDiscoveryService.swift; sourceTree = "<group>"; };
 		3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAppMonitoringService.swift; sourceTree = "<group>"; };
+		3C472BAD2E30297B00A33B35 /* AppChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppChange.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,6 +138,7 @@
 		373A36C52AD98A8C0086CCE0 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				3C472BAD2E30297B00A33B35 /* AppChange.swift */,
 				371F2BB02BA3A11E00B338FC /* AppGroup.swift */,
 				37CAA9D22ADEF07900A7F2CB /* AppGroupPlist.swift */,
 				37CAA9D62AE0730C00A7F2CB /* AppInfoPlist.swift */,
@@ -200,7 +203,6 @@
 		37F1DA552AD6E48F00C059DB /* SimulatorManager */ = {
 			isa = PBXGroup;
 			children = (
-				3C472BA92E301B3B00A33B35 /* Services */,
 				37F1DA5F2AD6E49000C059DB /* SimulatorManager.entitlements */,
 				3759873B2AE2D1670006BE45 /* CustomPropertyListDecoder.swift */,
 				373A36CA2AD995260086CCE0 /* DeviceManager.swift */,
@@ -211,6 +213,7 @@
 				3776EED82B2CF6640080F422 /* FolderMonitor */,
 				373A36C52AD98A8C0086CCE0 /* Models */,
 				37F1DA5C2AD6E49000C059DB /* Preview Content */,
+				3C472BA92E301B3B00A33B35 /* Services */,
 				37D6FBF72B1134E80023F886 /* Settings */,
 				37D6FBF02B1130310023F886 /* ViewModels */,
 				371F2BAF2BA399A500B338FC /* Views */,
@@ -448,6 +451,7 @@
 				37CAA9D12ADEEE6C00A7F2CB /* SimulatorApp.swift in Sources */,
 				37D6FBF42B1130870023F886 /* AppGroupsView.swift in Sources */,
 				37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */,
+				3C472BAE2E30297B00A33B35 /* AppChange.swift in Sources */,
 				371F2BB12BA3A11E00B338FC /* AppGroup.swift in Sources */,
 				37CAA9D32ADEF07900A7F2CB /* AppGroupPlist.swift in Sources */,
 			);

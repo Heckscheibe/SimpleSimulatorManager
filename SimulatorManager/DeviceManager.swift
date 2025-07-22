@@ -15,20 +15,6 @@ enum SimulatorPaths {
     static let userDefaultsPath = "Library/Preferences"
 }
 
-// MARK: - AppChange Types
-
-struct AppChange {
-    let app: any SimulatorApp
-    let device: Device
-    let changeType: ChangeType
-    let timestamp: Date
-}
-
-enum ChangeType {
-    case installed
-    case removed
-}
-
 class DeviceManager: ObservableObject {
     var deviceTypes: AnyPublisher<[DeviceType], Never> {
         deviceTypesPublisher.eraseToAnyPublisher()
@@ -82,10 +68,7 @@ class DeviceManager: ObservableObject {
         currentChanges.append(contentsOf: changes)
         
         // Sort by timestamp (most recent first)
-        currentChanges.sort { $0.timestamp > $1.timestamp }
-        
-        // Remove duplicates (same app on same device, keep most recent)
-        currentChanges = removeDuplicateChanges(from: currentChanges)
+        currentChanges = Set(currentChanges).sorted { $0.timestamp > $1.timestamp }
         
         // Limit to max recent changes
         if currentChanges.count > maxRecentChanges {
@@ -93,21 +76,6 @@ class DeviceManager: ObservableObject {
         }
         
         recentAppChangesPublisher.value = currentChanges
-    }
-    
-    private func removeDuplicateChanges(from changes: [AppChange]) -> [AppChange] {
-        var seen: Set<String> = []
-        var uniqueChanges: [AppChange] = []
-        
-        for change in changes {
-            let key = "\(change.app.bundleIdentifier)-\(change.device.udid)"
-            if !seen.contains(key) {
-                seen.insert(key)
-                uniqueChanges.append(change)
-            }
-        }
-        
-        return uniqueChanges
     }
 }
 

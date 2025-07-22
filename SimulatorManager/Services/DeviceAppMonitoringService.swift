@@ -16,7 +16,6 @@ class DeviceAppMonitoringService: ObservableObject {
     private let deviceManager: DeviceManager
     private var appFolderMonitors: [String: AppFolderMonitor] = [:] // UUID -> Monitor
     private var cancellables = Set<AnyCancellable>()
-    private var deviceAppsSnapshots: [String: [String]] = [:] // Device UUID -> App Bundle IDs
     
     // MARK: - Initialization
     
@@ -50,13 +49,11 @@ class DeviceAppMonitoringService: ObservableObject {
         
         for uuid in monitorsToRemove {
             appFolderMonitors.removeValue(forKey: uuid)
-            deviceAppsSnapshots.removeValue(forKey: uuid)
         }
         
         // Add or update monitors for new/existing devices
         for device in devices {
             updateMonitorForDevice(device)
-            takeAppSnapshot(for: device)
         }
     }
     
@@ -79,37 +76,29 @@ class DeviceAppMonitoringService: ObservableObject {
         appFolderMonitors[device.udid] = monitor
     }
     
-    private func takeAppSnapshot(for device: Device) {
-        let appBundleIds = device.apps.map(\.bundleIdentifier)
-        deviceAppsSnapshots[device.udid] = appBundleIds
-    }
-    
     private func handleDeviceAppFolderChange(_ device: Device) {
         // Refresh only the specific device's apps when its app container folder changes
+        let previousApps = device.apps
         deviceManager.updateSpecificDevice(device)
         
-        // Wait a bit for the device to process changes, then detect changes with updated device
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            // Get the updated device from the device manager
-            if let updatedDevice = self?.deviceManager.getDevice(withUdid: device.udid) {
-                self?.detectAppChanges(for: updatedDevice)
-            }
+        // Get the updated device to compare changes
+        guard let updatedDevice = deviceManager.getDevice(withUdid: device.udid) else {
+            return
         }
-    }
-    
-    private func detectAppChanges(for device: Device) {
-        let previousApps = Set(deviceAppsSnapshots[device.udid] ?? [])
-        let currentApps = Set(device.apps.map(\.bundleIdentifier))
+        
+        let currentApps = updatedDevice.apps
+        let previousAppIds = Set(previousApps.map(\.bundleIdentifier))
+        let currentAppIds = Set(currentApps.map(\.bundleIdentifier))
         
         var newChanges: [AppChange] = []
         
         // Detect newly installed apps
-        let newAppIds = currentApps.subtracting(previousApps)
+        let newAppIds = currentAppIds.subtracting(previousAppIds)
         for newAppId in newAppIds {
-            if let app = device.apps.first(where: { $0.bundleIdentifier == newAppId }) {
+            if let app = currentApps.first(where: { $0.bundleIdentifier == newAppId }) {
                 let change = AppChange(
                     app: app,
-                    device: device,
+                    device: updatedDevice,
                     changeType: .installed,
                     timestamp: Date()
                 )
@@ -118,38 +107,23 @@ class DeviceAppMonitoringService: ObservableObject {
         }
         
         // Detect removed apps
-        let removedAppIds = previousApps.subtracting(currentApps)
+        let removedAppIds = previousAppIds.subtracting(currentAppIds)
         for removedAppId in removedAppIds {
-            // Create a minimal app representation for removed apps
-            let removedApp = createRemovedAppRepresentation(bundleId: removedAppId)
-            let change = AppChange(
-                app: removedApp,
-                device: device,
-                changeType: .removed,
-                timestamp: Date()
-            )
-            newChanges.append(change)
+            if let removedApp = previousApps.first(where: { $0.bundleIdentifier == removedAppId }) {
+                let change = AppChange(
+                    app: removedApp,
+                    device: updatedDevice,
+                    changeType: .removed,
+                    timestamp: Date()
+                )
+                newChanges.append(change)
+            }
         }
         
+        // Propagate changes to DeviceManager
         if !newChanges.isEmpty {
-            // Propagate changes to DeviceManager
             deviceManager.addAppChanges(newChanges)
-            
-            // Update snapshot
-            takeAppSnapshot(for: device)
         }
-    }
-    
-    private func createRemovedAppRepresentation(bundleId: String) -> any SimulatorApp {
-        // Create a minimal representation for removed apps
-        return SimulatoriOSApp(
-            displayName: "Removed App",
-            bundleIdentifier: bundleId,
-            appDocumentsFolderURL: nil,
-            appPackageURL: nil,
-            hasWatchApp: false,
-            hasUserDefaults: false
-        )
     }
     
     // MARK: - Cleanup
