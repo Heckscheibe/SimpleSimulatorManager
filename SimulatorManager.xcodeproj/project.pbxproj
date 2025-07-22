@@ -36,6 +36,9 @@
 		37F1DA692AD6E49000C059DB /* SimulatorManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA682AD6E49000C059DB /* SimulatorManagerTests.swift */; };
 		37F1DA732AD6E49000C059DB /* SimulatorManagerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA722AD6E49000C059DB /* SimulatorManagerUITests.swift */; };
 		37F1DA752AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA742AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift */; };
+		3C0B99842E21A249001B244D /* RecentAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0B99832E21A249001B244D /* RecentAppsView.swift */; };
+		3C472BAA2E301B3B00A33B35 /* SimulatorAppChangeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA72E301B3B00A33B35 /* SimulatorAppChangeService.swift */; };
+		3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,6 +92,9 @@
 		37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA722AD6E49000C059DB /* SimulatorManagerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerUITests.swift; sourceTree = "<group>"; };
 		37F1DA742AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		3C0B99832E21A249001B244D /* RecentAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentAppsView.swift; sourceTree = "<group>"; };
+		3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDiscoveryService.swift; sourceTree = "<group>"; };
+		3C472BA72E301B3B00A33B35 /* SimulatorAppChangeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorAppChangeService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +125,7 @@
 		371F2BAF2BA399A500B338FC /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				3C0B99832E21A249001B244D /* RecentAppsView.swift */,
 				37D6FBF32B1130870023F886 /* AppGroupsView.swift */,
 				37D6FBF12B1130730023F886 /* AppsView.swift */,
 				3713A08A2B1923150060C939 /* DeviceTypeView.swift */,
@@ -193,6 +200,7 @@
 		37F1DA552AD6E48F00C059DB /* SimulatorManager */ = {
 			isa = PBXGroup;
 			children = (
+				3C472BA92E301B3B00A33B35 /* Services */,
 				37F1DA5F2AD6E49000C059DB /* SimulatorManager.entitlements */,
 				3759873B2AE2D1670006BE45 /* CustomPropertyListDecoder.swift */,
 				373A36CA2AD995260086CCE0 /* DeviceManager.swift */,
@@ -233,6 +241,15 @@
 				37F1DA742AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift */,
 			);
 			path = SimulatorManagerUITests;
+			sourceTree = "<group>";
+		};
+		3C472BA92E301B3B00A33B35 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */,
+				3C472BA72E301B3B00A33B35 /* SimulatorAppChangeService.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -414,9 +431,12 @@
 				37D6FBF62B11330D0023F886 /* Settings.swift in Sources */,
 				37D6FBFB2B11354E0023F886 /* SettingsViewModel.swift in Sources */,
 				37D6FBEF2B112E8C0023F886 /* DeviceViewModel.swift in Sources */,
+				3C0B99842E21A249001B244D /* RecentAppsView.swift in Sources */,
 				37CAA9CD2ADEEA4A00A7F2CB /* DeviceState.swift in Sources */,
 				3776EEDC2B2CF9310080F422 /* AppFolderMonitor.swift in Sources */,
 				3713A08B2B1923150060C939 /* DeviceTypeView.swift in Sources */,
+				3C472BAA2E301B3B00A33B35 /* SimulatorAppChangeService.swift in Sources */,
+				3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */,
 				373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */,
 				37CAA9CF2ADEEA6000A7F2CB /* DeviceType.swift in Sources */,
 				37D6FBF22B1130730023F886 /* AppsView.swift in Sources */,
@@ -592,7 +612,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SimulatorManager/SimulatorManager.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -614,7 +634,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Simple Simulator Manager Development";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 5.0;
@@ -649,7 +669,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Simple Simulator Manager Distribution";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 5.0;

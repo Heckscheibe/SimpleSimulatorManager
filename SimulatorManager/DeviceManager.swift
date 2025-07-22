@@ -15,7 +15,7 @@ enum SimulatorPaths {
     static let userDefaultsPath = "Library/Preferences"
 }
 
-class DeviceManager {
+class DeviceManager: ObservableObject {
     var deviceTypes: AnyPublisher<[DeviceType], Never> {
         deviceTypesPublisher.eraseToAnyPublisher()
     }
@@ -27,6 +27,7 @@ class DeviceManager {
     private let deviceTypesPublisher: CurrentValueSubject<[DeviceType], Never> = .init([])
     private let devicesPublisher: CurrentValueSubject<[Device], Never> = .init([])
     private var deviceTypeBinding: AnyCancellable?
+    private let appDiscoveryService = AppDiscoveryService()
     
     init() {
         loadDevices()
@@ -35,6 +36,23 @@ class DeviceManager {
     
     func updateDevices() {
         loadDevices()
+    }
+    
+    func updateSpecificDevice(_ updatedDevice: Device) {
+        // Reload apps for the specific device
+        appDiscoveryService.loadApps(for: updatedDevice)
+        appDiscoveryService.loadAppGroups(for: updatedDevice)
+        
+        // Update the device in the devices array
+        let currentDevices = devicesPublisher.value
+        let updatedDevices = currentDevices.map { device in
+            device.udid == updatedDevice.udid ? updatedDevice : device
+        }
+        devicesPublisher.value = updatedDevices
+    }
+    
+    func getDevice(withUdid udid: String) -> Device? {
+        return devicesPublisher.value.first { $0.udid == udid }
     }
 }
 
@@ -67,122 +85,9 @@ private extension DeviceManager {
         devicesPublisher.value = newDevices
         
         newDevices.forEach {
-            loadApps(for: $0)
-            loadAppGroups(for: $0)
+            appDiscoveryService.loadApps(for: $0)
+            appDiscoveryService.loadAppGroups(for: $0)
         }
-    }
-    
-    func loadApps(for device: Device) {
-        let infoPlists = loadAppInfoPlists(for: device)
-        
-        guard let appDataFolderURL = device.url?
-            .appendingPathComponent(SimulatorPaths.appDataPath) else {
-            return
-        }
-        let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
-        
-        var apps: [any SimulatorApp] = []
-        infoPlists.forEach { infoPlist in
-            // using oldschool for in loop to be able to `break` and return early
-            for url in appDataFolderURLs {
-                let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
-                do {
-                    let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
-                    
-                    guard metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier else {
-                        continue
-                    }
-                    let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
-                    let simulatorApp: any SimulatorApp
-                    if infoPlist.isWatchApp {
-                        simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
-                                                           bundleIdentifier: infoPlist.cfBundleIdentifier,
-                                                           appDocumentsFolderURL: metaDataPlist.url,
-                                                           appPackageURL: infoPlist.url,
-                                                           hasUserDefaults: hasUserDefaults,
-                                                           companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier)
-                    } else {
-                        simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
-                                                       bundleIdentifier: infoPlist.cfBundleIdentifier,
-                                                       appDocumentsFolderURL: metaDataPlist.url,
-                                                       appPackageURL: infoPlist.url,
-                                                       hasWatchApp: infoPlist.hasCompanionWatchApp,
-                                                       hasUserDefaults: hasUserDefaults)
-                    }
-                    apps.append(simulatorApp)
-                    
-                } catch {
-                    os_log("Failed to decode MetaDataPlist due to error: \(error)")
-                }
-            }
-        }
-        os_log("Device \(device.name) with \(device.osVersion) has the following apps installed: \(apps.map { $0.displayName })")
-        device.apps = apps
-    }
-    
-    func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
-        guard let appPackageFolderPath = device.url?
-            .appendingPathComponent(SimulatorPaths.appPackagePath) else {
-            return []
-        }
-        let appPackageURLs = getContentOfDirectoryAt(url: appPackageFolderPath)
-        
-        let infoPlists = appPackageURLs.compactMap { url -> AppInfoPlist? in
-            let appFolderContent = getContentOfDirectoryAt(url: url)
-            guard let appBundle = appFolderContent.filter({ $0.path.hasSuffix(".app") }).first else {
-                return nil
-            }
-            
-            let hasCompanionWatchApp = getContentOfDirectoryAt(url: appBundle).contains { url in
-                url.pathComponents.last == "Watch"
-            }
-            
-            do {
-                var infoPlist = try CustomPropertyListDecoder()
-                    .decode(AppInfoPlist.self, at: appBundle.appendingPathComponent(AppInfoPlist.infoPlistFileName))
-                infoPlist.hasCompanionWatchApp = hasCompanionWatchApp
-                return infoPlist
-            } catch {
-                os_log("Failed to decode plist due to error: \(error)")
-                return nil
-            }
-        }
-        
-        return infoPlists
-    }
-    
-    func loadAppGroups(for device: Device) {
-        guard let appGroupsFolderURL = device.appGroupsFolder else {
-            return
-        }
-        
-        let appGroupFolderURLs = getContentOfDirectoryAt(url: appGroupsFolderURL)
-        let appGroups = appGroupFolderURLs.compactMap { url in
-            let appGroupFilePath = url.appendingPathComponent(MetaDataPlist.fileName)
-            do {
-                let appGroupPlist = try CustomPropertyListDecoder().decode(AppGroupPlist.self, at: appGroupFilePath)
-                
-                let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
-                let appGroup = AppGroup(identifier: appGroupPlist.identifier,
-                                        uuid: appGroupPlist.uuid,
-                                        hasUserDefaults: hasUserDefaults,
-                                        url: appGroupPlist.url)
-                return appGroup
-                
-            } catch {
-                os_log("Failed to decode AppGroup due to error: \(error)")
-                return nil
-            }
-        }
-        .filter { (appGroup: AppGroup) in
-            device.apps
-                .map { $0.bundleIdentifier }
-                .contains(where: {
-                    $0.contains(appGroup.name)
-                })
-        }
-        
-        device.appGroups = appGroups
     }
     
     func getContentOfDirectoryAt(url: URL) -> [URL] {

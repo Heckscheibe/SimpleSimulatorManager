@@ -24,6 +24,10 @@ class AppFolderMonitor {
                 self?.appfolderDidChange.send(device)
             }
             .store(in: &cancellable)
-        folderMonitor.startMonitoring()
+        do {
+            try folderMonitor.startMonitoring()
+        } catch {
+            print(error)
+        }
     }
 }
