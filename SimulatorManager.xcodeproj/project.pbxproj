@@ -37,7 +37,7 @@
 		37F1DA732AD6E49000C059DB /* SimulatorManagerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA722AD6E49000C059DB /* SimulatorManagerUITests.swift */; };
 		37F1DA752AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA742AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift */; };
 		3C0B99842E21A249001B244D /* RecentAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0B99832E21A249001B244D /* RecentAppsView.swift */; };
-		3C472BAA2E301B3B00A33B35 /* SimulatorAppChangeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA72E301B3B00A33B35 /* SimulatorAppChangeService.swift */; };
+		3C472BAA2E301B3B00A33B35 /* DeviceAppMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */; };
 		3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */; };
 /* End PBXBuildFile section */
 
@@ -94,7 +94,7 @@
 		37F1DA742AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		3C0B99832E21A249001B244D /* RecentAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentAppsView.swift; sourceTree = "<group>"; };
 		3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDiscoveryService.swift; sourceTree = "<group>"; };
-		3C472BA72E301B3B00A33B35 /* SimulatorAppChangeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorAppChangeService.swift; sourceTree = "<group>"; };
+		3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAppMonitoringService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -247,7 +247,7 @@
 			isa = PBXGroup;
 			children = (
 				3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */,
-				3C472BA72E301B3B00A33B35 /* SimulatorAppChangeService.swift */,
+				3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -435,7 +435,7 @@
 				37CAA9CD2ADEEA4A00A7F2CB /* DeviceState.swift in Sources */,
 				3776EEDC2B2CF9310080F422 /* AppFolderMonitor.swift in Sources */,
 				3713A08B2B1923150060C939 /* DeviceTypeView.swift in Sources */,
-				3C472BAA2E301B3B00A33B35 /* SimulatorAppChangeService.swift in Sources */,
+				3C472BAA2E301B3B00A33B35 /* DeviceAppMonitoringService.swift in Sources */,
 				3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */,
 				373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */,
 				37CAA9CF2ADEEA6000A7F2CB /* DeviceType.swift in Sources */,

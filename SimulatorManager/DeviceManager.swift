@@ -15,6 +15,20 @@ enum SimulatorPaths {
     static let userDefaultsPath = "Library/Preferences"
 }
 
+// MARK: - AppChange Types
+
+struct AppChange {
+    let app: any SimulatorApp
+    let device: Device
+    let changeType: ChangeType
+    let timestamp: Date
+}
+
+enum ChangeType {
+    case installed
+    case removed
+}
+
 class DeviceManager: ObservableObject {
     var deviceTypes: AnyPublisher<[DeviceType], Never> {
         deviceTypesPublisher.eraseToAnyPublisher()
@@ -24,10 +38,18 @@ class DeviceManager: ObservableObject {
         devicesPublisher.eraseToAnyPublisher()
     }
     
+    var recentAppChanges: AnyPublisher<[AppChange], Never> {
+        recentAppChangesPublisher.eraseToAnyPublisher()
+    }
+    
     private let deviceTypesPublisher: CurrentValueSubject<[DeviceType], Never> = .init([])
     private let devicesPublisher: CurrentValueSubject<[Device], Never> = .init([])
+    private let recentAppChangesPublisher: CurrentValueSubject<[AppChange], Never> = .init([])
     private var deviceTypeBinding: AnyCancellable?
     private let appDiscoveryService = AppDiscoveryService()
+    
+    /// Maximum number of recent changes to keep
+    private let maxRecentChanges = 20
     
     init() {
         loadDevices()
@@ -53,6 +75,47 @@ class DeviceManager: ObservableObject {
     
     func getDevice(withUdid udid: String) -> Device? {
         return devicesPublisher.value.first { $0.udid == udid }
+    }
+    
+    func addAppChanges(_ changes: [AppChange]) {
+        var currentChanges = recentAppChangesPublisher.value
+        currentChanges.append(contentsOf: changes)
+        
+        // Sort by timestamp (most recent first)
+        currentChanges.sort { $0.timestamp > $1.timestamp }
+        
+        // Remove duplicates (same app on same device, keep most recent)
+        currentChanges = removeDuplicateChanges(from: currentChanges)
+        
+        // Limit to max recent changes
+        if currentChanges.count > maxRecentChanges {
+            currentChanges = Array(currentChanges.prefix(maxRecentChanges))
+        }
+        
+        recentAppChangesPublisher.value = currentChanges
+    }
+    
+    private func removeDuplicateChanges(from changes: [AppChange]) -> [AppChange] {
+        var seen: Set<String> = []
+        var uniqueChanges: [AppChange] = []
+        
+        for change in changes {
+            let key = "\(change.app.bundleIdentifier)-\(change.device.udid)"
+            if !seen.contains(key) {
+                seen.insert(key)
+                uniqueChanges.append(change)
+            }
+        }
+        
+        return uniqueChanges
+    }
+}
+
+// MARK: - Extensions
+
+extension AppChange: Identifiable {
+    var id: String {
+        "\(app.bundleIdentifier)-\(device.udid)-\(timestamp.timeIntervalSince1970)"
     }
 }
 

@@ -1,5 +1,5 @@
 //
-//  SimulatorAppChangeService.swift
+//  DeviceAppMonitoringService.swift
 //  SimulatorManager
 //
 //  Created by AI Assistant on 11.07.25.

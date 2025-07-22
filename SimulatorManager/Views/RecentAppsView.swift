@@ -52,7 +52,7 @@ struct RecentAppsView: View {
 }
 
 struct RecentAppRow: View {
-    let change: SimulatorManagerViewModel.AppChange
+    let change: AppChange
     
     var body: some View {
         HStack(spacing: 12) {

@@ -27,7 +27,7 @@ final class FolderMonitor: Sendable {
     }
     
     enum MonitorError: Error {
-        case failedToOpenDirectory
+        case failedToOpenDirectory(path: String)
         case alreadyMonitoring
         case notMonitoring
     }
@@ -152,7 +152,7 @@ final class FolderMonitor: Sendable {
         monitoredFolderFileDescriptor = open(url.path, O_EVTONLY)
         
         guard monitoredFolderFileDescriptor != -1 else {
-            throw MonitorError.failedToOpenDirectory
+            throw MonitorError.failedToOpenDirectory(path: url.path)
         }
         
         // Define a dispatch source monitoring the directory for additions, deletions, and renamings.
