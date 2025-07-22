@@ -34,3 +34,11 @@ enum ChangeType {
     case installed
     case removed
 }
+
+// MARK: - Extensions
+
+extension AppChange: Identifiable {
+    var id: String {
+        "\(app.bundleIdentifier)-\(device.udid)-\(timestamp.timeIntervalSince1970)"
+    }
+}

@@ -68,7 +68,10 @@ class DeviceManager: ObservableObject {
         currentChanges.append(contentsOf: changes)
         
         // Sort by timestamp (most recent first)
-        currentChanges = Set(currentChanges).sorted { $0.timestamp > $1.timestamp }
+        currentChanges.sort { $0.timestamp > $1.timestamp }
+        
+        // Remove duplicates manually (same app on same device, keep most recent)
+        currentChanges = removeDuplicateChanges(from: currentChanges)
         
         // Limit to max recent changes
         if currentChanges.count > maxRecentChanges {
@@ -77,15 +80,24 @@ class DeviceManager: ObservableObject {
         
         recentAppChangesPublisher.value = currentChanges
     }
+    
+    private func removeDuplicateChanges(from changes: [AppChange]) -> [AppChange] {
+        var seen: Set<String> = []
+        var uniqueChanges: [AppChange] = []
+        
+        for change in changes {
+            let key = "\(change.app.bundleIdentifier)-\(change.device.udid)"
+            if !seen.contains(key) {
+                seen.insert(key)
+                uniqueChanges.append(change)
+            }
+        }
+        
+        return uniqueChanges
+    }
 }
 
 // MARK: - Extensions
-
-extension AppChange: Identifiable {
-    var id: String {
-        "\(app.bundleIdentifier)-\(device.udid)-\(timestamp.timeIntervalSince1970)"
-    }
-}
 
 private extension DeviceManager {
     var simulatorFolderURL: URL? {
