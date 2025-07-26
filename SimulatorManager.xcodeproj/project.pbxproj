@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -102,24 +102,18 @@
 /* Begin PBXFrameworksBuildPhase section */
 		37F1DA502AD6E48F00C059DB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA612AD6E49000C059DB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA6B2AD6E49000C059DB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -270,8 +264,6 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			name = SimulatorManager;
 			productName = SimulatorManager;
 			productReference = 37F1DA532AD6E48F00C059DB /* SimulatorManager.app */;
@@ -321,7 +313,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1520;
+				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					37F1DA522AD6E48F00C059DB = {
 						CreatedOnToolsVersion = 15.0;
@@ -337,7 +329,6 @@
 				};
 			};
 			buildConfigurationList = 37F1DA4E2AD6E48E00C059DB /* Build configuration list for PBXProject "SimulatorManager" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -345,6 +336,7 @@
 				Base,
 			);
 			mainGroup = 37F1DA4A2AD6E48E00C059DB;
+			preferredProjectObjectVersion = 90;
 			productRefGroup = 37F1DA542AD6E48F00C059DB /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -359,73 +351,56 @@
 /* Begin PBXResourcesBuildPhase section */
 		37F1DA512AD6E48F00C059DB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				3750F9282B2D07AD00F578ED /* README.md in Resources */,
 				37F1DA5E2AD6E49000C059DB /* Preview Assets.xcassets in Resources */,
 				37F1DA5B2AD6E49000C059DB /* Assets.xcassets in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA622AD6E49000C059DB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA6C2AD6E49000C059DB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		373A36C82AD991EA0086CCE0 /* Swift Format */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
 			name = "Swift Format";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if which swiftformat >/dev/null; then\n  swiftformat .\nelse\n  echo \"warning: SwiftFormat not installed, download from https://github.com/nicklockwood/SwiftFormat\"\nfi\n";
+			shellScript = (
+				"if which swiftformat >/dev/null; then",
+				"  swiftformat .",
+				"else",
+				"  echo \"warning: SwiftFormat not installed, download from https://github.com/nicklockwood/SwiftFormat\"",
+				"fi",
+				"",
+			);
 		};
 		373A36C92AD992A00086CCE0 /* Swift Lint */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
 			name = "Swift Lint";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if which swiftformat >/dev/null; then\n  swiftlint\nelse\n  echo \"warning: SwiftLint not installed\"\nfi\n";
+			shellScript = (
+				"if which swiftformat >/dev/null; then",
+				"  swiftlint",
+				"else",
+				"  echo \"warning: SwiftLint not installed\"",
+				"fi",
+				"",
+			);
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		37F1DA4F2AD6E48F00C059DB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				373A36C72AD98A9A0086CCE0 /* Device.swift in Sources */,
 				37CAA9D52ADEF97400A7F2CB /* Extensions.swift in Sources */,
@@ -455,24 +430,19 @@
 				371F2BB12BA3A11E00B338FC /* AppGroup.swift in Sources */,
 				37CAA9D32ADEF07900A7F2CB /* AppGroupPlist.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA602AD6E49000C059DB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				37F1DA692AD6E49000C059DB /* SimulatorManagerTests.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA6A2AD6E49000C059DB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				37F1DA732AD6E49000C059DB /* SimulatorManagerUITests.swift in Sources */,
 				37F1DA752AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -490,7 +460,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		37F1DA762AD6E49000C059DB /* Debug */ = {
+		37F1DA762AD6E49000C059DB /* Debug configuration for PBXProject "SimulatorManager" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -554,7 +524,7 @@
 			};
 			name = Debug;
 		};
-		37F1DA772AD6E49000C059DB /* Release */ = {
+		37F1DA772AD6E49000C059DB /* Release configuration for PBXProject "SimulatorManager" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -610,7 +580,7 @@
 			};
 			name = Release;
 		};
-		37F1DA792AD6E49000C059DB /* Debug */ = {
+		37F1DA792AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManager" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -645,7 +615,7 @@
 			};
 			name = Debug;
 		};
-		37F1DA7A2AD6E49000C059DB /* Release */ = {
+		37F1DA7A2AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManager" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -680,10 +650,9 @@
 			};
 			name = Release;
 		};
-		37F1DA7C2AD6E49000C059DB /* Debug */ = {
+		37F1DA7C2AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManagerTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -699,10 +668,9 @@
 			};
 			name = Debug;
 		};
-		37F1DA7D2AD6E49000C059DB /* Release */ = {
+		37F1DA7D2AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManagerTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -718,10 +686,9 @@
 			};
 			name = Release;
 		};
-		37F1DA7F2AD6E49000C059DB /* Debug */ = {
+		37F1DA7F2AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManagerUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -735,10 +702,9 @@
 			};
 			name = Debug;
 		};
-		37F1DA802AD6E49000C059DB /* Release */ = {
+		37F1DA802AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManagerUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -758,37 +724,33 @@
 		37F1DA4E2AD6E48E00C059DB /* Build configuration list for PBXProject "SimulatorManager" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				37F1DA762AD6E49000C059DB /* Debug */,
-				37F1DA772AD6E49000C059DB /* Release */,
+				37F1DA762AD6E49000C059DB /* Debug configuration for PBXProject "SimulatorManager" */,
+				37F1DA772AD6E49000C059DB /* Release configuration for PBXProject "SimulatorManager" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		37F1DA782AD6E49000C059DB /* Build configuration list for PBXNativeTarget "SimulatorManager" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				37F1DA792AD6E49000C059DB /* Debug */,
-				37F1DA7A2AD6E49000C059DB /* Release */,
+				37F1DA792AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManager" */,
+				37F1DA7A2AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManager" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		37F1DA7B2AD6E49000C059DB /* Build configuration list for PBXNativeTarget "SimulatorManagerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				37F1DA7C2AD6E49000C059DB /* Debug */,
-				37F1DA7D2AD6E49000C059DB /* Release */,
+				37F1DA7C2AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManagerTests" */,
+				37F1DA7D2AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManagerTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		37F1DA7E2AD6E49000C059DB /* Build configuration list for PBXNativeTarget "SimulatorManagerUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				37F1DA7F2AD6E49000C059DB /* Debug */,
-				37F1DA802AD6E49000C059DB /* Release */,
+				37F1DA7F2AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManagerUITests" */,
+				37F1DA802AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManagerUITests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
