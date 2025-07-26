@@ -15,6 +15,22 @@ enum SimulatorPlatform {
     case appleTV
     case visionPro
     case iPodTouch
+    
+    init(from deviceTypeIdentifier: String) {
+        if deviceTypeIdentifier.contains("iPhone") {
+            self = .iPhone
+        } else if deviceTypeIdentifier.contains("iPad") {
+            self = .iPad
+        } else if deviceTypeIdentifier.contains("Apple-Vision-Pro") {
+            self = .visionPro
+        } else if deviceTypeIdentifier.contains("Apple-TV") {
+            self = .appleTV
+        } else if deviceTypeIdentifier.contains("Apple-Watch") {
+            self = .watch
+        } else {
+            self = .iPodTouch
+        }
+    }
 }
 
 class Device: ObservableObject, DecodableURLContainer {
@@ -33,9 +49,9 @@ class Device: ObservableObject, DecodableURLContainer {
     let udid: String
     let name: String
     let lastBootedAt: Date?
-    let runtime: String
-    let deviceType: String
     let state: DeviceState
+    let simulatorPlatform: SimulatorPlatform
+    let osVersion: String
     
     // not decoded properties
     var appContainerFolder: URL? {
@@ -46,8 +62,47 @@ class Device: ObservableObject, DecodableURLContainer {
         url?.appendingPathComponent(Device.appGroupFolderPath)
     }
     
-    var osVersion: String {
-        runtime.components(separatedBy: ".").last?
+    var hasAppsInstalled: Bool {
+        !apps.isEmpty
+    }
+    
+    @Published var apps: [any SimulatorApp] = []
+    @Published var appGroups: [AppGroup] = []
+    
+    var url: URL?
+    
+    // MARK: - Custom Decoder
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        udid = try container.decode(String.self, forKey: .udid)
+        name = try container.decode(String.self, forKey: .name)
+        lastBootedAt = try container.decodeIfPresent(Date.self, forKey: .lastBootedAt)
+        let runtime = try container.decode(String.self, forKey: .runtime)
+        let deviceType = try container.decode(String.self, forKey: .deviceType)
+        state = try container.decode(DeviceState.self, forKey: .state)
+        
+        // Determine simulatorPlatform and osVersion based on decoded values
+        simulatorPlatform = SimulatorPlatform(from: deviceType)
+        osVersion = Device.extractOSVersion(from: runtime)
+    }
+    
+    // MARK: - Custom Initializer
+    
+    init(udid: String, name: String, state: DeviceState, simulatorPlatform: SimulatorPlatform, osVersion: String) {
+        self.udid = udid
+        self.name = name
+        self.lastBootedAt = nil
+        self.osVersion = osVersion
+        self.simulatorPlatform = simulatorPlatform
+        self.state = state
+    }
+    
+    // MARK: - Helper Methods
+    
+    private static func extractOSVersion(from runtime: String) -> String {
+        return runtime.components(separatedBy: ".").last?
             .components(separatedBy: "-")
             .enumerated()
             .reduce(into: "") { partialResult, osVersion in
@@ -60,31 +115,6 @@ class Device: ObservableObject, DecodableURLContainer {
                 }
             } ?? ""
     }
-    
-    var simulatorPlatform: SimulatorPlatform {
-        if deviceType.contains("iPhone") {
-            return .iPhone
-        } else if deviceType.contains("iPad") {
-            return .iPad
-        } else if deviceType.contains("Apple-Vision-Pro") {
-            return .visionPro
-        } else if deviceType.contains("Apple-TV") {
-            return .appleTV
-        } else if deviceType.contains("Apple-Watch") {
-            return .watch
-        } else {
-            return .iPodTouch
-        }
-    }
-    
-    var hasAppsInstalled: Bool {
-        !apps.isEmpty
-    }
-    
-    @Published var apps: [any SimulatorApp] = []
-    @Published var appGroups: [AppGroup] = []
-    
-    var url: URL?
 }
 
 extension Device: Identifiable {

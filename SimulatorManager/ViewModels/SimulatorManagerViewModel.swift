@@ -15,13 +15,14 @@ class SimulatorManagerViewModel: ObservableObject {
     @Published var devices: [Device] = []
     @Published var recentAppChanges: [AppChange] = []
     
-    private let deviceManager: DeviceManager
-    private let deviceAppMonitoringService: DeviceAppMonitoringService
+    private let deviceManager: DeviceManagerProtocol
+    private let deviceAppMonitoringService: DeviceAppMonitoringServiceProtocol
     private var cancellables: Set<AnyCancellable> = []
     
-    init(deviceManager: DeviceManager = DeviceManager()) {
+    init(deviceManager: DeviceManagerProtocol = DeviceManager(),
+         deviceAppMonitoringService: DeviceAppMonitoringServiceProtocol? = nil) {
         self.deviceManager = deviceManager
-        self.deviceAppMonitoringService = DeviceAppMonitoringService(deviceManager: deviceManager)
+        self.deviceAppMonitoringService = deviceAppMonitoringService ?? DeviceAppMonitoringService(deviceManager: deviceManager)
         bind()
     }
     

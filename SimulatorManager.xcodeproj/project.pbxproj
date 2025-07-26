@@ -33,13 +33,16 @@
 		37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */; };
 		37F1DA5B2AD6E49000C059DB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5A2AD6E49000C059DB /* Assets.xcassets */; };
 		37F1DA5E2AD6E49000C059DB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5D2AD6E49000C059DB /* Preview Assets.xcassets */; };
-		37F1DA692AD6E49000C059DB /* SimulatorManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA682AD6E49000C059DB /* SimulatorManagerTests.swift */; };
-		37F1DA732AD6E49000C059DB /* SimulatorManagerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA722AD6E49000C059DB /* SimulatorManagerUITests.swift */; };
-		37F1DA752AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA742AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift */; };
 		3C0B99842E21A249001B244D /* RecentAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0B99832E21A249001B244D /* RecentAppsView.swift */; };
 		3C472BAA2E301B3B00A33B35 /* DeviceAppMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */; };
 		3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */; };
 		3C472BAE2E30297B00A33B35 /* AppChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BAD2E30297B00A33B35 /* AppChange.swift */; };
+		3CEA02482E35805F00EE9DA0 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3CEA02432E35805F00EE9DA0 /* README.md */; };
+		3CEA02492E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA023E2E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift */; };
+		3CEA024A2E35805F00EE9DA0 /* MockDeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA023F2E35805F00EE9DA0 /* MockDeviceManager.swift */; };
+		3CEA024D2E35805F00EE9DA0 /* TestDataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA023C2E35805F00EE9DA0 /* TestDataHelpers.swift */; };
+		3CEA024E2E35805F00EE9DA0 /* SimulatorManagerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA02462E35805F00EE9DA0 /* SimulatorManagerViewModelTests.swift */; };
+		3CEA024F2E35805F00EE9DA0 /* SimulatorManagerViewModelEdgeCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA02452E35805F00EE9DA0 /* SimulatorManagerViewModelEdgeCaseTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,14 +92,17 @@
 		37F1DA5D2AD6E49000C059DB /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		37F1DA5F2AD6E49000C059DB /* SimulatorManager.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SimulatorManager.entitlements; sourceTree = "<group>"; };
 		37F1DA642AD6E49000C059DB /* SimulatorManagerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		37F1DA682AD6E49000C059DB /* SimulatorManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerTests.swift; sourceTree = "<group>"; };
 		37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		37F1DA722AD6E49000C059DB /* SimulatorManagerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerUITests.swift; sourceTree = "<group>"; };
-		37F1DA742AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		3C0B99832E21A249001B244D /* RecentAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentAppsView.swift; sourceTree = "<group>"; };
 		3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDiscoveryService.swift; sourceTree = "<group>"; };
 		3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAppMonitoringService.swift; sourceTree = "<group>"; };
 		3C472BAD2E30297B00A33B35 /* AppChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppChange.swift; sourceTree = "<group>"; };
+		3CEA023C2E35805F00EE9DA0 /* TestDataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataHelpers.swift; sourceTree = "<group>"; };
+		3CEA023E2E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDeviceAppMonitoringService.swift; sourceTree = "<group>"; };
+		3CEA023F2E35805F00EE9DA0 /* MockDeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDeviceManager.swift; sourceTree = "<group>"; };
+		3CEA02432E35805F00EE9DA0 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		3CEA02452E35805F00EE9DA0 /* SimulatorManagerViewModelEdgeCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerViewModelEdgeCaseTests.swift; sourceTree = "<group>"; };
+		3CEA02462E35805F00EE9DA0 /* SimulatorManagerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerViewModelTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -179,7 +185,6 @@
 				3750F9272B2D07AD00F578ED /* README.md */,
 				37F1DA552AD6E48F00C059DB /* SimulatorManager */,
 				37F1DA672AD6E49000C059DB /* SimulatorManagerTests */,
-				37F1DA712AD6E49000C059DB /* SimulatorManagerUITests */,
 				37F1DA542AD6E48F00C059DB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -226,18 +231,12 @@
 		37F1DA672AD6E49000C059DB /* SimulatorManagerTests */ = {
 			isa = PBXGroup;
 			children = (
-				37F1DA682AD6E49000C059DB /* SimulatorManagerTests.swift */,
+				3CEA023D2E35805F00EE9DA0 /* Helpers */,
+				3CEA02402E35805F00EE9DA0 /* Mocks */,
+				3CEA02432E35805F00EE9DA0 /* README.md */,
+				3CEA02472E35805F00EE9DA0 /* ViewModels */,
 			);
 			path = SimulatorManagerTests;
-			sourceTree = "<group>";
-		};
-		37F1DA712AD6E49000C059DB /* SimulatorManagerUITests */ = {
-			isa = PBXGroup;
-			children = (
-				37F1DA722AD6E49000C059DB /* SimulatorManagerUITests.swift */,
-				37F1DA742AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift */,
-			);
-			path = SimulatorManagerUITests;
 			sourceTree = "<group>";
 		};
 		3C472BA92E301B3B00A33B35 /* Services */ = {
@@ -247,6 +246,32 @@
 				3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		3CEA023D2E35805F00EE9DA0 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				3CEA023C2E35805F00EE9DA0 /* TestDataHelpers.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		3CEA02402E35805F00EE9DA0 /* Mocks */ = {
+			isa = PBXGroup;
+			children = (
+				3CEA023E2E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift */,
+				3CEA023F2E35805F00EE9DA0 /* MockDeviceManager.swift */,
+			);
+			path = Mocks;
+			sourceTree = "<group>";
+		};
+		3CEA02472E35805F00EE9DA0 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				3CEA02452E35805F00EE9DA0 /* SimulatorManagerViewModelEdgeCaseTests.swift */,
+				3CEA02462E35805F00EE9DA0 /* SimulatorManagerViewModelTests.swift */,
+			);
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -360,6 +385,7 @@
 		37F1DA622AD6E49000C059DB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
+				3CEA02482E35805F00EE9DA0 /* README.md in Resources */,
 			);
 		};
 		37F1DA6C2AD6E49000C059DB /* Resources */ = {
@@ -381,6 +407,8 @@
 				"  echo \"warning: SwiftFormat not installed, download from https://github.com/nicklockwood/SwiftFormat\"",
 				"fi",
 				"",
+				"",
+				"",
 			);
 		};
 		373A36C92AD992A00086CCE0 /* Swift Lint */ = {
@@ -393,6 +421,8 @@
 				"else",
 				"  echo \"warning: SwiftLint not installed\"",
 				"fi",
+				"",
+				"",
 				"",
 			);
 		};
@@ -434,14 +464,16 @@
 		37F1DA602AD6E49000C059DB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-				37F1DA692AD6E49000C059DB /* SimulatorManagerTests.swift in Sources */,
+				3CEA02492E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift in Sources */,
+				3CEA024A2E35805F00EE9DA0 /* MockDeviceManager.swift in Sources */,
+				3CEA024D2E35805F00EE9DA0 /* TestDataHelpers.swift in Sources */,
+				3CEA024E2E35805F00EE9DA0 /* SimulatorManagerViewModelTests.swift in Sources */,
+				3CEA024F2E35805F00EE9DA0 /* SimulatorManagerViewModelEdgeCaseTests.swift in Sources */,
 			);
 		};
 		37F1DA6A2AD6E49000C059DB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-				37F1DA732AD6E49000C059DB /* SimulatorManagerUITests.swift in Sources */,
-				37F1DA752AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift in Sources */,
 			);
 		};
 /* End PBXSourcesBuildPhase section */

@@ -9,13 +9,27 @@ import Foundation
 import Combine
 import os
 
+// MARK: - Protocols
+
+/// Protocol defining the interface for device management
+protocol DeviceManagerProtocol: AnyObject {
+    var deviceTypes: AnyPublisher<[DeviceType], Never> { get }
+    var devices: AnyPublisher<[Device], Never> { get }
+    var recentAppChanges: AnyPublisher<[AppChange], Never> { get }
+    
+    func updateDevices()
+    func updateSpecificDevice(_ updatedDevice: Device)
+    func getDevice(withUdid udid: String) -> Device?
+    func addAppChanges(_ changes: [AppChange])
+}
+
 enum SimulatorPaths {
     static let appPackagePath = "data/Containers/Bundle/Application"
     static let appDataPath = "data/Containers/Data/Application"
     static let userDefaultsPath = "Library/Preferences"
 }
 
-class DeviceManager: ObservableObject {
+class DeviceManager: ObservableObject, DeviceManagerProtocol {
     var deviceTypes: AnyPublisher<[DeviceType], Never> {
         deviceTypesPublisher.eraseToAnyPublisher()
     }

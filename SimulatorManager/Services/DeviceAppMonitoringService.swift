@@ -9,17 +9,24 @@ import Foundation
 import Combine
 import os
 
+// MARK: - Protocol
+
+/// Protocol defining the interface for device app monitoring
+protocol DeviceAppMonitoringServiceProtocol: AnyObject {
+    func stopMonitoring()
+}
+
 /// Service that monitors simulator app changes and integrates with DeviceManager
-class DeviceAppMonitoringService: ObservableObject {
+class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoringServiceProtocol {
     // MARK: - Properties
     
-    private let deviceManager: DeviceManager
+    private let deviceManager: DeviceManagerProtocol
     private var appFolderMonitors: [String: AppFolderMonitor] = [:] // UUID -> Monitor
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
     
-    init(deviceManager: DeviceManager) {
+    init(deviceManager: DeviceManagerProtocol) {
         self.deviceManager = deviceManager
         setupDeviceMonitoring()
     }
