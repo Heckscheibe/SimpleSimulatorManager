@@ -58,11 +58,6 @@ class MockDeviceManager: DeviceManagerProtocol {
         deviceTypesSubject.send(deviceTypes)
     }
     
-    func setMockRecentAppChanges(_ changes: [AppChange]) {
-        mockRecentAppChanges = changes
-        recentAppChangesSubject.send(changes)
-    }
-    
     func setMockRecentInstalledApps(_ apps: [AppChange]) {
         mockRecentInstalledApps = apps
         recentInstalledAppsSubject.send(apps)
@@ -70,7 +65,6 @@ class MockDeviceManager: DeviceManagerProtocol {
     
     func simulateAppChanges(_ changes: [AppChange]) {
         mockRecentAppChanges.append(contentsOf: changes)
-        recentAppChangesSubject.send(mockRecentAppChanges)
         
         // Simulate the lifecycle management for installed apps
         var currentInstalled = mockRecentInstalledApps
@@ -121,7 +115,6 @@ class MockDeviceManager: DeviceManagerProtocol {
         updateRecentAppsCalled = true
         lastAddedChanges = changes
         mockRecentAppChanges.append(contentsOf: changes)
-        recentAppChangesSubject.send(mockRecentAppChanges)
     }
     
     // MARK: - Test Helper Methods
