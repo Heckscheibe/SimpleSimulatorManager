@@ -1,0 +1,107 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:mac)
+
+platform :mac do
+  desc "Build and sign the app for distribution outside Mac App Store"
+  lane :build do
+    # Sync certificates and provisioning profiles
+    match(
+      type: "development",
+      additional_cert_types: "developer_id",
+      app_identifier: "com.nicolashiller.SimpleSimulatorManager",
+      git_url: "https://github.com/Heckscheibe/SimpleSimulatorManagerSigning.git",
+      readonly: true
+    )
+
+    # Build the app
+    build_mac_app(
+      scheme: "SimulatorManager",
+      configuration: "Release",
+      export_method: "developer-id",
+      export_options: {
+        signingStyle: "manual",
+        provisioningProfiles: {
+          "com.nicolashiller.SimpleSimulatorManager" => "match DeveloperID com.nicolashiller.SimpleSimulatorManager"
+        }
+      },
+      output_directory: "./build",
+      output_name: "SimulatorManager.app"
+    )
+
+    # Create DMG for distribution
+    create_dmg
+  end
+
+  desc "Setup certificates and provisioning profiles"
+  lane :setup_signing do
+    match(
+      type: "distribution",
+      app_identifier: "com.nicolashiller.SimpleSimulatorManager",
+      git_url: "https://github.com/Heckscheibe/SimpleSimulatorManagerSigning.git",
+      force_for_new_devices: true
+    )
+  end
+
+  desc "Create a new certificate (run this only once)"
+  lane :create_certificates do
+    match(
+      type: "distribution",
+      app_identifier: "com.nicolashiller.SimpleSimulatorManager",
+      git_url: "https://github.com/Heckscheibe/SimpleSimulatorManagerSigning.git",
+      force: true
+    )
+  end
+
+  desc "Build and prepare for GitHub release"
+  lane :release do
+    # Build the app
+    build
+
+    # Create a zip file for GitHub releases
+    zip(
+      path: "./build/SimulatorManager.app",
+      output_path: "./build/SimulatorManager.zip"
+    )
+
+    # Copy files to a release directory
+    sh("mkdir -p ../release")
+    sh("cp ./build/SimulatorManager.dmg ../release/")
+    sh("cp ./build/SimulatorManager.zip ../release/")
+
+    UI.success("🎉 Build completed successfully!")
+    UI.message("Files available in ./release/:")
+    UI.message("- SimulatorManager.dmg")
+    UI.message("- SimulatorManager.zip")
+    UI.message("")
+    UI.message("You can now upload these files to your GitHub release.")
+  end
+
+  desc "Create DMG from built app"
+  private_lane :create_dmg do
+    # Create a DMG file for distribution
+    sh("mkdir -p ./build/dmg")
+    sh("cp -R ./build/SimulatorManager.app ./build/dmg/")
+    
+    # Create the DMG
+    sh("hdiutil create -volname 'Simulator Manager' -srcfolder ./build/dmg -ov -format UDZO ./build/SimulatorManager.dmg")
+    
+    # Clean up temporary directory
+    sh("rm -rf ./build/dmg")
+    
+    UI.success("✅ DMG created at ./build/SimulatorManager.dmg")
+  end
+end

@@ -1,0 +1,18 @@
+# Matchfile for managing certificates and provisioning profiles
+git_url("https://github.com/Heckscheibe/SimpleSimulatorManagerSigning.git")
+
+storage_mode("git")
+
+type("distribution") # Developer ID for distribution outside Mac App Store
+
+app_identifier(["com.nicolashiller.SimpleSimulatorManager"])
+
+# You can uncomment and set these if needed
+# username("your-apple-id@example.com") # Your Apple ID
+# team_id("YOUR_TEAM_ID") # Your Apple Developer Team ID
+
+# Force match to skip verification of existing certificates
+# skip_certificate_verification(true)
+
+# For more information about match, see:
+# https://docs.fastlane.tools/actions/match/
