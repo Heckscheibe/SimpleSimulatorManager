@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -33,9 +33,17 @@
 		37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */; };
 		37F1DA5B2AD6E49000C059DB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5A2AD6E49000C059DB /* Assets.xcassets */; };
 		37F1DA5E2AD6E49000C059DB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5D2AD6E49000C059DB /* Preview Assets.xcassets */; };
-		37F1DA692AD6E49000C059DB /* SimulatorManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA682AD6E49000C059DB /* SimulatorManagerTests.swift */; };
-		37F1DA732AD6E49000C059DB /* SimulatorManagerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA722AD6E49000C059DB /* SimulatorManagerUITests.swift */; };
-		37F1DA752AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA742AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift */; };
+		3C0B99842E21A249001B244D /* RecentAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0B99832E21A249001B244D /* RecentAppsView.swift */; };
+		3C0BE5A82E35934900F36023 /* SimulatorPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0BE5A62E35934900F36023 /* SimulatorPlatformTests.swift */; };
+		3C472BAA2E301B3B00A33B35 /* DeviceAppMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */; };
+		3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */; };
+		3C472BAE2E30297B00A33B35 /* AppChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BAD2E30297B00A33B35 /* AppChange.swift */; };
+		3CEA02482E35805F00EE9DA0 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3CEA02432E35805F00EE9DA0 /* README.md */; };
+		3CEA02492E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA023E2E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift */; };
+		3CEA024A2E35805F00EE9DA0 /* MockDeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA023F2E35805F00EE9DA0 /* MockDeviceManager.swift */; };
+		3CEA024D2E35805F00EE9DA0 /* TestDataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA023C2E35805F00EE9DA0 /* TestDataHelpers.swift */; };
+		3CEA024E2E35805F00EE9DA0 /* SimulatorManagerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA02462E35805F00EE9DA0 /* SimulatorManagerViewModelTests.swift */; };
+		3CEA024F2E35805F00EE9DA0 /* SimulatorManagerViewModelEdgeCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA02452E35805F00EE9DA0 /* SimulatorManagerViewModelEdgeCaseTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,33 +93,35 @@
 		37F1DA5D2AD6E49000C059DB /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		37F1DA5F2AD6E49000C059DB /* SimulatorManager.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SimulatorManager.entitlements; sourceTree = "<group>"; };
 		37F1DA642AD6E49000C059DB /* SimulatorManagerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		37F1DA682AD6E49000C059DB /* SimulatorManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerTests.swift; sourceTree = "<group>"; };
 		37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		37F1DA722AD6E49000C059DB /* SimulatorManagerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerUITests.swift; sourceTree = "<group>"; };
-		37F1DA742AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		3C0B99832E21A249001B244D /* RecentAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentAppsView.swift; sourceTree = "<group>"; };
+		3C0BE5A62E35934900F36023 /* SimulatorPlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorPlatformTests.swift; sourceTree = "<group>"; };
+		3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDiscoveryService.swift; sourceTree = "<group>"; };
+		3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAppMonitoringService.swift; sourceTree = "<group>"; };
+		3C472BAD2E30297B00A33B35 /* AppChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppChange.swift; sourceTree = "<group>"; };
+		3CEA023C2E35805F00EE9DA0 /* TestDataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataHelpers.swift; sourceTree = "<group>"; };
+		3CEA023E2E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDeviceAppMonitoringService.swift; sourceTree = "<group>"; };
+		3CEA023F2E35805F00EE9DA0 /* MockDeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDeviceManager.swift; sourceTree = "<group>"; };
+		3CEA02432E35805F00EE9DA0 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		3CEA02452E35805F00EE9DA0 /* SimulatorManagerViewModelEdgeCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerViewModelEdgeCaseTests.swift; sourceTree = "<group>"; };
+		3CEA02462E35805F00EE9DA0 /* SimulatorManagerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerViewModelTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		37F1DA502AD6E48F00C059DB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA612AD6E49000C059DB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA6B2AD6E49000C059DB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -119,6 +129,7 @@
 		371F2BAF2BA399A500B338FC /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				3C0B99832E21A249001B244D /* RecentAppsView.swift */,
 				37D6FBF32B1130870023F886 /* AppGroupsView.swift */,
 				37D6FBF12B1130730023F886 /* AppsView.swift */,
 				3713A08A2B1923150060C939 /* DeviceTypeView.swift */,
@@ -129,6 +140,7 @@
 		373A36C52AD98A8C0086CCE0 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				3C472BAD2E30297B00A33B35 /* AppChange.swift */,
 				371F2BB02BA3A11E00B338FC /* AppGroup.swift */,
 				37CAA9D22ADEF07900A7F2CB /* AppGroupPlist.swift */,
 				37CAA9D62AE0730C00A7F2CB /* AppInfoPlist.swift */,
@@ -175,7 +187,6 @@
 				3750F9272B2D07AD00F578ED /* README.md */,
 				37F1DA552AD6E48F00C059DB /* SimulatorManager */,
 				37F1DA672AD6E49000C059DB /* SimulatorManagerTests */,
-				37F1DA712AD6E49000C059DB /* SimulatorManagerUITests */,
 				37F1DA542AD6E48F00C059DB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -203,6 +214,7 @@
 				3776EED82B2CF6640080F422 /* FolderMonitor */,
 				373A36C52AD98A8C0086CCE0 /* Models */,
 				37F1DA5C2AD6E49000C059DB /* Preview Content */,
+				3C472BA92E301B3B00A33B35 /* Services */,
 				37D6FBF72B1134E80023F886 /* Settings */,
 				37D6FBF02B1130310023F886 /* ViewModels */,
 				371F2BAF2BA399A500B338FC /* Views */,
@@ -221,18 +233,56 @@
 		37F1DA672AD6E49000C059DB /* SimulatorManagerTests */ = {
 			isa = PBXGroup;
 			children = (
-				37F1DA682AD6E49000C059DB /* SimulatorManagerTests.swift */,
+				3C0BE5A72E35934900F36023 /* Models */,
+				3CEA023D2E35805F00EE9DA0 /* Helpers */,
+				3CEA02402E35805F00EE9DA0 /* Mocks */,
+				3CEA02432E35805F00EE9DA0 /* README.md */,
+				3CEA02472E35805F00EE9DA0 /* ViewModels */,
 			);
 			path = SimulatorManagerTests;
 			sourceTree = "<group>";
 		};
-		37F1DA712AD6E49000C059DB /* SimulatorManagerUITests */ = {
+		3C0BE5A72E35934900F36023 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				37F1DA722AD6E49000C059DB /* SimulatorManagerUITests.swift */,
-				37F1DA742AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift */,
+				3C0BE5A62E35934900F36023 /* SimulatorPlatformTests.swift */,
 			);
-			path = SimulatorManagerUITests;
+			path = Models;
+			sourceTree = "<group>";
+		};
+		3C472BA92E301B3B00A33B35 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */,
+				3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		3CEA023D2E35805F00EE9DA0 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				3CEA023C2E35805F00EE9DA0 /* TestDataHelpers.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		3CEA02402E35805F00EE9DA0 /* Mocks */ = {
+			isa = PBXGroup;
+			children = (
+				3CEA023E2E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift */,
+				3CEA023F2E35805F00EE9DA0 /* MockDeviceManager.swift */,
+			);
+			path = Mocks;
+			sourceTree = "<group>";
+		};
+		3CEA02472E35805F00EE9DA0 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				3CEA02452E35805F00EE9DA0 /* SimulatorManagerViewModelEdgeCaseTests.swift */,
+				3CEA02462E35805F00EE9DA0 /* SimulatorManagerViewModelTests.swift */,
+			);
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -249,8 +299,6 @@
 				37F1DA512AD6E48F00C059DB /* Resources */,
 			);
 			buildRules = (
-			);
-			dependencies = (
 			);
 			name = SimulatorManager;
 			productName = SimulatorManager;
@@ -301,7 +349,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1520;
+				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					37F1DA522AD6E48F00C059DB = {
 						CreatedOnToolsVersion = 15.0;
@@ -317,7 +365,6 @@
 				};
 			};
 			buildConfigurationList = 37F1DA4E2AD6E48E00C059DB /* Build configuration list for PBXProject "SimulatorManager" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -325,6 +372,7 @@
 				Base,
 			);
 			mainGroup = 37F1DA4A2AD6E48E00C059DB;
+			preferredProjectObjectVersion = 90;
 			productRefGroup = 37F1DA542AD6E48F00C059DB /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -339,73 +387,61 @@
 /* Begin PBXResourcesBuildPhase section */
 		37F1DA512AD6E48F00C059DB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				3750F9282B2D07AD00F578ED /* README.md in Resources */,
 				37F1DA5E2AD6E49000C059DB /* Preview Assets.xcassets in Resources */,
 				37F1DA5B2AD6E49000C059DB /* Assets.xcassets in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA622AD6E49000C059DB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
+				3CEA02482E35805F00EE9DA0 /* README.md in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA6C2AD6E49000C059DB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		373A36C82AD991EA0086CCE0 /* Swift Format */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
 			name = "Swift Format";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if which swiftformat >/dev/null; then\n  swiftformat .\nelse\n  echo \"warning: SwiftFormat not installed, download from https://github.com/nicklockwood/SwiftFormat\"\nfi\n";
+			shellScript = (
+				"if which swiftformat >/dev/null; then",
+				"  swiftformat .",
+				"else",
+				"  echo \"warning: SwiftFormat not installed, download from https://github.com/nicklockwood/SwiftFormat\"",
+				"fi",
+				"",
+				"",
+				"",
+			);
 		};
 		373A36C92AD992A00086CCE0 /* Swift Lint */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
 			name = "Swift Lint";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if which swiftformat >/dev/null; then\n  swiftlint\nelse\n  echo \"warning: SwiftLint not installed\"\nfi\n";
+			shellScript = (
+				"if which swiftformat >/dev/null; then",
+				"  swiftlint",
+				"else",
+				"  echo \"warning: SwiftLint not installed\"",
+				"fi",
+				"",
+				"",
+				"",
+			);
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		37F1DA4F2AD6E48F00C059DB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				373A36C72AD98A9A0086CCE0 /* Device.swift in Sources */,
 				37CAA9D52ADEF97400A7F2CB /* Extensions.swift in Sources */,
@@ -414,9 +450,12 @@
 				37D6FBF62B11330D0023F886 /* Settings.swift in Sources */,
 				37D6FBFB2B11354E0023F886 /* SettingsViewModel.swift in Sources */,
 				37D6FBEF2B112E8C0023F886 /* DeviceViewModel.swift in Sources */,
+				3C0B99842E21A249001B244D /* RecentAppsView.swift in Sources */,
 				37CAA9CD2ADEEA4A00A7F2CB /* DeviceState.swift in Sources */,
 				3776EEDC2B2CF9310080F422 /* AppFolderMonitor.swift in Sources */,
 				3713A08B2B1923150060C939 /* DeviceTypeView.swift in Sources */,
+				3C472BAA2E301B3B00A33B35 /* DeviceAppMonitoringService.swift in Sources */,
+				3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */,
 				373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */,
 				37CAA9CF2ADEEA6000A7F2CB /* DeviceType.swift in Sources */,
 				37D6FBF22B1130730023F886 /* AppsView.swift in Sources */,
@@ -428,27 +467,26 @@
 				37CAA9D12ADEEE6C00A7F2CB /* SimulatorApp.swift in Sources */,
 				37D6FBF42B1130870023F886 /* AppGroupsView.swift in Sources */,
 				37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */,
+				3C472BAE2E30297B00A33B35 /* AppChange.swift in Sources */,
 				371F2BB12BA3A11E00B338FC /* AppGroup.swift in Sources */,
 				37CAA9D32ADEF07900A7F2CB /* AppGroupPlist.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA602AD6E49000C059DB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
-				37F1DA692AD6E49000C059DB /* SimulatorManagerTests.swift in Sources */,
+				3CEA02492E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift in Sources */,
+				3CEA024A2E35805F00EE9DA0 /* MockDeviceManager.swift in Sources */,
+				3CEA024D2E35805F00EE9DA0 /* TestDataHelpers.swift in Sources */,
+				3C0BE5A82E35934900F36023 /* SimulatorPlatformTests.swift in Sources */,
+				3CEA024E2E35805F00EE9DA0 /* SimulatorManagerViewModelTests.swift in Sources */,
+				3CEA024F2E35805F00EE9DA0 /* SimulatorManagerViewModelEdgeCaseTests.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		37F1DA6A2AD6E49000C059DB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
-				37F1DA732AD6E49000C059DB /* SimulatorManagerUITests.swift in Sources */,
-				37F1DA752AD6E49000C059DB /* SimulatorManagerUITestsLaunchTests.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -466,7 +504,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		37F1DA762AD6E49000C059DB /* Debug */ = {
+		37F1DA762AD6E49000C059DB /* Debug configuration for PBXProject "SimulatorManager" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -530,7 +568,7 @@
 			};
 			name = Debug;
 		};
-		37F1DA772AD6E49000C059DB /* Release */ = {
+		37F1DA772AD6E49000C059DB /* Release configuration for PBXProject "SimulatorManager" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -586,42 +624,7 @@
 			};
 			name = Release;
 		};
-		37F1DA792AD6E49000C059DB /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = SimulatorManager/SimulatorManager.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
-				CODE_SIGN_STYLE = Manual;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = C26VF67R9C;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Simple Simulator Manager Development";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		37F1DA7A2AD6E49000C059DB /* Release */ = {
+		37F1DA792AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManager" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -649,17 +652,51 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Simple Simulator Manager Distribution";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		37F1DA7A2AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManager" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SimulatorManager/SimulatorManager.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = C26VF67R9C;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
-		37F1DA7C2AD6E49000C059DB /* Debug */ = {
+		37F1DA7C2AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManagerTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -675,10 +712,9 @@
 			};
 			name = Debug;
 		};
-		37F1DA7D2AD6E49000C059DB /* Release */ = {
+		37F1DA7D2AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManagerTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -694,10 +730,9 @@
 			};
 			name = Release;
 		};
-		37F1DA7F2AD6E49000C059DB /* Debug */ = {
+		37F1DA7F2AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManagerUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -711,10 +746,9 @@
 			};
 			name = Debug;
 		};
-		37F1DA802AD6E49000C059DB /* Release */ = {
+		37F1DA802AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManagerUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -734,37 +768,33 @@
 		37F1DA4E2AD6E48E00C059DB /* Build configuration list for PBXProject "SimulatorManager" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				37F1DA762AD6E49000C059DB /* Debug */,
-				37F1DA772AD6E49000C059DB /* Release */,
+				37F1DA762AD6E49000C059DB /* Debug configuration for PBXProject "SimulatorManager" */,
+				37F1DA772AD6E49000C059DB /* Release configuration for PBXProject "SimulatorManager" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		37F1DA782AD6E49000C059DB /* Build configuration list for PBXNativeTarget "SimulatorManager" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				37F1DA792AD6E49000C059DB /* Debug */,
-				37F1DA7A2AD6E49000C059DB /* Release */,
+				37F1DA792AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManager" */,
+				37F1DA7A2AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManager" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		37F1DA7B2AD6E49000C059DB /* Build configuration list for PBXNativeTarget "SimulatorManagerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				37F1DA7C2AD6E49000C059DB /* Debug */,
-				37F1DA7D2AD6E49000C059DB /* Release */,
+				37F1DA7C2AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManagerTests" */,
+				37F1DA7D2AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManagerTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		37F1DA7E2AD6E49000C059DB /* Build configuration list for PBXNativeTarget "SimulatorManagerUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				37F1DA7F2AD6E49000C059DB /* Debug */,
-				37F1DA802AD6E49000C059DB /* Release */,
+				37F1DA7F2AD6E49000C059DB /* Debug configuration for PBXNativeTarget "SimulatorManagerUITests" */,
+				37F1DA802AD6E49000C059DB /* Release configuration for PBXNativeTarget "SimulatorManagerUITests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */

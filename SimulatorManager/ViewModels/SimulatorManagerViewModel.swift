@@ -10,32 +10,21 @@ import os
 import AppKit
 import Combine
 
-class SimulatorManagerViewModel: ObservableObject {
+class SimulatorManagerViewModel: ObservableObject, FolderOpening {
     @Published var deviceTypes: [DeviceType] = []
     @Published var devices: [Device] = []
+    @Published var recentAppChanges: [AppChange] = []
+    @Published var recentInstalledApps: [AppChange] = []
     
-    private let deviceManager = DeviceManager()
-    private var folderMonitors: [AppFolderMonitor] = []
-    private var cancellables: [AnyCancellable] = []
+    private let deviceManager: DeviceManagerProtocol
+    private let deviceAppMonitoringService: DeviceAppMonitoringServiceProtocol
+    private var cancellables: Set<AnyCancellable> = []
     
-    init() {
+    init(deviceManager: DeviceManagerProtocol = DeviceManager(),
+         deviceAppMonitoringService: DeviceAppMonitoringServiceProtocol? = nil) {
+        self.deviceManager = deviceManager
+        self.deviceAppMonitoringService = deviceAppMonitoringService ?? DeviceAppMonitoringService(deviceManager: deviceManager)
         bind()
-        observeDevices()
-    }
-    
-    func observeDevices() {
-        folderMonitors = devices
-            .compactMap {
-                guard $0.hasAppsInstalled else { return nil }
-                let monitor = AppFolderMonitor(device: $0)
-                monitor.appfolderDidChange
-                    .sink { [weak self] device in
-                        os_log("\(device.name)'s folder did change.")
-                        self?.deviceManager.updateDevices()
-                    }
-                    .store(in: &cancellables)
-                return monitor
-            }
     }
     
     func didSelectSimulatorFolder(for device: Device) {
@@ -62,7 +51,9 @@ private extension SimulatorManagerViewModel {
         deviceManager.deviceTypes
             .assign(to: \.deviceTypes, on: self)
             .store(in: &cancellables)
+        
+        deviceManager.recentInstalledApps
+            .assign(to: \.recentInstalledApps, on: self)
+            .store(in: &cancellables)
     }
 }
-
-extension SimulatorManagerViewModel: FolderOpening {}

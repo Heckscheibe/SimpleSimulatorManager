@@ -9,11 +9,22 @@ import SwiftUI
 import os
 
 @main struct SimulatorManagerApp: App {
-    @StateObject private var viewModel = SimulatorManagerViewModel()
+    @StateObject private var deviceManager = DeviceManager()
     @StateObject private var settingsViewModel = SettingsViewModel()
+    @StateObject private var viewModel: SimulatorManagerViewModel
+    
+    init() {
+        let deviceManager = DeviceManager()
+        let viewModel = SimulatorManagerViewModel(deviceManager: deviceManager)
+        
+        self._deviceManager = StateObject(wrappedValue: deviceManager)
+        self._viewModel = StateObject(wrappedValue: viewModel)
+    }
     
     var body: some Scene {
         MenuBarExtra("SimulatorManager", systemImage: "iphone.gen3") {
+            RecentAppsView(viewModel: viewModel, settings: settingsViewModel)
+            Divider()
             DeviceTypeView(viewModel: viewModel, settings: settingsViewModel)
             Divider()
             SettingsView(viewModel: settingsViewModel)

@@ -13,6 +13,14 @@ struct SettingsView: View {
     
     var body: some View {
         Button(action: {
+            viewModel.toggleRecentAppsVisibility()
+        }, label: {
+            Text(viewModel.showRecentAppsText)
+        })
+        
+        Divider()
+        
+        Button(action: {
             viewModel.toggleAppleTVVisibility()
         }, label: {
             Text(viewModel.showAppleTVText)

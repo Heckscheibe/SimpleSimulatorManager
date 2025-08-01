@@ -15,6 +15,7 @@ class SettingsViewModel: ObservableObject {
     @Published var showIPadText: String
     @Published var showIPhoneText: String
     @Published var showWatchText: String
+    @Published var showRecentAppsText: String
     @Published var visiblePlatforms = Set<SimulatorPlatform>()
     
     init() {
@@ -23,6 +24,7 @@ class SettingsViewModel: ObservableObject {
         self.showIPadText = settings.showIPad ? "Hide iPadOS" : "Show iPadOS"
         self.showIPhoneText = settings.showIPhone ? "Hide iOS" : "Show iOS"
         self.showWatchText = settings.showWatch ? "Hide watchOS" : "Show watchOS"
+        self.showRecentAppsText = settings.showRecentApps ? "Hide Recent App Changes" : "Show Recent App Changes"
         
         updateVisiblePlatforms()
     }
@@ -55,6 +57,11 @@ class SettingsViewModel: ObservableObject {
         settings.showWatch.toggle()
         showWatchText = settings.showWatch ? "Hide watchOS" : "Show watchOS"
         updateVisiblePlatforms()
+    }
+    
+    func toggleRecentAppsVisibility() {
+        settings.showRecentApps.toggle()
+        showRecentAppsText = settings.showRecentApps ? "Hide Recent App Changes" : "Show Recent App Changes"
     }
 }
 

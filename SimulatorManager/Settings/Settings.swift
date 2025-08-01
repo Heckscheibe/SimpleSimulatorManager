@@ -14,6 +14,7 @@ struct Settings {
         case showIPad
         case showIPhone
         case showWatch
+        case showRecentApps
     }
     
     init() {
@@ -66,6 +67,15 @@ struct Settings {
         }
         set {
             userDefaults?.setValue(newValue, forKey: Keys.showWatch.rawValue)
+        }
+    }
+    
+    var showRecentApps: Bool {
+        get {
+            userDefaults?.bool(forKey: Keys.showRecentApps.rawValue) ?? true
+        }
+        set {
+            userDefaults?.setValue(newValue, forKey: Keys.showRecentApps.rawValue)
         }
     }
 }
