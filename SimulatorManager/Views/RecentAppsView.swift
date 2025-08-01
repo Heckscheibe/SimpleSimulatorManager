@@ -14,32 +14,28 @@ struct RecentAppsView: View {
     
     var body: some View {
         if Settings().showRecentApps {
-            VStack(alignment: .leading, spacing: 8) {
-                if !viewModel.recentAppChanges.isEmpty {
-                    HStack {
-                        Image(systemName: "clock")
-                            .foregroundColor(.secondary)
-                        Text("Recently Added/Removed Apps")
-                            .font(.headline)
-                            .foregroundColor(.primary)
+            ForEach(viewModel.recentAppChanges, id: \.id) { appChange in
+                Menu {
+                    Button {
+//                        viewModel.didSelectAppDocumentFolder(for: appChange.app)
+                    } label: {
+                        Text("Documents Folder")
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-                    ForEach(viewModel.recentAppChanges.prefix(10)) { change in
-                        RecentAppRow(change: change)
+                    Button {
+//                        viewModel.didSelectAppPackageFolder(for: appChange.app)
+                    } label: {
+                        Text("App Package")
                     }
-                    .frame(maxHeight: 300)
-                    
-                } else {
-                    HStack {
-                        Image(systemName: "clock")
-                            .foregroundColor(.secondary)
-                        Text("No recent app changes")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                    if appChange.app.hasUserDefaults {
+                        Button {
+//                            viewModel.didSelectUserDefaultsFolder(for: appChange.app)
+                        } label: {
+                            Text("User Defaults")
+                        }
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                } label: {
+                    Text(appChange.app.displayName)
+                    Text(appChange.device.name + " " + appChange.device.osVersion)
                 }
             }
         }
