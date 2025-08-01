@@ -10,7 +10,7 @@ import os
 import AppKit
 import Combine
 
-class SimulatorManagerViewModel: ObservableObject {
+class SimulatorManagerViewModel: ObservableObject, FolderOpening {
     @Published var deviceTypes: [DeviceType] = []
     @Published var devices: [Device] = []
     @Published var recentAppChanges: [AppChange] = []
@@ -56,5 +56,3 @@ private extension SimulatorManagerViewModel {
             .store(in: &cancellables)
     }
 }
-
-extension SimulatorManagerViewModel: FolderOpening {}

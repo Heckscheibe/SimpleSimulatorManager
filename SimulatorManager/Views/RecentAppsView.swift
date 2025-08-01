@@ -17,18 +17,18 @@ struct RecentAppsView: View {
             ForEach(viewModel.recentAppChanges, id: \.id) { appChange in
                 Menu {
                     Button {
-//                        viewModel.didSelectAppDocumentFolder(for: appChange.app)
+                        viewModel.didSelectAppDocumentFolder(for: appChange.app)
                     } label: {
                         Text("Documents Folder")
                     }
                     Button {
-//                        viewModel.didSelectAppPackageFolder(for: appChange.app)
+                        viewModel.didSelectAppPackageFolder(for: appChange.app)
                     } label: {
                         Text("App Package")
                     }
                     if appChange.app.hasUserDefaults {
                         Button {
-//                            viewModel.didSelectUserDefaultsFolder(for: appChange.app)
+                            viewModel.didSelectUserDefaultsFolder(for: appChange.app)
                         } label: {
                             Text("User Defaults")
                         }
