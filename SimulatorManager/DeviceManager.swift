@@ -16,6 +16,7 @@ protocol DeviceManagerProtocol: AnyObject {
     var deviceTypes: AnyPublisher<[DeviceType], Never> { get }
     var devices: AnyPublisher<[Device], Never> { get }
     var recentAppChanges: AnyPublisher<[AppChange], Never> { get }
+    var recentInstalledApps: AnyPublisher<[AppChange], Never> { get }
     
     func updateDevices()
     func updateSpecificDevice(_ updatedDevice: Device)
@@ -42,14 +43,19 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
         recentAppChangesPublisher.eraseToAnyPublisher()
     }
     
+    var recentInstalledApps: AnyPublisher<[AppChange], Never> {
+        recentInstalledAppsPublisher.eraseToAnyPublisher()
+    }
+    
     private let deviceTypesPublisher: CurrentValueSubject<[DeviceType], Never> = .init([])
     private let devicesPublisher: CurrentValueSubject<[Device], Never> = .init([])
     private let recentAppChangesPublisher: CurrentValueSubject<[AppChange], Never> = .init([])
+    private let recentInstalledAppsPublisher: CurrentValueSubject<[AppChange], Never> = .init([])
     private var deviceTypeBinding: AnyCancellable?
     private let appDiscoveryService = AppDiscoveryService()
     
-    /// Maximum number of recent changes to keep
-    private let maxRecentChanges = 20
+    /// Maximum number of recent installed apps to keep
+    private let maxRecentInstalledApps = 20
     
     init() {
         loadDevices()
@@ -78,21 +84,44 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
     }
     
     func addAppChanges(_ changes: [AppChange]) {
-        var currentChanges = recentAppChangesPublisher.value
-        currentChanges.append(contentsOf: changes)
+        var allChanges = recentAppChangesPublisher.value
+        allChanges.append(contentsOf: changes)
+        allChanges.sort { $0.timestamp > $1.timestamp }
+        recentAppChangesPublisher.value = allChanges
         
-        // Sort by timestamp (most recent first)
-        currentChanges.sort { $0.timestamp > $1.timestamp }
+        var currentInstalledApps = recentInstalledAppsPublisher.value
         
-        // Remove duplicates manually (same app on same device, keep most recent)
-        currentChanges = removeDuplicateChanges(from: currentChanges)
-        
-        // Limit to max recent changes
-        if currentChanges.count > maxRecentChanges {
-            currentChanges = Array(currentChanges.prefix(maxRecentChanges))
+        for change in changes {
+            let appKey = "\(change.app.bundleIdentifier)-\(change.device.udid)"
+            
+            switch change.changeType {
+            case .installed:
+                // Remove any existing entry for this app/device combination
+                currentInstalledApps.removeAll { existingChange in
+                    let existingKey = "\(existingChange.app.bundleIdentifier)-\(existingChange.device.udid)"
+                    return existingKey == appKey
+                }
+                // Add the new installation
+                currentInstalledApps.append(change)
+                
+            case .removed:
+                // Remove the app from installed apps
+                currentInstalledApps.removeAll { existingChange in
+                    let existingKey = "\(existingChange.app.bundleIdentifier)-\(existingChange.device.udid)"
+                    return existingKey == appKey
+                }
+            }
         }
         
-        recentAppChangesPublisher.value = currentChanges
+        // Sort by timestamp (most recent first)
+        currentInstalledApps.sort { $0.timestamp > $1.timestamp }
+        
+        // Limit to max recent installed apps
+        if currentInstalledApps.count > maxRecentInstalledApps {
+            currentInstalledApps = Array(currentInstalledApps.prefix(maxRecentInstalledApps))
+        }
+        
+        recentInstalledAppsPublisher.value = currentInstalledApps
     }
     
     private func removeDuplicateChanges(from changes: [AppChange]) -> [AppChange] {

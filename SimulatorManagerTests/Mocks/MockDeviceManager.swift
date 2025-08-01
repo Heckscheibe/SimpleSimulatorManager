@@ -14,7 +14,7 @@ class MockDeviceManager: DeviceManagerProtocol {
     
     private let deviceTypesSubject = CurrentValueSubject<[DeviceType], Never>([])
     private let devicesSubject = CurrentValueSubject<[Device], Never>([])
-    private let recentAppChangesSubject = CurrentValueSubject<[AppChange], Never>([])
+    private let recentInstalledAppsSubject = CurrentValueSubject<[AppChange], Never>([])
     
     var deviceTypes: AnyPublisher<[DeviceType], Never> {
         deviceTypesSubject.eraseToAnyPublisher()
@@ -24,8 +24,8 @@ class MockDeviceManager: DeviceManagerProtocol {
         devicesSubject.eraseToAnyPublisher()
     }
     
-    var recentAppChanges: AnyPublisher<[AppChange], Never> {
-        recentAppChangesSubject.eraseToAnyPublisher()
+    var recentInstalledApps: AnyPublisher<[AppChange], Never> {
+        recentInstalledAppsSubject.eraseToAnyPublisher()
     }
     
     // MARK: - Mock Data
@@ -33,6 +33,7 @@ class MockDeviceManager: DeviceManagerProtocol {
     private var mockDevices: [Device] = []
     private var mockDeviceTypes: [DeviceType] = []
     private var mockRecentAppChanges: [AppChange] = []
+    private var mockRecentInstalledApps: [AppChange] = []
     
     // MARK: - Call Tracking
     
@@ -62,9 +63,35 @@ class MockDeviceManager: DeviceManagerProtocol {
         recentAppChangesSubject.send(changes)
     }
     
+    func setMockRecentInstalledApps(_ apps: [AppChange]) {
+        mockRecentInstalledApps = apps
+        recentInstalledAppsSubject.send(apps)
+    }
+    
     func simulateAppChanges(_ changes: [AppChange]) {
         mockRecentAppChanges.append(contentsOf: changes)
         recentAppChangesSubject.send(mockRecentAppChanges)
+        
+        // Simulate the lifecycle management for installed apps
+        var currentInstalled = mockRecentInstalledApps
+        for change in changes {
+            let appKey = "\(change.app.bundleIdentifier)-\(change.device.udid)"
+            switch change.changeType {
+            case .installed:
+                currentInstalled.removeAll { existing in
+                    let existingKey = "\(existing.app.bundleIdentifier)-\(existing.device.udid)"
+                    return existingKey == appKey
+                }
+                currentInstalled.append(change)
+            case .removed:
+                currentInstalled.removeAll { existing in
+                    let existingKey = "\(existing.app.bundleIdentifier)-\(existing.device.udid)"
+                    return existingKey == appKey
+                }
+            }
+        }
+        mockRecentInstalledApps = currentInstalled
+        recentInstalledAppsSubject.send(currentInstalled)
     }
     
     // MARK: - DeviceManagerProtocol Implementation

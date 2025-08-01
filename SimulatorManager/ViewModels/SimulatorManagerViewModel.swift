@@ -14,6 +14,7 @@ class SimulatorManagerViewModel: ObservableObject, FolderOpening {
     @Published var deviceTypes: [DeviceType] = []
     @Published var devices: [Device] = []
     @Published var recentAppChanges: [AppChange] = []
+    @Published var recentInstalledApps: [AppChange] = []
     
     private let deviceManager: DeviceManagerProtocol
     private let deviceAppMonitoringService: DeviceAppMonitoringServiceProtocol
@@ -53,6 +54,10 @@ private extension SimulatorManagerViewModel {
         
         deviceManager.recentAppChanges
             .assign(to: \.recentAppChanges, on: self)
+            .store(in: &cancellables)
+        
+        deviceManager.recentInstalledApps
+            .assign(to: \.recentInstalledApps, on: self)
             .store(in: &cancellables)
     }
 }

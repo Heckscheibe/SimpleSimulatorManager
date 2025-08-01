@@ -14,7 +14,7 @@ struct RecentAppsView: View {
     
     var body: some View {
         if Settings().showRecentApps {
-            ForEach(viewModel.recentAppChanges, id: \.id) { appChange in
+            ForEach(viewModel.recentInstalledApps, id: \.id) { appChange in
                 Menu {
                     Button {
                         viewModel.didSelectAppDocumentFolder(for: appChange.app)
@@ -142,7 +142,7 @@ struct RecentAppRow: View {
         .frame(width: 320)
         .padding()
         .onAppear {
-            viewModel.recentAppChanges = [appChange]
+            viewModel.recentInstalledApps = [appChange]
         }
 }
 
@@ -156,7 +156,7 @@ struct RecentAppRow: View {
         .frame(width: 320)
         .padding()
         .onAppear {
-            viewModel.recentAppChanges = []
+            viewModel.recentInstalledApps = []
         }
 }
 
@@ -166,10 +166,12 @@ private class InlineDeviceManager: DeviceManagerProtocol {
     private let _devices = CurrentValueSubject<[Device], Never>([])
     private let _deviceTypes = CurrentValueSubject<[DeviceType], Never>([])
     private let _recentAppChanges = CurrentValueSubject<[AppChange], Never>([])
+    private let _recentInstalledApps = CurrentValueSubject<[AppChange], Never>([])
     
     var devices: AnyPublisher<[Device], Never> { _devices.eraseToAnyPublisher() }
     var deviceTypes: AnyPublisher<[DeviceType], Never> { _deviceTypes.eraseToAnyPublisher() }
     var recentAppChanges: AnyPublisher<[AppChange], Never> { _recentAppChanges.eraseToAnyPublisher() }
+    var recentInstalledApps: AnyPublisher<[AppChange], Never> { _recentInstalledApps.eraseToAnyPublisher() }
     
     func updateDevices() {}
     func updateDeviceTypes() {}
