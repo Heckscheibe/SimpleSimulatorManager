@@ -15,7 +15,6 @@ import os
 protocol DeviceManagerProtocol: AnyObject {
     var deviceTypes: AnyPublisher<[DeviceType], Never> { get }
     var devices: AnyPublisher<[Device], Never> { get }
-    var recentAppChanges: AnyPublisher<[AppChange], Never> { get }
     var recentInstalledApps: AnyPublisher<[AppChange], Never> { get }
     
     func updateDevices()
@@ -39,17 +38,12 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
         devicesPublisher.eraseToAnyPublisher()
     }
     
-    var recentAppChanges: AnyPublisher<[AppChange], Never> {
-        recentAppChangesPublisher.eraseToAnyPublisher()
-    }
-    
     var recentInstalledApps: AnyPublisher<[AppChange], Never> {
         recentInstalledAppsPublisher.eraseToAnyPublisher()
     }
     
     private let deviceTypesPublisher: CurrentValueSubject<[DeviceType], Never> = .init([])
     private let devicesPublisher: CurrentValueSubject<[Device], Never> = .init([])
-    private let recentAppChangesPublisher: CurrentValueSubject<[AppChange], Never> = .init([])
     private let recentInstalledAppsPublisher: CurrentValueSubject<[AppChange], Never> = .init([])
     private var deviceTypeBinding: AnyCancellable?
     private let appDiscoveryService = AppDiscoveryService()
@@ -84,11 +78,6 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
     }
     
     func updateRecentApps(_ changes: [AppChange]) {
-        var allChanges = recentAppChangesPublisher.value
-        allChanges.append(contentsOf: changes)
-        allChanges.sort { $0.timestamp > $1.timestamp }
-        recentAppChangesPublisher.value = allChanges
-        
         var currentInstalledApps = recentInstalledAppsPublisher.value
         
         for change in changes {

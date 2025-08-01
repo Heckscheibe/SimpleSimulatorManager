@@ -52,10 +52,6 @@ private extension SimulatorManagerViewModel {
             .assign(to: \.deviceTypes, on: self)
             .store(in: &cancellables)
         
-        deviceManager.recentAppChanges
-            .assign(to: \.recentAppChanges, on: self)
-            .store(in: &cancellables)
-        
         deviceManager.recentInstalledApps
             .assign(to: \.recentInstalledApps, on: self)
             .store(in: &cancellables)
