@@ -182,7 +182,7 @@ private class InlineDeviceManager: DeviceManagerProtocol {
     func getDeviceByUdid(_ udid: String) -> Device? { nil }
     func updateSpecificDevice(_ updatedDevice: Device) {}
     func getDevice(withUdid udid: String) -> Device? { nil }
-    func addAppChanges(_ changes: [AppChange]) {}
+    func updateRecentApps(_ changes: [AppChange]) {}
 }
 
 private func createInlineMockDevice() -> Device {

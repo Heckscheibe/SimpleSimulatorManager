@@ -133,7 +133,7 @@ class DeviceAppMonitoringService: ObservableObject {
         
         if !newChanges.isEmpty {
             // Propagate changes to DeviceManager
-            deviceManager.addAppChanges(newChanges)
+            deviceManager.updateRecentApps(newChanges)
             
             // Update snapshot
             takeAppSnapshot(for: device)

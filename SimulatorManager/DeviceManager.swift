@@ -21,7 +21,7 @@ protocol DeviceManagerProtocol: AnyObject {
     func updateDevices()
     func updateSpecificDevice(_ updatedDevice: Device)
     func getDevice(withUdid udid: String) -> Device?
-    func addAppChanges(_ changes: [AppChange])
+    func updateRecentApps(_ changes: [AppChange])
 }
 
 enum SimulatorPaths {
@@ -83,7 +83,7 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
         return devicesPublisher.value.first { $0.udid == udid }
     }
     
-    func addAppChanges(_ changes: [AppChange]) {
+    func updateRecentApps(_ changes: [AppChange]) {
         var allChanges = recentAppChangesPublisher.value
         allChanges.append(contentsOf: changes)
         allChanges.sort { $0.timestamp > $1.timestamp }

@@ -129,7 +129,7 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoringServicePr
         
         // Propagate changes to DeviceManager
         if !newChanges.isEmpty {
-            deviceManager.addAppChanges(newChanges)
+            deviceManager.updateRecentApps(newChanges)
         }
     }
     

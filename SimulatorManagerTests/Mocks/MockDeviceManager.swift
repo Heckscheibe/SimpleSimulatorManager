@@ -40,7 +40,7 @@ class MockDeviceManager: DeviceManagerProtocol {
     var updateDevicesCalled = false
     var updateSpecificDeviceCalled = false
     var getDeviceCalled = false
-    var addAppChangesCalled = false
+    var updateRecentAppsCalled = false
     
     var lastUpdatedDevice: Device?
     var lastQueriedUdid: String?
@@ -117,8 +117,8 @@ class MockDeviceManager: DeviceManagerProtocol {
         return mockDevices.first { $0.udid == udid }
     }
     
-    func addAppChanges(_ changes: [AppChange]) {
-        addAppChangesCalled = true
+    func updateRecentApps(_ changes: [AppChange]) {
+        updateRecentAppsCalled = true
         lastAddedChanges = changes
         mockRecentAppChanges.append(contentsOf: changes)
         recentAppChangesSubject.send(mockRecentAppChanges)
@@ -130,7 +130,7 @@ class MockDeviceManager: DeviceManagerProtocol {
         updateDevicesCalled = false
         updateSpecificDeviceCalled = false
         getDeviceCalled = false
-        addAppChangesCalled = false
+        updateRecentAppsCalled = false
         lastUpdatedDevice = nil
         lastQueriedUdid = nil
         lastAddedChanges = []
