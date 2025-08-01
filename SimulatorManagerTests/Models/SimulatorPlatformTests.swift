@@ -2,7 +2,7 @@
 //  SimulatorPlatformTests.swift
 //  SimulatorManagerTests
 //
-//  Created by AI Assistant on 27.07.25.
+//  Created by Nicolas Hiller on 27.07.25.
 //
 
 import Testing

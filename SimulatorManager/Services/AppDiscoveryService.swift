@@ -2,7 +2,7 @@
 //  AppDiscoveryService.swift
 //  SimulatorManager
 //
-//  Created by AI Assistant on 11.07.25.
+//  Created by Nicolas Hiller on 11.07.25.
 //
 
 import Foundation

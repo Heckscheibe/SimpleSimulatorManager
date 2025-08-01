@@ -2,7 +2,7 @@
 //  SimulatorManagerViewModelEdgeCaseTests.swift
 //  SimulatorManagerTests
 //
-//  Created by AI Assistant on 26.07.25.
+//  Created by Nicolas Hiller on 26.07.25.
 //
 
 import Foundation
