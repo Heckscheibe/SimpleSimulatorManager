@@ -23,22 +23,6 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Build and sign the app for distribution outside Mac App Store
 
-### mac setup_signing
-
-```sh
-[bundle exec] fastlane mac setup_signing
-```
-
-Setup certificates and provisioning profiles
-
-### mac create_certificates
-
-```sh
-[bundle exec] fastlane mac create_certificates
-```
-
-Create a new certificate (run this only once)
-
 ### mac release
 
 ```sh

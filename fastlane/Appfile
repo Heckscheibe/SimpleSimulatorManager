@@ -1,6 +1,0 @@
-app_identifier("com.nicolashiller.SimpleSimulatorManager")
-apple_id("your-apple-id@example.com") # Replace with your Apple ID
-team_id("YOUR_TEAM_ID") # Replace with your Apple Developer Team ID
-
-# For more information about the Appfile, see:
-#     https://docs.fastlane.tools/advanced/#appfile
