@@ -57,7 +57,6 @@ platform :mac do
 
     # Find the actual app location
     app_path = Dir.glob("../build/**/*.app").first
-    sh("pwd")
     if app_path.nil?
       UI.error("❌ Could not find SimulatorManager.app for ZIP creation")
       sh("find ../build -name '*.app*' -type d")

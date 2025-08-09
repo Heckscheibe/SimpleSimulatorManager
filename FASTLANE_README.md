@@ -67,14 +67,13 @@ fastlane build
 
 ### Full Release Build
 
-For a complete release with DMG and ZIP files:
+For a complete release with ZIP files:
 
 ```bash
 fastlane release
 ```
 
 This will create:
-- `release/SimulatorManager.dmg` - DMG installer
 - `release/SimulatorManager.zip` - ZIP archive for GitHub releases
 
 ## Lanes Available
