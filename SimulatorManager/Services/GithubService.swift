@@ -64,7 +64,7 @@ private extension GithubService {
         request.setValue("SimulatorManager/1.0", forHTTPHeaderField: "User-Agent")
         
         do {
-            let data = try await NetworkService.shared.fetchData(for: request)
+            let (data, _) = try await URLSession.shared.data(for: request)
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
             self.handleReleaseResponse(release)
             isChecking = false
