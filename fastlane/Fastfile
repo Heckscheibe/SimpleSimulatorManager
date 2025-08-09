@@ -1,0 +1,95 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:mac)
+
+platform :mac do
+  desc "Build and sign the app for distribution outside Mac App Store"
+  lane :build do
+    # For macOS Developer ID, we'll manage certificates manually
+    # Ensure Developer ID certificate is installed in keychain
+
+    # Build the app with automatic signing (Developer ID will be used automatically)
+    build_mac_app(
+      project: "SimulatorManager.xcodeproj",
+      scheme: "SimulatorManager",
+      configuration: "Release",
+      export_method: "developer-id",
+      codesigning_identity: ENV["CODESIGNING_IDENTITY"],
+      export_options: {
+        signingStyle: "manual",
+        provisioningProfiles: {
+          "com.nicolashiller.SimpleSimulatorManager" => ENV["PROVISIONING_PROFILE_NAME"]
+        }
+      },
+      output_directory: "./build",
+      output_name: "SimulatorManager"
+    )
+    UI.success("✅ Build completed successfully!")
+  end
+
+  desc "Build and prepare for GitHub release"
+  lane :release do
+    # Ask for release version
+    release_version = prompt(text: "Enter the release version (e.g. 1.2.3):")
+    
+    # Bump the build number and set the version
+    increment_version_number(version_number: release_version)
+    increment_build_number(
+      xcodeproj: "SimulatorManager.xcodeproj"
+    )
+    UI.success("🔢 Version set to #{release_version} and build number incremented.")
+
+    # Build the app
+    build
+
+    # Find the actual app location
+    app_path = Dir.glob("../build/**/*.app").first
+    if app_path.nil?
+      UI.error("❌ Could not find SimulatorManager.app for ZIP creation")
+      sh("find ../build -name '*.app*' -type d")
+      raise "App not found in build directory"
+    end
+
+    # Create a zip file for GitHub releases
+    zip(
+      path: "build/SimulatorManager.app",
+      output_path: "build/SimulatorManager.zip"
+    )
+
+    # Find the actual ZIP file location
+    zip_path = nil
+    if File.exist?("../build/SimulatorManager.zip")
+      zip_path = "../build/SimulatorManager.zip"
+    else
+      # Find any zip files in build directory
+      zip_files = Dir.glob("../build/**/*.zip")
+      zip_path = zip_files.first if !zip_files.empty?
+    end
+    
+    UI.message("📦 Found ZIP at: #{zip_path}")
+
+    # Copy files to a release directory
+    sh("mkdir -p ../release")
+    sh("cp '#{zip_path}' ../release/SimulatorManager.zip")
+
+    UI.success("🎉 Build completed successfully!")
+    UI.message("Files available in ./release/:")
+    UI.message("- SimulatorManager.zip")
+    UI.message("")
+    UI.success("You can now upload these files to your GitHub release.")
+  end
+
+  end
