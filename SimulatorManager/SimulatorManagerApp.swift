@@ -12,6 +12,7 @@ import os
     @StateObject private var deviceManager = DeviceManager()
     @StateObject private var settingsViewModel = SettingsViewModel()
     @StateObject private var viewModel: SimulatorManagerViewModel
+    @StateObject private var githubService = GithubService()
     
     init() {
         let deviceManager = DeviceManager()
@@ -19,6 +20,8 @@ import os
         
         self._deviceManager = StateObject(wrappedValue: deviceManager)
         self._viewModel = StateObject(wrappedValue: viewModel)
+        
+        githubService.startPeriodicUpdateCheck()
     }
     
     var body: some Scene {
@@ -30,15 +33,20 @@ import os
             SettingsView(viewModel: settingsViewModel)
             Divider()
             Button("GitHub Project") {
-                guard let url = URL(string: "https://github.com/Heckscheibe/SimpleSimulatorManager") else {
-                    return
-                }
-                NSWorkspace.shared.open(url)
+                githubService.openGithubProject()
             }
             if let version = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as? String {
                 Divider()
-                Text("Version \(version)")
-                    .font(.system(size: 12))
+                if githubService.isUpdateAvailable {
+                    Button {
+                        githubService.openLatestRelease()
+                    } label: {
+                        Text("! Update Available !")
+                        Text("Version \(version)")
+                    }
+                } else {
+                    Text("Version \(version)")
+                }
             }
             Divider()
             Button("Quit") {

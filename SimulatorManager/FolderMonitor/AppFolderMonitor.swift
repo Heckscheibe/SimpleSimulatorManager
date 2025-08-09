@@ -10,11 +10,11 @@ import Combine
 
 class AppFolderMonitor {
     let appfolderDidChange: PassthroughSubject<Device, Never> = .init()
-    
+
     private let device: Device
     private let folderMonitor: FolderMonitor
     private var cancellable: [AnyCancellable] = []
-    
+
     init(device: Device) {
         self.device = device
         self.folderMonitor = FolderMonitor(url: device.appContainerFolder ?? URL(fileURLWithPath: ""))
