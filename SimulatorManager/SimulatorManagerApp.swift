@@ -9,11 +9,11 @@ import SwiftUI
 import os
 
 @main struct SimulatorManagerApp: App {
-    @StateObject private var deviceManager = DeviceManager()
     @StateObject private var settingsViewModel = SettingsViewModel()
+    @StateObject private var deviceManager: DeviceManager
     @StateObject private var viewModel: SimulatorManagerViewModel
     @StateObject private var githubService = GithubService()
-    
+        
     init() {
         let deviceManager = DeviceManager()
         let viewModel = SimulatorManagerViewModel(deviceManager: deviceManager)
