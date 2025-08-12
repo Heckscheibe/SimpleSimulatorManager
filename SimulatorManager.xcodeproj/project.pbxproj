@@ -33,6 +33,7 @@
 		37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */; };
 		37F1DA5E2AD6E49000C059DB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5D2AD6E49000C059DB /* Preview Assets.xcassets */; };
 		3C00F2FF2E4BBF0E00159780 /* Media.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3C00F2FE2E4BBF0E00159780 /* Media.xcassets */; };
+		3C00F3032E4BC6C700159780 /* GitHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C00F3022E4BC6C700159780 /* GitHubView.swift */; };
 		3C0B99842E21A249001B244D /* RecentAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0B99832E21A249001B244D /* RecentAppsView.swift */; };
 		3C0BE5A82E35934900F36023 /* SimulatorPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0BE5A62E35934900F36023 /* SimulatorPlatformTests.swift */; };
 		3C0C4A522E47ED28005F53F7 /* DeviceAppMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C4A4E2E47ED28005F53F7 /* DeviceAppMonitoringService.swift */; };
@@ -97,6 +98,7 @@
 		37F1DA642AD6E49000C059DB /* SimulatorManagerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C00F2FE2E4BBF0E00159780 /* Media.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Media.xcassets; sourceTree = "<group>"; };
+		3C00F3022E4BC6C700159780 /* GitHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubView.swift; sourceTree = "<group>"; };
 		3C0B99832E21A249001B244D /* RecentAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentAppsView.swift; sourceTree = "<group>"; };
 		3C0BE5A62E35934900F36023 /* SimulatorPlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorPlatformTests.swift; sourceTree = "<group>"; };
 		3C0C4A4E2E47ED28005F53F7 /* DeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAppMonitoringService.swift; sourceTree = "<group>"; };
@@ -141,6 +143,7 @@
 		371F2BAF2BA399A500B338FC /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				3C00F3022E4BC6C700159780 /* GitHubView.swift */,
 				3C0B99832E21A249001B244D /* RecentAppsView.swift */,
 				37D6FBF32B1130870023F886 /* AppGroupsView.swift */,
 				37D6FBF12B1130730023F886 /* AppsView.swift */,
@@ -503,6 +506,7 @@
 				3C0C4A522E47ED28005F53F7 /* DeviceAppMonitoringService.swift in Sources */,
 				373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */,
 				3C0C4A582E47F1C8005F53F7 /* GitHubRelease.swift in Sources */,
+				3C00F3032E4BC6C700159780 /* GitHubView.swift in Sources */,
 				37CAA9CF2ADEEA6000A7F2CB /* DeviceType.swift in Sources */,
 				37D6FBF22B1130730023F886 /* AppsView.swift in Sources */,
 				37CAA9D92AE0786400A7F2CB /* MetaDataPlist.swift in Sources */,
