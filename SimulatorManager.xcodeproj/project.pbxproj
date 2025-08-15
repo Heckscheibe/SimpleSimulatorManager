@@ -31,11 +31,13 @@
 		37D6FBF92B1134F30023F886 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBF82B1134F30023F886 /* SettingsView.swift */; };
 		37D6FBFB2B11354E0023F886 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBFA2B11354E0023F886 /* SettingsViewModel.swift */; };
 		37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */; };
-		37F1DA5B2AD6E49000C059DB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5A2AD6E49000C059DB /* Assets.xcassets */; };
 		37F1DA5E2AD6E49000C059DB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5D2AD6E49000C059DB /* Preview Assets.xcassets */; };
+		3C00F3032E4BC6C700159780 /* GitHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C00F3022E4BC6C700159780 /* GitHubView.swift */; };
 		3C0B99842E21A249001B244D /* RecentAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0B99832E21A249001B244D /* RecentAppsView.swift */; };
 		3C0BE5A82E35934900F36023 /* SimulatorPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0BE5A62E35934900F36023 /* SimulatorPlatformTests.swift */; };
-		3C472BAA2E301B3B00A33B35 /* DeviceAppMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */; };
+		3C0C4A522E47ED28005F53F7 /* DeviceAppMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C4A4E2E47ED28005F53F7 /* DeviceAppMonitoringService.swift */; };
+		3C0C4A582E47F1C8005F53F7 /* GitHubRelease.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C4A572E47F1C8005F53F7 /* GitHubRelease.swift */; };
+		3C0C4A5A2E47F8FA005F53F7 /* GithubService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C4A592E47F8FA005F53F7 /* GithubService.swift */; };
 		3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */; };
 		3C472BAE2E30297B00A33B35 /* AppChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BAD2E30297B00A33B35 /* AppChange.swift */; };
 		3CEA02482E35805F00EE9DA0 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3CEA02432E35805F00EE9DA0 /* README.md */; };
@@ -89,15 +91,17 @@
 		37D6FBFA2B11354E0023F886 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		37F1DA532AD6E48F00C059DB /* SimulatorManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimulatorManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorManagerApp.swift; sourceTree = "<group>"; };
-		37F1DA5A2AD6E49000C059DB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		37F1DA5D2AD6E49000C059DB /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		37F1DA5F2AD6E49000C059DB /* SimulatorManager.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SimulatorManager.entitlements; sourceTree = "<group>"; };
 		37F1DA642AD6E49000C059DB /* SimulatorManagerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C00F3022E4BC6C700159780 /* GitHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubView.swift; sourceTree = "<group>"; };
 		3C0B99832E21A249001B244D /* RecentAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentAppsView.swift; sourceTree = "<group>"; };
 		3C0BE5A62E35934900F36023 /* SimulatorPlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorPlatformTests.swift; sourceTree = "<group>"; };
+		3C0C4A4E2E47ED28005F53F7 /* DeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAppMonitoringService.swift; sourceTree = "<group>"; };
+		3C0C4A572E47F1C8005F53F7 /* GitHubRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubRelease.swift; sourceTree = "<group>"; };
+		3C0C4A592E47F8FA005F53F7 /* GithubService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GithubService.swift; sourceTree = "<group>"; };
 		3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDiscoveryService.swift; sourceTree = "<group>"; };
-		3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAppMonitoringService.swift; sourceTree = "<group>"; };
 		3C472BAD2E30297B00A33B35 /* AppChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppChange.swift; sourceTree = "<group>"; };
 		3CEA023C2E35805F00EE9DA0 /* TestDataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataHelpers.swift; sourceTree = "<group>"; };
 		3CEA023E2E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDeviceAppMonitoringService.swift; sourceTree = "<group>"; };
@@ -135,6 +139,7 @@
 		371F2BAF2BA399A500B338FC /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				3C00F3022E4BC6C700159780 /* GitHubView.swift */,
 				3C0B99832E21A249001B244D /* RecentAppsView.swift */,
 				37D6FBF32B1130870023F886 /* AppGroupsView.swift */,
 				37D6FBF12B1130730023F886 /* AppsView.swift */,
@@ -147,6 +152,7 @@
 			isa = PBXGroup;
 			children = (
 				3C472BAD2E30297B00A33B35 /* AppChange.swift */,
+				3C0C4A572E47F1C8005F53F7 /* GitHubRelease.swift */,
 				371F2BB02BA3A11E00B338FC /* AppGroup.swift */,
 				37CAA9D22ADEF07900A7F2CB /* AppGroupPlist.swift */,
 				37CAA9D62AE0730C00A7F2CB /* AppInfoPlist.swift */,
@@ -216,7 +222,6 @@
 				37CAA9D42ADEF97400A7F2CB /* Extensions.swift */,
 				37D6FBEC2B112E360023F886 /* FolderOpening.swift */,
 				37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */,
-				37F1DA5A2AD6E49000C059DB /* Assets.xcassets */,
 				3776EED82B2CF6640080F422 /* FolderMonitor */,
 				373A36C52AD98A8C0086CCE0 /* Models */,
 				37F1DA5C2AD6E49000C059DB /* Preview Content */,
@@ -260,7 +265,8 @@
 			isa = PBXGroup;
 			children = (
 				3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */,
-				3C472BA72E301B3B00A33B35 /* DeviceAppMonitoringService.swift */,
+				3C0C4A4E2E47ED28005F53F7 /* DeviceAppMonitoringService.swift */,
+				3C0C4A592E47F8FA005F53F7 /* GithubService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -405,7 +411,6 @@
 			files = (
 				3750F9282B2D07AD00F578ED /* README.md in Resources */,
 				37F1DA5E2AD6E49000C059DB /* Preview Assets.xcassets in Resources */,
-				37F1DA5B2AD6E49000C059DB /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -481,13 +486,16 @@
 				37CAA9CD2ADEEA4A00A7F2CB /* DeviceState.swift in Sources */,
 				3776EEDC2B2CF9310080F422 /* AppFolderMonitor.swift in Sources */,
 				3713A08B2B1923150060C939 /* DeviceTypeView.swift in Sources */,
-				3C472BAA2E301B3B00A33B35 /* DeviceAppMonitoringService.swift in Sources */,
 				3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */,
+				3C0C4A522E47ED28005F53F7 /* DeviceAppMonitoringService.swift in Sources */,
 				373A36CB2AD995260086CCE0 /* DeviceManager.swift in Sources */,
+				3C0C4A582E47F1C8005F53F7 /* GitHubRelease.swift in Sources */,
+				3C00F3032E4BC6C700159780 /* GitHubView.swift in Sources */,
 				37CAA9CF2ADEEA6000A7F2CB /* DeviceType.swift in Sources */,
 				37D6FBF22B1130730023F886 /* AppsView.swift in Sources */,
 				37CAA9D92AE0786400A7F2CB /* MetaDataPlist.swift in Sources */,
 				3759873E2AE3043E0006BE45 /* SimulatorManagerViewModel.swift in Sources */,
+				3C0C4A5A2E47F8FA005F53F7 /* GithubService.swift in Sources */,
 				3759873C2AE2D1670006BE45 /* CustomPropertyListDecoder.swift in Sources */,
 				37D6FBED2B112E360023F886 /* FolderOpening.swift in Sources */,
 				3776EEDA2B2CF6720080F422 /* FolderMonitor.swift in Sources */,
@@ -661,11 +669,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = SimulatorManager/SimulatorManager.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
@@ -681,14 +690,14 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Simple Simulator Manager Development";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -697,11 +706,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = SimulatorManager/SimulatorManager.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
@@ -717,14 +727,14 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Simple Simulator Manager Distribution";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -733,7 +743,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -751,7 +761,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -768,7 +778,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
@@ -784,7 +794,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;

@@ -9,10 +9,10 @@ import SwiftUI
 import os
 
 @main struct SimulatorManagerApp: App {
-    @StateObject private var deviceManager = DeviceManager()
     @StateObject private var settingsViewModel = SettingsViewModel()
+    @StateObject private var deviceManager: DeviceManager
     @StateObject private var viewModel: SimulatorManagerViewModel
-    
+        
     init() {
         let deviceManager = DeviceManager()
         let viewModel = SimulatorManagerViewModel(deviceManager: deviceManager)
@@ -23,27 +23,19 @@ import os
     
     var body: some Scene {
         MenuBarExtra("SimulatorManager", systemImage: "iphone.gen3") {
-            RecentAppsView(viewModel: viewModel, settings: settingsViewModel)
-            Divider()
-            DeviceTypeView(viewModel: viewModel, settings: settingsViewModel)
-            Divider()
-            SettingsView(viewModel: settingsViewModel)
-            Divider()
-            Button("GitHub Project") {
-                guard let url = URL(string: "https://github.com/Heckscheibe/SimpleSimulatorManager") else {
-                    return
-                }
-                NSWorkspace.shared.open(url)
-            }
-            if let version = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as? String {
+            VStack {
+                RecentAppsView(viewModel: viewModel, settings: settingsViewModel)
                 Divider()
-                Text("Version \(version)")
-                    .font(.system(size: 12))
+                DeviceTypeView(viewModel: viewModel, settings: settingsViewModel)
+                Divider()
+                SettingsView(viewModel: settingsViewModel)
+                Divider()
+                GitHubView()
+                Divider()
+                Button("Quit") {
+                    NSApplication.shared.terminate(nil)
+                }.keyboardShortcut("q")
             }
-            Divider()
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
-            }.keyboardShortcut("q")
         }
     }
 }
