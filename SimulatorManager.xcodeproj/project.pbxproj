@@ -32,7 +32,6 @@
 		37D6FBFB2B11354E0023F886 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D6FBFA2B11354E0023F886 /* SettingsViewModel.swift */; };
 		37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F1DA562AD6E48F00C059DB /* SimulatorManagerApp.swift */; };
 		37F1DA5E2AD6E49000C059DB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37F1DA5D2AD6E49000C059DB /* Preview Assets.xcassets */; };
-		3C00F2FF2E4BBF0E00159780 /* Media.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3C00F2FE2E4BBF0E00159780 /* Media.xcassets */; };
 		3C00F3032E4BC6C700159780 /* GitHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C00F3022E4BC6C700159780 /* GitHubView.swift */; };
 		3C0B99842E21A249001B244D /* RecentAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0B99832E21A249001B244D /* RecentAppsView.swift */; };
 		3C0BE5A82E35934900F36023 /* SimulatorPlatformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0BE5A62E35934900F36023 /* SimulatorPlatformTests.swift */; };
@@ -41,7 +40,6 @@
 		3C0C4A5A2E47F8FA005F53F7 /* GithubService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C4A592E47F8FA005F53F7 /* GithubService.swift */; };
 		3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */; };
 		3C472BAE2E30297B00A33B35 /* AppChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BAD2E30297B00A33B35 /* AppChange.swift */; };
-		3C477CD92E4A862300907E41 /* Icon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 3C477CD52E4A862300907E41 /* Icon.icon */; };
 		3CEA02482E35805F00EE9DA0 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3CEA02432E35805F00EE9DA0 /* README.md */; };
 		3CEA02492E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA023E2E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift */; };
 		3CEA024A2E35805F00EE9DA0 /* MockDeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA023F2E35805F00EE9DA0 /* MockDeviceManager.swift */; };
@@ -97,7 +95,6 @@
 		37F1DA5F2AD6E49000C059DB /* SimulatorManager.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SimulatorManager.entitlements; sourceTree = "<group>"; };
 		37F1DA642AD6E49000C059DB /* SimulatorManagerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		3C00F2FE2E4BBF0E00159780 /* Media.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Media.xcassets; sourceTree = "<group>"; };
 		3C00F3022E4BC6C700159780 /* GitHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubView.swift; sourceTree = "<group>"; };
 		3C0B99832E21A249001B244D /* RecentAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentAppsView.swift; sourceTree = "<group>"; };
 		3C0BE5A62E35934900F36023 /* SimulatorPlatformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorPlatformTests.swift; sourceTree = "<group>"; };
@@ -106,7 +103,6 @@
 		3C0C4A592E47F8FA005F53F7 /* GithubService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GithubService.swift; sourceTree = "<group>"; };
 		3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDiscoveryService.swift; sourceTree = "<group>"; };
 		3C472BAD2E30297B00A33B35 /* AppChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppChange.swift; sourceTree = "<group>"; };
-		3C477CD52E4A862300907E41 /* Icon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Icon.icon; sourceTree = "<group>"; };
 		3CEA023C2E35805F00EE9DA0 /* TestDataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataHelpers.swift; sourceTree = "<group>"; };
 		3CEA023E2E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDeviceAppMonitoringService.swift; sourceTree = "<group>"; };
 		3CEA023F2E35805F00EE9DA0 /* MockDeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDeviceManager.swift; sourceTree = "<group>"; };
@@ -200,7 +196,6 @@
 		37F1DA4A2AD6E48E00C059DB = {
 			isa = PBXGroup;
 			children = (
-				3C477CD72E4A862300907E41 /* Icon */,
 				3750F9272B2D07AD00F578ED /* README.md */,
 				37F1DA552AD6E48F00C059DB /* SimulatorManager */,
 				37F1DA672AD6E49000C059DB /* SimulatorManagerTests */,
@@ -234,7 +229,6 @@
 				37D6FBF72B1134E80023F886 /* Settings */,
 				37D6FBF02B1130310023F886 /* ViewModels */,
 				371F2BAF2BA399A500B338FC /* Views */,
-				3C00F2FE2E4BBF0E00159780 /* Media.xcassets */,
 			);
 			path = SimulatorManager;
 			sourceTree = "<group>";
@@ -275,14 +269,6 @@
 				3C0C4A592E47F8FA005F53F7 /* GithubService.swift */,
 			);
 			path = Services;
-			sourceTree = "<group>";
-		};
-		3C477CD72E4A862300907E41 /* Icon */ = {
-			isa = PBXGroup;
-			children = (
-				3C477CD52E4A862300907E41 /* Icon.icon */,
-			);
-			path = Icon;
 			sourceTree = "<group>";
 		};
 		3CEA023D2E35805F00EE9DA0 /* Helpers */ = {
@@ -425,8 +411,6 @@
 			files = (
 				3750F9282B2D07AD00F578ED /* README.md in Resources */,
 				37F1DA5E2AD6E49000C059DB /* Preview Assets.xcassets in Resources */,
-				3C00F2FF2E4BBF0E00159780 /* Media.xcassets in Resources */,
-				3C477CD92E4A862300907E41 /* Icon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
