@@ -12,111 +12,6 @@ import os
 class AppDiscoveryService {
     // MARK: - Public Methods
     
-    func loadApps(for device: Device) {
-        let infoPlists = loadAppInfoPlists(for: device)
-        
-        guard let appDataFolderURL = device.url?
-            .appendingPathComponent(SimulatorPaths.appDataPath) else {
-            return
-        }
-        let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
-        
-        var apps: [any SimulatorApp] = []
-        infoPlists.forEach { infoPlist in
-            // using oldschool for in loop to be able to `break` and return early
-            for url in appDataFolderURLs {
-                let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
-                do {
-                    let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
-                    
-                    guard metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier else {
-                        continue
-                    }
-                    let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
-                    let simulatorApp: any SimulatorApp
-                    if infoPlist.isWatchApp {
-                        simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
-                                                           bundleIdentifier: infoPlist.cfBundleIdentifier,
-                                                           appDocumentsFolderURL: metaDataPlist.url,
-                                                           appPackageURL: infoPlist.url,
-                                                           hasUserDefaults: hasUserDefaults,
-                                                           companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier)
-                    } else {
-                        simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
-                                                       bundleIdentifier: infoPlist.cfBundleIdentifier,
-                                                       appDocumentsFolderURL: metaDataPlist.url,
-                                                       appPackageURL: infoPlist.url,
-                                                       hasWatchApp: infoPlist.hasCompanionWatchApp,
-                                                       hasUserDefaults: hasUserDefaults)
-                    }
-                    apps.append(simulatorApp)
-                    break // Found matching app data, move to next info plist
-                    
-                } catch {
-                    os_log("Failed to decode MetaDataPlist due to error: \(error)")
-                }
-            }
-        }
-        os_log("Device \(device.name) with \(device.osVersion) has the following apps installed: \(apps.map { $0.displayName })")
-        device.apps = apps
-    }
-    
-    /// Load apps with their installation timestamps for initial recent apps population
-    func loadAppsWithTimestamps(for device: Device) -> [AppChange] {
-        let infoPlists = loadAppInfoPlists(for: device)
-        
-        guard let appDataFolderURL = device.url?
-            .appendingPathComponent(SimulatorPaths.appDataPath) else {
-            return []
-        }
-        let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
-        
-        var appChanges: [AppChange] = []
-        infoPlists.forEach { infoPlist in
-            // using oldschool for in loop to be able to `break` and return early
-            for url in appDataFolderURLs {
-                let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
-                do {
-                    let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
-                    
-                    guard metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier else {
-                        continue
-                    }
-                    
-                    // Get the modification date of the app data folder
-                    let timestamp = getFileModificationDate(url: url) ?? Date.distantPast
-                    
-                    let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
-                    let simulatorApp: any SimulatorApp
-                    if infoPlist.isWatchApp {
-                        simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
-                                                           bundleIdentifier: infoPlist.cfBundleIdentifier,
-                                                           appDocumentsFolderURL: metaDataPlist.url,
-                                                           appPackageURL: infoPlist.url,
-                                                           hasUserDefaults: hasUserDefaults,
-                                                           companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier)
-                    } else {
-                        simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
-                                                       bundleIdentifier: infoPlist.cfBundleIdentifier,
-                                                       appDocumentsFolderURL: metaDataPlist.url,
-                                                       appPackageURL: infoPlist.url,
-                                                       hasWatchApp: infoPlist.hasCompanionWatchApp,
-                                                       hasUserDefaults: hasUserDefaults)
-                    }
-                    
-                    let appChange = AppChange(app: simulatorApp, device: device, changeType: .installed, timestamp: timestamp)
-                    appChanges.append(appChange)
-                    break // Found matching app data, move to next info plist
-                    
-                } catch {
-                    os_log("Failed to decode MetaDataPlist due to error: \(error)")
-                }
-            }
-        }
-        
-        return appChanges
-    }
-    
     func loadAppGroups(for device: Device) {
         guard let appGroupsFolderURL = device.appGroupsFolder else {
             return
@@ -149,6 +44,68 @@ class AppDiscoveryService {
         }
         
         device.appGroups = appGroups
+    }
+    
+    /// Load apps and their corresponding app changes with timestamps
+    /// Returns a tuple of (apps, appChanges) to avoid code duplication
+    func loadAppsAndTimestamps(for device: Device) -> (apps: [any SimulatorApp], appChanges: [AppChange]) {
+        let infoPlists = loadAppInfoPlists(for: device)
+        
+        guard let appDataFolderURL = device.url?
+            .appendingPathComponent(SimulatorPaths.appDataPath) else {
+            return ([], [])
+        }
+        let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
+        
+        var apps: [any SimulatorApp] = []
+        var appChanges: [AppChange] = []
+        
+        infoPlists.forEach { infoPlist in
+            // using oldschool for in loop to be able to `break` and return early
+            for url in appDataFolderURLs {
+                let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
+                do {
+                    let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
+                    
+                    guard metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier else {
+                        continue
+                    }
+                    
+                    // Get the modification date of the app data folder
+                    let timestamp = getFileModificationDate(url: url) ?? Date.distantPast
+                    
+                    let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
+                    let simulatorApp: any SimulatorApp
+                    if infoPlist.isWatchApp {
+                        simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
+                                                           bundleIdentifier: infoPlist.cfBundleIdentifier,
+                                                           appDocumentsFolderURL: metaDataPlist.url,
+                                                           appPackageURL: infoPlist.url,
+                                                           hasUserDefaults: hasUserDefaults,
+                                                           companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier)
+                    } else {
+                        simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
+                                                       bundleIdentifier: infoPlist.cfBundleIdentifier,
+                                                       appDocumentsFolderURL: metaDataPlist.url,
+                                                       appPackageURL: infoPlist.url,
+                                                       hasWatchApp: infoPlist.hasCompanionWatchApp,
+                                                       hasUserDefaults: hasUserDefaults)
+                    }
+                    
+                    // Add to both collections
+                    apps.append(simulatorApp)
+                    let appChange = AppChange(app: simulatorApp, device: device, changeType: .installed, timestamp: timestamp)
+                    appChanges.append(appChange)
+                    break // Found matching app data, move to next info plist
+                    
+                } catch {
+                    os_log("Failed to decode MetaDataPlist due to error: \(error)")
+                }
+            }
+        }
+        
+        os_log("Device \(device.name) with \(device.osVersion) has the following apps installed: \(apps.map { $0.displayName })")
+        return (apps, appChanges)
     }
     
     // MARK: - Private Methods
