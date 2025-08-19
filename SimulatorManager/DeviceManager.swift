@@ -62,8 +62,7 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
     
     func updateSpecificDevice(_ updatedDevice: Device) {
         // Reload apps for the specific device
-        let apps = appDiscoveryService.loadAppsAndTimestamps(for: updatedDevice)
-        updatedDevice.apps = apps.apps
+        appDiscoveryService.loadApps(for: updatedDevice)
         appDiscoveryService.loadAppGroups(for: updatedDevice)
         
         // Update the device in the devices array
@@ -180,10 +179,12 @@ private extension DeviceManager {
         var allInitialAppChanges: [AppChange] = []
         
         newDevices.forEach { device in
+            appDiscoveryService.loadApps(for: device)
             appDiscoveryService.loadAppGroups(for: device)
-            let appsAndChanges = appDiscoveryService.loadAppsAndTimestamps(for: device)
-            device.apps = appsAndChanges.apps
-            allInitialAppChanges.append(contentsOf: appsAndChanges.appChanges)
+            
+            // Load apps with timestamps for initial recent apps
+            let appChanges = appDiscoveryService.loadAppsWithTimestamps(for: device)
+            allInitialAppChanges.append(contentsOf: appChanges)
         }
         
         // Populate initial recent apps
