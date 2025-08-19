@@ -15,8 +15,7 @@ class AppDiscoveryService {
     func loadApps(for device: Device) {
         let infoPlists = loadAppInfoPlists(for: device)
         
-        guard let appDataFolderURL = device.url?
-            .appendingPathComponent(SimulatorPaths.appDataPath) else {
+        guard let appDataFolderURL = device.appDataFolder else {
             return
         }
         let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
@@ -29,6 +28,8 @@ class AppDiscoveryService {
                 do {
                     let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
                     
+                    // this is the check if we found the correct app data folder
+                    // we check the mcmMetadataIdentifier against the infoPlist's bundle identifier
                     guard metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier else {
                         continue
                     }
@@ -65,8 +66,7 @@ class AppDiscoveryService {
     func loadAppsWithTimestamps(for device: Device) -> [AppChange] {
         let infoPlists = loadAppInfoPlists(for: device)
         
-        guard let appDataFolderURL = device.url?
-            .appendingPathComponent(SimulatorPaths.appDataPath) else {
+        guard let appDataFolderURL = device.appDataFolder else {
             return []
         }
         let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
@@ -154,8 +154,7 @@ class AppDiscoveryService {
     // MARK: - Private Methods
     
     private func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
-        guard let appPackageFolderPath = device.url?
-            .appendingPathComponent(SimulatorPaths.appPackagePath) else {
+        guard let appPackageFolderPath = device.appPackagesFolder else {
             return []
         }
         let appPackageURLs = getContentOfDirectoryAt(url: appPackageFolderPath)

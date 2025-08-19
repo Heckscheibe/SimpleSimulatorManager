@@ -24,8 +24,6 @@ protocol DeviceManagerProtocol: AnyObject {
 }
 
 enum SimulatorPaths {
-    static let appPackagePath = "data/Containers/Bundle/Application"
-    static let appDataPath = "data/Containers/Data/Application"
     static let userDefaultsPath = "Library/Preferences"
 }
 
@@ -85,14 +83,20 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
             
             switch change.changeType {
             case .installed:
-                // Remove any existing entry for this app/device combination
+//                // Remove any existing entry for this app/device combination
+//                currentInstalledApps.removeAll { existingChange in
+//                    let existingKey = "\(existingChange.app.bundleIdentifier)-\(existingChange.device.udid)"
+//                    return existingKey == appKey
+//                }
+                // Add the new installation
+                currentInstalledApps.append(change)
+            case .updated:
+                // Remove the app if it exists, then add the updated version
                 currentInstalledApps.removeAll { existingChange in
                     let existingKey = "\(existingChange.app.bundleIdentifier)-\(existingChange.device.udid)"
                     return existingKey == appKey
                 }
-                // Add the new installation
                 currentInstalledApps.append(change)
-                
             case .removed:
                 // Remove the app from installed apps
                 currentInstalledApps.removeAll { existingChange in
