@@ -24,8 +24,6 @@ protocol DeviceManagerProtocol: AnyObject {
 }
 
 enum SimulatorPaths {
-    static let appPackagePath = "data/Containers/Bundle/Application"
-    static let appDataPath = "data/Containers/Data/Application"
     static let userDefaultsPath = "Library/Preferences"
 }
 
@@ -85,14 +83,20 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
             
             switch change.changeType {
             case .installed:
-                // Remove any existing entry for this app/device combination
+//                // Remove any existing entry for this app/device combination
+//                currentInstalledApps.removeAll { existingChange in
+//                    let existingKey = "\(existingChange.app.bundleIdentifier)-\(existingChange.device.udid)"
+//                    return existingKey == appKey
+//                }
+                // Add the new installation
+                currentInstalledApps.append(change)
+            case .updated:
+                // Remove the app if it exists, then add the updated version
                 currentInstalledApps.removeAll { existingChange in
                     let existingKey = "\(existingChange.app.bundleIdentifier)-\(existingChange.device.udid)"
                     return existingKey == appKey
                 }
-                // Add the new installation
                 currentInstalledApps.append(change)
-                
             case .removed:
                 // Remove the app from installed apps
                 currentInstalledApps.removeAll { existingChange in
@@ -127,6 +131,22 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
         
         return uniqueChanges
     }
+    
+    /// Populate initial recent apps from already installed apps
+    private func populateInitialRecentApps(_ appChanges: [AppChange]) {
+        guard !appChanges.isEmpty else { return }
+        
+        // Sort by timestamp (most recent first)
+        let sortedChanges = appChanges.sorted { $0.timestamp > $1.timestamp }
+        
+        // Limit to max recent installed apps
+        let limitedChanges = Array(sortedChanges.prefix(maxRecentInstalledApps))
+        
+        // Remove duplicates (keep most recent for each app/device combination)
+        let uniqueChanges = removeDuplicateChanges(from: limitedChanges)
+        
+        recentInstalledAppsPublisher.value = uniqueChanges
+    }
 }
 
 // MARK: - Extensions
@@ -159,10 +179,20 @@ private extension DeviceManager {
         }
         devicesPublisher.value = newDevices
         
-        newDevices.forEach {
-            appDiscoveryService.loadApps(for: $0)
-            appDiscoveryService.loadAppGroups(for: $0)
+        // Load apps and collect initial recent apps
+        var allInitialAppChanges: [AppChange] = []
+        
+        newDevices.forEach { device in
+            appDiscoveryService.loadApps(for: device)
+            appDiscoveryService.loadAppGroups(for: device)
+            
+            // Load apps with timestamps for initial recent apps
+            let appChanges = appDiscoveryService.loadAppsWithTimestamps(for: device)
+            allInitialAppChanges.append(contentsOf: appChanges)
         }
+        
+        // Populate initial recent apps
+        populateInitialRecentApps(allInitialAppChanges)
     }
     
     func getContentOfDirectoryAt(url: URL) -> [URL] {

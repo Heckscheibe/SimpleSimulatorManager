@@ -66,7 +66,7 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoringServicePr
     
     private func updateMonitorForDevice(_ device: Device) {
         // Only create monitor if device has app container folder and we don't already have one
-        guard device.appContainerFolder != nil,
+        guard device.appDataFolder != nil,
               appFolderMonitors[device.udid] == nil else {
             return
         }
@@ -107,6 +107,20 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoringServicePr
                     app: app,
                     device: updatedDevice,
                     changeType: .installed,
+                    timestamp: Date()
+                )
+                newChanges.append(change)
+            }
+        }
+        
+        // Detect updated apps
+        let updatedAppIds = currentAppIds.intersection(previousAppIds)
+        for updatedAppId in updatedAppIds {
+            if let currentApp = currentApps.first(where: { $0.bundleIdentifier == updatedAppId }) {
+                let change = AppChange(
+                    app: currentApp,
+                    device: updatedDevice,
+                    changeType: .updated,
                     timestamp: Date()
                 )
                 newChanges.append(change)

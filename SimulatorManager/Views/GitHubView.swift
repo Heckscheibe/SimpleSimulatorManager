@@ -22,6 +22,7 @@ struct GitHubView: View {
                     Button {
                         githubService.openLatestRelease()
                     } label: {
+                        Image(systemName: "info.circle.fill")
                         Text("Update Available")
                         Text("Version \(version)")
                     }

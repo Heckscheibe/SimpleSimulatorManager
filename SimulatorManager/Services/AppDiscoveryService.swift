@@ -15,8 +15,7 @@ class AppDiscoveryService {
     func loadApps(for device: Device) {
         let infoPlists = loadAppInfoPlists(for: device)
         
-        guard let appDataFolderURL = device.url?
-            .appendingPathComponent(SimulatorPaths.appDataPath) else {
+        guard let appDataFolderURL = device.appDataFolder else {
             return
         }
         let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
@@ -29,6 +28,8 @@ class AppDiscoveryService {
                 do {
                     let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
                     
+                    // this is the check if we found the correct app data folder
+                    // we check the mcmMetadataIdentifier against the infoPlist's bundle identifier
                     guard metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier else {
                         continue
                     }
@@ -59,6 +60,61 @@ class AppDiscoveryService {
         }
         os_log("Device \(device.name) with \(device.osVersion) has the following apps installed: \(apps.map { $0.displayName })")
         device.apps = apps
+    }
+    
+    /// Load apps with their installation timestamps for initial recent apps population
+    func loadAppsWithTimestamps(for device: Device) -> [AppChange] {
+        let infoPlists = loadAppInfoPlists(for: device)
+        
+        guard let appDataFolderURL = device.appDataFolder else {
+            return []
+        }
+        let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
+        
+        var appChanges: [AppChange] = []
+        infoPlists.forEach { infoPlist in
+            // using oldschool for in loop to be able to `break` and return early
+            for url in appDataFolderURLs {
+                let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
+                do {
+                    let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
+                    
+                    guard metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier else {
+                        continue
+                    }
+                    
+                    // Get the modification date of the app data folder
+                    let timestamp = getFileModificationDate(url: url) ?? Date.distantPast
+                    
+                    let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
+                    let simulatorApp: any SimulatorApp
+                    if infoPlist.isWatchApp {
+                        simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
+                                                           bundleIdentifier: infoPlist.cfBundleIdentifier,
+                                                           appDocumentsFolderURL: metaDataPlist.url,
+                                                           appPackageURL: infoPlist.url,
+                                                           hasUserDefaults: hasUserDefaults,
+                                                           companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier)
+                    } else {
+                        simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
+                                                       bundleIdentifier: infoPlist.cfBundleIdentifier,
+                                                       appDocumentsFolderURL: metaDataPlist.url,
+                                                       appPackageURL: infoPlist.url,
+                                                       hasWatchApp: infoPlist.hasCompanionWatchApp,
+                                                       hasUserDefaults: hasUserDefaults)
+                    }
+                    
+                    let appChange = AppChange(app: simulatorApp, device: device, changeType: .installed, timestamp: timestamp)
+                    appChanges.append(appChange)
+                    break // Found matching app data, move to next info plist
+                    
+                } catch {
+                    os_log("Failed to decode MetaDataPlist due to error: \(error)")
+                }
+            }
+        }
+        
+        return appChanges
     }
     
     func loadAppGroups(for device: Device) {
@@ -98,8 +154,7 @@ class AppDiscoveryService {
     // MARK: - Private Methods
     
     private func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
-        guard let appPackageFolderPath = device.url?
-            .appendingPathComponent(SimulatorPaths.appPackagePath) else {
+        guard let appPackageFolderPath = device.appPackagesFolder else {
             return []
         }
         let appPackageURLs = getContentOfDirectoryAt(url: appPackageFolderPath)
@@ -141,6 +196,17 @@ class AppDiscoveryService {
         } catch {
             os_log("Failed to get content at path \(url) due to error \(error)")
             return []
+        }
+    }
+    
+    /// Get the modification date of a file or directory
+    private func getFileModificationDate(url: URL) -> Date? {
+        do {
+            let resourceValues = try url.resourceValues(forKeys: [.contentModificationDateKey])
+            return resourceValues.contentModificationDate
+        } catch {
+            os_log("Failed to get modification date for \(url) due to error: \(error)")
+            return nil
         }
     }
 }

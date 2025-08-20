@@ -32,6 +32,7 @@ struct AppChange: Hashable {
 
 enum ChangeType {
     case installed
+    case updated
     case removed
 }
 

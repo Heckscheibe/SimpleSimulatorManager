@@ -43,4 +43,25 @@ extension FolderOpening {
         }
         openFolderAt(url)
     }
+    
+    func didSelectSimulatorFolder(for device: Device) {
+        guard let url = device.url else {
+            return
+        }
+        openFolderAt(url)
+    }
+    
+    func didSelectAppsFolder(for device: Device) {
+        guard let url = device.appDataFolder else {
+            return
+        }
+        openFolderAt(url)
+    }
+    
+    func didSelectAppPackagesFolder(for device: Device) {
+        guard let url = device.appPackagesFolder else {
+            return
+        }
+        openFolderAt(url)
+    }
 }

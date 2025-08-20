@@ -26,20 +26,6 @@ class SimulatorManagerViewModel: ObservableObject, FolderOpening {
         self.deviceAppMonitoringService = deviceAppMonitoringService ?? DeviceAppMonitoringService(deviceManager: deviceManager)
         bind()
     }
-    
-    func didSelectSimulatorFolder(for device: Device) {
-        guard let url = device.url else {
-            return
-        }
-        openFolderAt(url)
-    }
-    
-    func didSelectAppsFolder(for device: Device) {
-        guard let url = device.url?.appendingPathComponent(SimulatorPaths.appDataPath) else {
-            return
-        }
-        openFolderAt(url)
-    }
 }
 
 private extension SimulatorManagerViewModel {

@@ -39,6 +39,11 @@ struct DeviceTypeView: View {
                     } label: {
                         Text("Application Folder")
                     }
+                    Button {
+                        viewModel.didSelectAppPackagesFolder(for: device)
+                    } label: {
+                        Text("Application Package Folder")
+                    }
                     Divider()
                 }
             }
