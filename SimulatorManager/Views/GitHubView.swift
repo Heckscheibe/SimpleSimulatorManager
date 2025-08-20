@@ -23,7 +23,6 @@ struct GitHubView: View {
                         githubService.openLatestRelease()
                     } label: {
                         Image(systemName: "info.circle.fill")
-                            .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 2.0)))
                         Text("Update Available")
                         Text("Version \(version)")
                     }
