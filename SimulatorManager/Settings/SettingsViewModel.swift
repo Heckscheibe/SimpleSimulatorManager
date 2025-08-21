@@ -24,7 +24,7 @@ class SettingsViewModel: ObservableObject {
         self.showIPadText = settings.showIPad ? "Hide iPadOS" : "Show iPadOS"
         self.showIPhoneText = settings.showIPhone ? "Hide iOS" : "Show iOS"
         self.showWatchText = settings.showWatch ? "Hide watchOS" : "Show watchOS"
-        self.showRecentAppsText = settings.showRecentApps ? "Hide Recent App Changes" : "Show Recent App Changes"
+        self.showRecentAppsText = settings.showRecentApps ? "Hide Recent Apps" : "Show Recent Apps"
         
         updateVisiblePlatforms()
     }
