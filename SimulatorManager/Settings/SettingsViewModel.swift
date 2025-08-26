@@ -10,6 +10,22 @@ import Foundation
 class SettingsViewModel: ObservableObject {
     private var settings = Settings()
     
+    // Constants for platform names
+    private enum PlatformText {
+        static let appleTV = "Apple TV"
+        static let visionOS = "visionOS"
+        static let iPadOS = "iPadOS"
+        static let iOS = "iOS"
+        static let watchOS = "watchOS"
+        static let recentApps = "Recent Apps"
+    }
+    
+    // Constants for action prefixes
+    private enum ActionText {
+        static let show = "Show"
+        static let hide = "Hide"
+    }
+    
     @Published var showAppleTVText: String
     @Published var showVisionText: String
     @Published var showIPadText: String
@@ -19,49 +35,54 @@ class SettingsViewModel: ObservableObject {
     @Published var visiblePlatforms = Set<SimulatorPlatform>()
     
     init() {
-        self.showAppleTVText = settings.showAppleTV ? "Hide Apple TV" : "Show Apple TV"
-        self.showVisionText = settings.showVisionPro ? "Hide visionOS" : "Show visionOS"
-        self.showIPadText = settings.showIPad ? "Hide iPadOS" : "Show iPadOS"
-        self.showIPhoneText = settings.showIPhone ? "Hide iOS" : "Show iOS"
-        self.showWatchText = settings.showWatch ? "Hide watchOS" : "Show watchOS"
-        self.showRecentAppsText = settings.showRecentApps ? "Hide Recent Apps" : "Show Recent Apps"
+        self.showAppleTVText = Self.toggleText(for: PlatformText.appleTV, isVisible: settings.showAppleTV)
+        self.showVisionText = Self.toggleText(for: PlatformText.visionOS, isVisible: settings.showVisionPro)
+        self.showIPadText = Self.toggleText(for: PlatformText.iPadOS, isVisible: settings.showIPad)
+        self.showIPhoneText = Self.toggleText(for: PlatformText.iOS, isVisible: settings.showIPhone)
+        self.showWatchText = Self.toggleText(for: PlatformText.watchOS, isVisible: settings.showWatch)
+        self.showRecentAppsText = Self.toggleText(for: PlatformText.recentApps, isVisible: settings.showRecentApps)
         
         updateVisiblePlatforms()
     }
     
+    // Helper method to generate toggle text
+    private static func toggleText(for platform: String, isVisible: Bool) -> String {
+        return isVisible ? "\(ActionText.hide) \(platform)" : "\(ActionText.show) \(platform)"
+    }
+    
     func toggleAppleTVVisibility() {
         settings.showAppleTV.toggle()
-        showAppleTVText = settings.showAppleTV ? "Hide Apple TV" : "Show Apple TV"
+        showAppleTVText = Self.toggleText(for: PlatformText.appleTV, isVisible: settings.showAppleTV)
         updateVisiblePlatforms()
     }
     
     func toggleVisionProVisibility() {
         settings.showVisionPro.toggle()
-        showVisionText = settings.showVisionPro ? "Hide visionOS" : "Show visionOS"
+        showVisionText = Self.toggleText(for: PlatformText.visionOS, isVisible: settings.showVisionPro)
         updateVisiblePlatforms()
     }
     
     func toggleIPadVisibility() {
         settings.showIPad.toggle()
-        showIPadText = settings.showIPad ? "Hide iPadOS" : "Show iPadOS"
+        showIPadText = Self.toggleText(for: PlatformText.iPadOS, isVisible: settings.showIPad)
         updateVisiblePlatforms()
     }
     
     func toggleIPhoneVisibility() {
         settings.showIPhone.toggle()
-        showIPhoneText = settings.showIPhone ? "Hide iOS" : "Show iOS"
+        showIPhoneText = Self.toggleText(for: PlatformText.iOS, isVisible: settings.showIPhone)
         updateVisiblePlatforms()
     }
     
     func toggleWatchVisibility() {
         settings.showWatch.toggle()
-        showWatchText = settings.showWatch ? "Hide watchOS" : "Show watchOS"
+        showWatchText = Self.toggleText(for: PlatformText.watchOS, isVisible: settings.showWatch)
         updateVisiblePlatforms()
     }
     
     func toggleRecentAppsVisibility() {
         settings.showRecentApps.toggle()
-        showRecentAppsText = settings.showRecentApps ? "Hide Recent App Changes" : "Show Recent App Changes"
+        showRecentAppsText = Self.toggleText(for: PlatformText.recentApps, isVisible: settings.showRecentApps)
     }
 }
 

@@ -19,7 +19,8 @@ struct ResetSimulatorsView: View {
                     Text("Resetting...")
                 }
             } else {
-                Label("Reset All Simulators", systemImage: "arrow.clockwise")
+                Image(systemName: "arrow.clockwise")
+                Text("Reset All Simulators")
             }
         }
         .disabled(viewModel.isResettingSimulators)
