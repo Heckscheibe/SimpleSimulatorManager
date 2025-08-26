@@ -20,12 +20,6 @@ class SettingsViewModel: ObservableObject {
         static let recentApps = "Recent Apps"
     }
     
-    // Constants for action prefixes
-    private enum ActionText {
-        static let show = "Show"
-        static let hide = "Hide"
-    }
-    
     @Published var showAppleTVText: String
     @Published var showVisionText: String
     @Published var showIPadText: String
@@ -47,7 +41,7 @@ class SettingsViewModel: ObservableObject {
     
     // Helper method to generate toggle text
     private static func toggleText(for platform: String, isVisible: Bool) -> String {
-        return isVisible ? "\(ActionText.hide) \(platform)" : "\(ActionText.show) \(platform)"
+        return isVisible ? "Hide \(platform)" : "Show \(platform)"
     }
     
     func toggleAppleTVVisibility() {
