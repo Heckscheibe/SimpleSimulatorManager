@@ -2,7 +2,7 @@
 //  GitHubView.swift
 //  SimulatorManager
 //
-//  Created on 12.08.25.
+//  Created by Nicolas Hiller 12.08.25.
 //
 
 import SwiftUI
@@ -22,9 +22,9 @@ struct GitHubView: View {
                     Button {
                         githubService.openLatestRelease()
                     } label: {
-                        Image(systemName: "info.circle.fill")
                         Text("Update Available")
                         Text("Version \(version)")
+                        Image(systemName: "info.circle.fill")
                     }
                 } else {
                     Text("Version \(version)")

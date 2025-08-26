@@ -2,7 +2,7 @@
 //  GithubService.swift
 //  SimulatorManager
 //
-//  Created on 09.08.25.
+//  Created by Nicolas Hiller 09.08.25.
 //
 
 import Foundation

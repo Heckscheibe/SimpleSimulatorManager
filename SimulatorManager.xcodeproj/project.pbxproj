@@ -40,6 +40,8 @@
 		3C0C4A5A2E47F8FA005F53F7 /* GithubService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0C4A592E47F8FA005F53F7 /* GithubService.swift */; };
 		3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */; };
 		3C472BAE2E30297B00A33B35 /* AppChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C472BAD2E30297B00A33B35 /* AppChange.swift */; };
+		3CB7972D2E5D8EAA00F2853F /* ResetSimulatorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB7972C2E5D8EAA00F2853F /* ResetSimulatorsView.swift */; };
+		3CB7972F2E5D8ECD00F2853F /* SimulatorResetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB7972E2E5D8ECD00F2853F /* SimulatorResetService.swift */; };
 		3CEA02482E35805F00EE9DA0 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3CEA02432E35805F00EE9DA0 /* README.md */; };
 		3CEA02492E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA023E2E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift */; };
 		3CEA024A2E35805F00EE9DA0 /* MockDeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CEA023F2E35805F00EE9DA0 /* MockDeviceManager.swift */; };
@@ -103,6 +105,8 @@
 		3C0C4A592E47F8FA005F53F7 /* GithubService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GithubService.swift; sourceTree = "<group>"; };
 		3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDiscoveryService.swift; sourceTree = "<group>"; };
 		3C472BAD2E30297B00A33B35 /* AppChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppChange.swift; sourceTree = "<group>"; };
+		3CB7972C2E5D8EAA00F2853F /* ResetSimulatorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetSimulatorsView.swift; sourceTree = "<group>"; };
+		3CB7972E2E5D8ECD00F2853F /* SimulatorResetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorResetService.swift; sourceTree = "<group>"; };
 		3CEA023C2E35805F00EE9DA0 /* TestDataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataHelpers.swift; sourceTree = "<group>"; };
 		3CEA023E2E35805F00EE9DA0 /* MockDeviceAppMonitoringService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDeviceAppMonitoringService.swift; sourceTree = "<group>"; };
 		3CEA023F2E35805F00EE9DA0 /* MockDeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDeviceManager.swift; sourceTree = "<group>"; };
@@ -140,6 +144,7 @@
 			isa = PBXGroup;
 			children = (
 				3C00F3022E4BC6C700159780 /* GitHubView.swift */,
+				3CB7972C2E5D8EAA00F2853F /* ResetSimulatorsView.swift */,
 				3C0B99832E21A249001B244D /* RecentAppsView.swift */,
 				37D6FBF32B1130870023F886 /* AppGroupsView.swift */,
 				37D6FBF12B1130730023F886 /* AppsView.swift */,
@@ -264,6 +269,7 @@
 		3C472BA92E301B3B00A33B35 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				3CB7972E2E5D8ECD00F2853F /* SimulatorResetService.swift */,
 				3C472BA62E301B3B00A33B35 /* AppDiscoveryService.swift */,
 				3C0C4A4E2E47ED28005F53F7 /* DeviceAppMonitoringService.swift */,
 				3C0C4A592E47F8FA005F53F7 /* GithubService.swift */,
@@ -485,6 +491,7 @@
 				3C0B99842E21A249001B244D /* RecentAppsView.swift in Sources */,
 				37CAA9CD2ADEEA4A00A7F2CB /* DeviceState.swift in Sources */,
 				3776EEDC2B2CF9310080F422 /* AppFolderMonitor.swift in Sources */,
+				3CB7972F2E5D8ECD00F2853F /* SimulatorResetService.swift in Sources */,
 				3713A08B2B1923150060C939 /* DeviceTypeView.swift in Sources */,
 				3C472BAC2E301B3B00A33B35 /* AppDiscoveryService.swift in Sources */,
 				3C0C4A522E47ED28005F53F7 /* DeviceAppMonitoringService.swift in Sources */,
@@ -501,6 +508,7 @@
 				3776EEDA2B2CF6720080F422 /* FolderMonitor.swift in Sources */,
 				37CAA9D12ADEEE6C00A7F2CB /* SimulatorApp.swift in Sources */,
 				37D6FBF42B1130870023F886 /* AppGroupsView.swift in Sources */,
+				3CB7972D2E5D8EAA00F2853F /* ResetSimulatorsView.swift in Sources */,
 				37F1DA572AD6E48F00C059DB /* SimulatorManagerApp.swift in Sources */,
 				3C472BAE2E30297B00A33B35 /* AppChange.swift in Sources */,
 				371F2BB12BA3A11E00B338FC /* AppGroup.swift in Sources */,

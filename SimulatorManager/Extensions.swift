@@ -44,3 +44,31 @@ extension KeyedEncodingContainer {
         // Do nothing
     }
 }
+
+// MARK: - Shell Command Execution
+
+extension Process {
+    /// Execute a shell command and return the result
+    @discardableResult static func execute(command: String, arguments: [String] = []) throws -> String {
+        let process = Process()
+        let pipe = Pipe()
+        
+        process.standardOutput = pipe
+        process.standardError = pipe
+        process.arguments = arguments.isEmpty ? ["-c", command] : arguments
+        process.executableURL = arguments.isEmpty ? URL(fileURLWithPath: "/bin/sh") : URL(fileURLWithPath: command)
+        
+        try process.run()
+        process.waitUntilExit()
+        
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let output = String(data: data, encoding: .utf8) ?? ""
+        
+        if process.terminationStatus != 0 {
+            let errorInfo = [NSLocalizedDescriptionKey: "Command failed: \(output)"]
+            throw NSError(domain: "ShellCommand", code: Int(process.terminationStatus), userInfo: errorInfo)
+        }
+        
+        return output.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
