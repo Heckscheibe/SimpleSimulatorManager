@@ -30,6 +30,8 @@ import os
                 Divider()
                 SettingsView(viewModel: settingsViewModel)
                 Divider()
+                ResetSimulatorsView(viewModel: viewModel)
+                Divider()
                 GitHubView()
                 Divider()
                 Button("Quit") {

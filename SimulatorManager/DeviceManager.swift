@@ -83,11 +83,6 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
             
             switch change.changeType {
             case .installed:
-//                // Remove any existing entry for this app/device combination
-//                currentInstalledApps.removeAll { existingChange in
-//                    let existingKey = "\(existingChange.app.bundleIdentifier)-\(existingChange.device.udid)"
-//                    return existingKey == appKey
-//                }
                 // Add the new installation
                 currentInstalledApps.append(change)
             case .updated:
@@ -135,16 +130,16 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
     /// Populate initial recent apps from already installed apps
     private func populateInitialRecentApps(_ appChanges: [AppChange]) {
         guard !appChanges.isEmpty else { return }
-        
+
         // Sort by timestamp (most recent first)
         let sortedChanges = appChanges.sorted { $0.timestamp > $1.timestamp }
-        
+
         // Limit to max recent installed apps
         let limitedChanges = Array(sortedChanges.prefix(maxRecentInstalledApps))
-        
+
         // Remove duplicates (keep most recent for each app/device combination)
         let uniqueChanges = removeDuplicateChanges(from: limitedChanges)
-        
+
         recentInstalledAppsPublisher.value = uniqueChanges
     }
 }

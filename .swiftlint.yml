@@ -280,7 +280,6 @@ type_name:
   max_length:
     warning: 60
     error: 60
-  severity: error
 unneeded_break_in_switch:
   severity: error
 unused_closure_parameter:
@@ -313,24 +312,23 @@ contains_over_first_not_nil:
   severity: error
 
 identifier_name:
-    severity: error
-    min_length:
-      warning: 3
-      error: 3
-    max_length: 
-      warning: 60
-      error: 60
-    excluded:
-      - id
-      - to
-      - on
-      - km
-      - up
-      - dc
-      - vf
-      - am
-      - pm
-      - QA
+  min_length:
+    warning: 3
+    error: 3
+  max_length: 
+    warning: 60
+    error: 60
+  excluded:
+    - id
+    - to
+    - on
+    - km
+    - up
+    - dc
+    - vf
+    - am
+    - pm
+    - QA
 
 line_length:
     warning: 150
