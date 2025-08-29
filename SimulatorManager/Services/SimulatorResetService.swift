@@ -8,13 +8,7 @@
 import Foundation
 import os
 
-protocol SimulatorResetServiceProtocol {
-    func shutDownAllSimulators() async throws
-    func resetAllSimulators() async throws
-    func shutDownAndResetAllSimulators() async throws
-}
-
-class SimulatorResetService: SimulatorResetServiceProtocol {
+class SimulatorResetService {
     /// Shuts down all running simulators
     func shutDownAllSimulators() async throws {
         return try await withCheckedThrowingContinuation { continuation in

@@ -10,7 +10,7 @@ import SwiftUI
 
 struct DeviceTypeView: View {
     @ObservedObject var viewModel: SimulatorManagerViewModel
-    @ObservedObject var settings: SettingsViewModel
+    @ObservedObject var settings: Settings
     
     var body: some View {
         ForEach(viewModel.deviceTypes.filter { settings.visiblePlatforms.contains($0.simulatorPlatform) }) { deviceType in

@@ -15,39 +15,16 @@ class SimulatorManagerViewModel: ObservableObject, FolderOpening {
     @Published var devices: [Device] = []
     @Published var recentAppChanges: [AppChange] = []
     @Published var recentInstalledApps: [AppChange] = []
-    @Published var isResettingSimulators = false
     
     private let deviceManager: DeviceManagerProtocol
     private let deviceAppMonitoringService: DeviceAppMonitoringServiceProtocol
-    private let simulatorResetService: SimulatorResetServiceProtocol
     private var cancellables: Set<AnyCancellable> = []
     
     init(deviceManager: DeviceManagerProtocol = DeviceManager(),
-         deviceAppMonitoringService: DeviceAppMonitoringServiceProtocol? = nil,
-         simulatorResetService: SimulatorResetServiceProtocol = SimulatorResetService()) {
+         deviceAppMonitoringService: DeviceAppMonitoringServiceProtocol? = nil) {
         self.deviceManager = deviceManager
         self.deviceAppMonitoringService = deviceAppMonitoringService ?? DeviceAppMonitoringService(deviceManager: deviceManager)
-        self.simulatorResetService = simulatorResetService
         bind()
-    }
-    
-    @MainActor func resetAllSimulators() {
-        guard !isResettingSimulators else { return }
-        
-        isResettingSimulators = true
-        
-        Task {
-            do {
-                try await simulatorResetService.shutDownAndResetAllSimulators()
-                os_log("Successfully reset all simulators")
-            } catch {
-                os_log("Failed to reset simulators: \(error.localizedDescription)")
-            }
-            
-            await MainActor.run {
-                isResettingSimulators = false
-            }
-        }
     }
 }
 

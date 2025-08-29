@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ResetSimulatorsView: View {
-    @ObservedObject var viewModel: SimulatorManagerViewModel
+    @ObservedObject var viewModel: ResetSimulatorsViewModel
     
     var body: some View {
         Button {
@@ -28,5 +28,5 @@ struct ResetSimulatorsView: View {
 }
 
 #Preview {
-    ResetSimulatorsView(viewModel: SimulatorManagerViewModel())
+    ResetSimulatorsView(viewModel: ResetSimulatorsViewModel())
 }

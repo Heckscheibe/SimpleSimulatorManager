@@ -8,31 +8,6 @@
 import Foundation
 import os
 
-enum SimulatorPlatform {
-    case iPhone
-    case iPad
-    case watch
-    case appleTV
-    case visionPro
-    case iPodTouch
-    
-    init(from deviceTypeIdentifier: String) {
-        if deviceTypeIdentifier.contains("iPhone") {
-            self = .iPhone
-        } else if deviceTypeIdentifier.contains("iPad") {
-            self = .iPad
-        } else if deviceTypeIdentifier.contains("Apple-Vision-Pro") {
-            self = .visionPro
-        } else if deviceTypeIdentifier.contains("Apple-TV") {
-            self = .appleTV
-        } else if deviceTypeIdentifier.contains("Apple-Watch") {
-            self = .watch
-        } else {
-            self = .iPodTouch
-        }
-    }
-}
-
 class Device: ObservableObject, DecodableURLContainer {
     static let devicePlistName = "device.plist"
     static let appGroupFolderPath = "data/Containers/Shared/AppGroup"
