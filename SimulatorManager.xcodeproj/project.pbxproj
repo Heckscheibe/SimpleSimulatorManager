@@ -29,7 +29,7 @@
 
 /* Begin PBXFileReference section */
 		3750F9272B2D07AD00F578ED /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		37F1DA532AD6E48F00C059DB /* SimulatorManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimulatorManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		37F1DA532AD6E48F00C059DB /* Simulator Manager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Simulator Manager.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA642AD6E49000C059DB /* SimulatorManagerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -85,7 +85,7 @@
 		37F1DA542AD6E48F00C059DB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				37F1DA532AD6E48F00C059DB /* SimulatorManager.app */,
+				37F1DA532AD6E48F00C059DB /* Simulator Manager.app */,
 				37F1DA642AD6E49000C059DB /* SimulatorManagerTests.xctest */,
 				37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */,
 			);
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		37F1DA522AD6E48F00C059DB /* SimulatorManager */ = {
+		37F1DA522AD6E48F00C059DB /* Simulator Manager */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 37F1DA782AD6E49000C059DB /* Build configuration list for PBXNativeTarget "SimulatorManager" */;
+			buildConfigurationList = 37F1DA782AD6E49000C059DB /* Build configuration list for PBXNativeTarget "Simulator Manager" */;
 			buildPhases = (
 				373A36C82AD991EA0086CCE0 /* Swift Format */,
 				373A36C92AD992A00086CCE0 /* Swift Lint */,
@@ -112,11 +112,11 @@
 			fileSystemSynchronizedGroups = (
 				3C385C3E2E5F1A44002AD325 /* SimulatorManager */,
 			);
-			name = SimulatorManager;
+			name = "Simulator Manager";
 			packageProductDependencies = (
 			);
 			productName = SimulatorManager;
-			productReference = 37F1DA532AD6E48F00C059DB /* SimulatorManager.app */;
+			productReference = 37F1DA532AD6E48F00C059DB /* Simulator Manager.app */;
 			productType = "com.apple.product-type.application";
 		};
 		37F1DA632AD6E49000C059DB /* SimulatorManagerTests */ = {
@@ -198,7 +198,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				37F1DA522AD6E48F00C059DB /* SimulatorManager */,
+				37F1DA522AD6E48F00C059DB /* Simulator Manager */,
 				37F1DA632AD6E49000C059DB /* SimulatorManagerTests */,
 				37F1DA6D2AD6E49000C059DB /* SimulatorManagerUITests */,
 			);
@@ -296,12 +296,12 @@
 /* Begin PBXTargetDependency section */
 		37F1DA662AD6E49000C059DB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 37F1DA522AD6E48F00C059DB /* SimulatorManager */;
+			target = 37F1DA522AD6E48F00C059DB /* Simulator Manager */;
 			targetProxy = 37F1DA652AD6E49000C059DB /* PBXContainerItemProxy */;
 		};
 		37F1DA702AD6E49000C059DB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 37F1DA522AD6E48F00C059DB /* SimulatorManager */;
+			target = 37F1DA522AD6E48F00C059DB /* Simulator Manager */;
 			targetProxy = 37F1DA6F2AD6E49000C059DB /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -437,7 +437,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 17;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
@@ -454,6 +454,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.1.1;
+				MERGEABLE_LIBRARY = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -474,7 +475,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 17;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
@@ -491,6 +492,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.1.1;
+				MERGEABLE_LIBRARY = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -506,7 +508,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 17;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -524,7 +526,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 17;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -541,7 +543,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 17;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
@@ -557,7 +559,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 17;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
@@ -581,7 +583,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		37F1DA782AD6E49000C059DB /* Build configuration list for PBXNativeTarget "SimulatorManager" */ = {
+		37F1DA782AD6E49000C059DB /* Build configuration list for PBXNativeTarget "Simulator Manager" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				37F1DA792AD6E49000C059DB /* Debug */,
