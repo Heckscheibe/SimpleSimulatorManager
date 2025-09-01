@@ -13,6 +13,10 @@
 # Uncomment the line if you want fastlane to automatically update itself
 # update_fastlane
 
+# App and archive names
+APP_NAME = "Simulator Manager"
+ZIP_NAME = "SimulatorManager"
+
 default_platform(:mac)
 
 platform :mac do
@@ -35,7 +39,7 @@ platform :mac do
         }
       },
       output_directory: "./build",
-      output_name: "Simulator Manager"
+      output_name: APP_NAME
     )
     UI.success("✅ Build completed successfully!")
   end
@@ -65,14 +69,14 @@ platform :mac do
 
     # Create a zip file for GitHub releases
     zip(
-      path: "build/Simulator Manager.app",
-      output_path: "build/SimulatorManager.zip"
+      path: "build/#{APP_NAME}.app",
+      output_path: "build/#{ZIP_NAME}.zip"
     )
 
     # Find the actual ZIP file location
     zip_path = nil
-    if File.exist?("../build/SimulatorManager.zip")
-      zip_path = "../build/SimulatorManager.zip"
+    if File.exist?("../build/#{ZIP_NAME}.zip")
+      zip_path = "../build/#{ZIP_NAME}.zip"
     else
       # Find any zip files in build directory
       zip_files = Dir.glob("../build/**/*.zip")
@@ -83,11 +87,11 @@ platform :mac do
 
     # Copy files to a release directory
     sh("mkdir -p ../release")
-    sh("cp '#{zip_path}' ../release/SimulatorManager.zip")
+    sh("cp '#{zip_path}' ../release/#{ZIP_NAME}.zip")
 
     UI.success("🎉 Build completed successfully!")
     UI.message("Files available in ./release/:")
-    UI.message("- SimulatorManager.zip")
+    UI.message("- #{ZIP_NAME}.zip")
     UI.message("")
     UI.success("You can now upload these files to your GitHub release.")
   end
