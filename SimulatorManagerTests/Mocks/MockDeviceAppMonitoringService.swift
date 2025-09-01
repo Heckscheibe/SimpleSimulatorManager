@@ -18,10 +18,4 @@ class MockDeviceAppMonitoringService: DeviceAppMonitoringServiceProtocol {
     func stopMonitoring() {
         stopMonitoringCalled = true
     }
-    
-    // MARK: - Test Helper Methods
-    
-    func reset() {
-        stopMonitoringCalled = false
-    }
 }

@@ -116,19 +116,4 @@ class MockDeviceManager: DeviceManagerProtocol {
         lastAddedChanges = changes
         mockRecentAppChanges.append(contentsOf: changes)
     }
-    
-    // MARK: - Test Helper Methods
-    
-    func reset() {
-        updateDevicesCalled = false
-        updateSpecificDeviceCalled = false
-        getDeviceCalled = false
-        updateRecentAppsCalled = false
-        lastUpdatedDevice = nil
-        lastQueriedUdid = nil
-        lastAddedChanges = []
-        mockDevices = []
-        mockDeviceTypes = []
-        mockRecentAppChanges = []
-    }
 }
