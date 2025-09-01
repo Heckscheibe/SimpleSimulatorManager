@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <style>
+      .s { fill: none; stroke: #000; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+      .f { fill: #000; }
+    </style>
+  </defs>
+  <!-- Outer gear ring -->
+  <circle cx="128" cy="128" r="70" class="s"/>
+  <!-- Inner bore -->
+  <circle cx="128" cy="128" r="32" class="s"/>
+  <!-- Teeth: 12 identical rectangles rotated around center -->
+  <g transform="translate(128,128)">
+    <g id="tooth">
+      <!-- a rounded rectangle tooth -->
+      <rect x="-10" y="-94" width="20" height="28" rx="6" ry="6" class="f"/>
+    </g>
+    <use href="#tooth" transform="rotate(30)"/>
+    <use href="#tooth" transform="rotate(60)"/>
+    <use href="#tooth" transform="rotate(90)"/>
+    <use href="#tooth" transform="rotate(120)"/>
+    <use href="#tooth" transform="rotate(150)"/>
+    <use href="#tooth" transform="rotate(180)"/>
+    <use href="#tooth" transform="rotate(210)"/>
+    <use href="#tooth" transform="rotate(240)"/>
+    <use href="#tooth" transform="rotate(270)"/>
+    <use href="#tooth" transform="rotate(300)"/>
+    <use href="#tooth" transform="rotate(330)"/>
+  </g>
+</svg>

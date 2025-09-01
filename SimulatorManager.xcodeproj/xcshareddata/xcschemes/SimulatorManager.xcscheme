@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "37F1DA522AD6E48F00C059DB"
-               BuildableName = "SimulatorManager.app"
-               BlueprintName = "SimulatorManager"
+               BuildableName = "Simulator Manager.app"
+               BlueprintName = "Simulator Manager"
                ReferencedContainer = "container:SimulatorManager.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -69,8 +69,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "37F1DA522AD6E48F00C059DB"
-            BuildableName = "SimulatorManager.app"
-            BlueprintName = "SimulatorManager"
+            BuildableName = "Simulator Manager.app"
+            BlueprintName = "Simulator Manager"
             ReferencedContainer = "container:SimulatorManager.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -86,8 +86,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "37F1DA522AD6E48F00C059DB"
-            BuildableName = "SimulatorManager.app"
-            BlueprintName = "SimulatorManager"
+            BuildableName = "Simulator Manager.app"
+            BlueprintName = "Simulator Manager"
             ReferencedContainer = "container:SimulatorManager.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

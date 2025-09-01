@@ -13,7 +13,6 @@ import AppKit
     var latestRelease: GitHubRelease?
     var isChecking = false
     
-    private let githubRepo = "Heckscheibe/SimpleSimulatorManager"
     private let apiURL = "https://api.github.com/repos/Heckscheibe/SimpleSimulatorManager/releases/latest"
     private let projectURL = "https://github.com/Heckscheibe/SimpleSimulatorManager"
     
