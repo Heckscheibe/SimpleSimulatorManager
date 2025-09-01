@@ -35,7 +35,7 @@ platform :mac do
         }
       },
       output_directory: "./build",
-      output_name: "SimulatorManager"
+      output_name: "Simulator Manager"
     )
     UI.success("✅ Build completed successfully!")
   end
@@ -65,7 +65,7 @@ platform :mac do
 
     # Create a zip file for GitHub releases
     zip(
-      path: "build/SimulatorManager.app",
+      path: "build/Simulator Manager.app",
       output_path: "build/SimulatorManager.zip"
     )
 
