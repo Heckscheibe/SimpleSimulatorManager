@@ -26,7 +26,3 @@ struct ResetSimulatorsView: View {
         .disabled(viewModel.isResettingSimulators)
     }
 }
-
-#Preview {
-    ResetSimulatorsView(viewModel: ResetSimulatorsViewModel())
-}

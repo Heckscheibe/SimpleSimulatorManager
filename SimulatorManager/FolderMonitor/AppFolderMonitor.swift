@@ -17,9 +17,19 @@ class AppFolderMonitor {
 
     init(device: Device) {
         self.device = device
-        self.folderMonitor = FolderMonitor(url: device.appPackagesFolder ?? URL(fileURLWithPath: ""))
+        let url: URL?
+        let recursive: Bool
+        if FileManager.default.fileExists(atPath: device.appPackagesFolder?.path ?? "") {
+            url = device.appPackagesFolder
+            recursive = false
+        } else {
+            url = device.dataFolder
+            recursive = true
+        }
+        self.folderMonitor = FolderMonitor(url: url ?? URL(fileURLWithPath: ""),
+                                           recursive: recursive)
         folderMonitor.folderDidChange
-            .debounce(for: 1.0, scheduler: RunLoop.main)
+            .debounce(for: 1.0, scheduler: DispatchQueue.main)
             .sink { [weak self] in
                 self?.appfolderDidChange.send(device)
             }
@@ -29,5 +39,9 @@ class AppFolderMonitor {
         } catch {
             print(error)
         }
+    }
+    
+    deinit {
+        try? folderMonitor.stopMonitoring()
     }
 }

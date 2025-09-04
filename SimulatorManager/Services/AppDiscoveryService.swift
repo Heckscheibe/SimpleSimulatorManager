@@ -12,21 +12,21 @@ import os
 class AppDiscoveryService {
     // MARK: - Public Methods
     
-    func loadApps(for device: Device) {
+    func loadApps(for device: Device) -> [any SimulatorApp] {
         let (apps, _) = loadAppsAndTimestamps(for: device)
-        device.apps = apps
         os_log("Device \(device.name) with \(device.osVersion) has the following apps installed: \(apps.map { $0.displayName })")
+        return apps
     }
     
     /// Load apps with their installation timestamps for initial recent apps population
-    func loadAppsWithTimestamps(for device: Device) -> [AppChange] {
+    func loadRecentInstalledApps(for device: Device) -> [AppChange] {
         let (_, appChanges) = loadAppsAndTimestamps(for: device)
         return appChanges
     }
     
-    func loadAppGroups(for device: Device) {
+    func loadAppGroups(for device: Device) -> [AppGroup] {
         guard let appGroupsFolderURL = device.appGroupsFolder else {
-            return
+            return []
         }
         
         let appGroupFolderURLs = getContentOfDirectoryAt(url: appGroupsFolderURL)
@@ -54,13 +54,9 @@ class AppDiscoveryService {
                     $0.contains(appGroup.name)
                 })
         }
-        
-        device.appGroups = appGroups
+        return appGroups
     }
-}
-
-// MARK: - Private Methods
-private extension AppDiscoveryService {
+    
     /// Load apps and their corresponding app changes with timestamps
     /// Returns a tuple of (apps, appChanges) to avoid code duplication
     func loadAppsAndTimestamps(for device: Device) -> (apps: [any SimulatorApp], appChanges: [AppChange]) {

@@ -6,39 +6,31 @@
 //
 
 import Foundation
+@preconcurrency import Combine
 import os
 
-class SimulatorResetService {
+final class SimulatorResetService: Sendable {
+    var didResetAllSimulators: AnyPublisher<Void, Never> {
+        didResetAllSimulatorsPublisher.eraseToAnyPublisher()
+    }
+    
+    private nonisolated(unsafe) var didResetAllSimulatorsPublisher: PassthroughSubject<Void, Never> = .init()
+    
     /// Shuts down all running simulators
     func shutDownAllSimulators() async throws {
-        return try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    let result = try Process.execute(command: "xcrun simctl shutdown all")
-                    os_log("Shut down all simulators: \(result)")
-                    continuation.resume()
-                } catch {
-                    os_log("Failed to shut down simulators: \(error.localizedDescription)")
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+        let result = try await Task {
+            try Process.execute(command: "xcrun simctl shutdown all")
+        }.value
+        os_log("Shut down all simulators: \(result)")
     }
     
     /// Resets all simulators to factory defaults
     func resetAllSimulators() async throws {
-        return try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    let result = try Process.execute(command: "xcrun simctl erase all")
-                    os_log("Reset all simulators: \(result)")
-                    continuation.resume()
-                } catch {
-                    os_log("Failed to reset simulators: \(error.localizedDescription)")
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
+        let result = try await Task {
+            try Process.execute(command: "xcrun simctl erase all")
+        }.value
+        os_log("Reset all simulators: \(result)")
+        didResetAllSimulatorsPublisher.send()
     }
     
     /// Shuts down and then resets all simulators

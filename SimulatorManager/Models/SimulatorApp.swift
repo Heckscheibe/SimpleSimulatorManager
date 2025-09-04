@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol SimulatorApp: Identifiable {
+protocol SimulatorApp: Identifiable, Sendable {
     var displayName: String { get }
     var bundleIdentifier: String { get }
     var appDocumentsFolderURL: URL? { get }
@@ -22,7 +22,7 @@ extension SimulatorApp {
     }
 }
 
-class SimulatoriOSApp: SimulatorApp {
+final class SimulatoriOSApp: SimulatorApp {
     let displayName: String
     let bundleIdentifier: String
     let appDocumentsFolderURL: URL?
@@ -47,7 +47,7 @@ class SimulatoriOSApp: SimulatorApp {
     }
 }
 
-class SimulatorWatchOSApp: SimulatorApp {
+final class SimulatorWatchOSApp: SimulatorApp {
     let displayName: String
     let bundleIdentifier: String
     let appDocumentsFolderURL: URL?

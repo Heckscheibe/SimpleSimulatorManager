@@ -13,11 +13,4 @@ class DeviceViewModel: ObservableObject, FolderOpening {
     init(device: Device) {
         self.device = device
     }
-    
-    func didSelect(appGroup: AppGroup) {
-        guard let url = appGroup.url else {
-            return
-        }
-        openFolderAt(url)
-    }
 }

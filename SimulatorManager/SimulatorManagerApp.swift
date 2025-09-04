@@ -12,12 +12,17 @@ import os
     @StateObject private var deviceManager: DeviceManager
     @StateObject private var viewModel: SimulatorManagerViewModel
     @StateObject private var settings: Settings
+    
+    private let simulatorResetService: SimulatorResetService
         
     init() {
         let deviceManager = DeviceManager()
-        let viewModel = SimulatorManagerViewModel(deviceManager: deviceManager)
+        let simulatorResetService = SimulatorResetService()
+        let viewModel = SimulatorManagerViewModel(deviceManager: deviceManager,
+                                                  simulatorResetService: simulatorResetService)
         let settings = Settings()
         
+        self.simulatorResetService = simulatorResetService
         self._deviceManager = StateObject(wrappedValue: deviceManager)
         self._viewModel = StateObject(wrappedValue: viewModel)
         self._settings = StateObject(wrappedValue: settings)
@@ -31,7 +36,8 @@ import os
             Divider()
             SettingsView(viewModel: SettingsViewModel(settings: settings, simulatorManagerViewModel: viewModel))
             Divider()
-            ResetSimulatorsView(viewModel: ResetSimulatorsViewModel())
+            ResetSimulatorsView(viewModel: ResetSimulatorsViewModel(deviceManager: deviceManager,
+                                                                    simulatorResetService: simulatorResetService))
             Divider()
             GitHubView()
             Divider()

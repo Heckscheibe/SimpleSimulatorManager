@@ -37,12 +37,12 @@ struct DeviceTypeView: View {
                     Button {
                         viewModel.didSelectAppsFolder(for: device)
                     } label: {
-                        Text("Application Folder")
+                        Text("App Folder")
                     }
                     Button {
                         viewModel.didSelectAppPackagesFolder(for: device)
                     } label: {
-                        Text("Application Package Folder")
+                        Text("App Package Folder")
                     }
                     Divider()
                 }
