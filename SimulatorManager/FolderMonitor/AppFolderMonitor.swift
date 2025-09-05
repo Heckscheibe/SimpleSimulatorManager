@@ -29,7 +29,7 @@ class AppFolderMonitor {
         self.folderMonitor = FolderMonitor(url: url ?? URL(fileURLWithPath: ""),
                                            recursive: recursive)
         folderMonitor.folderDidChange
-            .debounce(for: 1.0, scheduler: DispatchQueue.main)
+            .debounce(for: 3.0, scheduler: DispatchQueue.main)
             .sink { [weak self] in
                 self?.appfolderDidChange.send(device)
             }
