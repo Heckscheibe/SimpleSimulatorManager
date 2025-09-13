@@ -30,7 +30,8 @@ This tool simplifies the process by offering an intuitive interface for managing
 
 **Note:** visionOS simulators are supported, but app discovery and management is currently not available for visionOS apps due to platform-specific differences.
 
-<img width="475" height="669" alt="Screenshot 2025-09-04 at 22 12 55" src="https://github.com/user-attachments/assets/ecb3b0a1-1397-417f-a3ec-02bbb0a17293" />
+<img width="475" height="669" alt="Screenshot 2025-09-04 at 22 12 55" src="https://github.com/user-attachments/assets/ad74a567-8a8b-4cab-8624-c721dfaac0a5" />
+
 
 
 
