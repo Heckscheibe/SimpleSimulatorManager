@@ -64,4 +64,11 @@ extension FolderOpening {
         }
         openFolderAt(url)
     }
+    
+    func didSelect(appGroup: AppGroup) {
+        guard let url = appGroup.url else {
+            return
+        }
+        openFolderAt(url)
+    }
 }

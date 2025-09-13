@@ -29,12 +29,16 @@ class Device: ObservableObject, DecodableURLContainer {
     let osVersion: String
     
     // not decoded properties
+    var dataFolder: URL? {
+        url?.appendingPathComponent("data")
+    }
+    
     var appDataFolder: URL? {
-        url?.appendingPathComponent("data/Containers/Data/Application")
+        dataFolder?.appendingPathComponent("/Containers/Data/Application")
     }
     
     var appPackagesFolder: URL? {
-        url?.appendingPathComponent("data/Containers/Bundle/Application")
+        dataFolder?.appendingPathComponent("/Containers/Bundle/Application")
     }
     
     var appGroupsFolder: URL? {

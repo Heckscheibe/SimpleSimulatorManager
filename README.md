@@ -17,13 +17,25 @@ This tool simplifies the process by offering an intuitive interface for managing
   - app's document folders and the `.app` package itself installed on simulators
   - app groups installed on simulators
   - `UserDefault` folders of apps and  app groups
+- Recent apps view with device context
+  - Track most recently installed/updated apps across all simulators
+  - Quick access to recently modified applications
+  - Live updates without manual refresh
+- Simulator reset functionality
+  - Bulk reset of all simulators with progress tracking
+  - Clean slate for testing scenarios
 - Option to Show/Hide platforms in the list
+  - only installed platforms are shown
+- Update indicator
+
+**Note:** visionOS simulators are supported, but app discovery and management is currently not available for visionOS apps due to platform-specific differences.
+
 <img width="692" alt="Screenshot 2024-03-15 at 08 45 09" src="https://github.com/Heckscheibe/SimpleSimulatorManager/assets/9963191/5dead621-5d1f-4831-8f03-a485f4e71683">
 
 
 
 ## Security and Privacy
-To access the local file system, Simple Simulator Manager disables the [Hardened Runtime](https://developer.apple.com/documentation/security/hardened_runtime) of macOS and turns off the app sandbox. This involves a potentially risky entitlement and is the reason why this tool can't be released in the official App Store. The entire code of the app is openly available in this repository, allowing users to review it and ensure that none of their data is used inappropriately or sent anywhere. The app operates entirely offline, ensuring a secure and private development environment.
+To access the local file system, Simple Simulator Manager disables the [Hardened Runtime](https://developer.apple.com/documentation/security/hardened_runtime) of macOS and turns off the app sandbox. This involves a potentially risky entitlement and is the reason why this tool can't be released in the official App Store. The entire code of the app is openly available in this repository, allowing users to review it and ensure that none of their data is used inappropriately or sent anywhere. The app operates entirely offline (except for the GitHub update check), ensuring a secure and private development environment.
 
 
 **Note:** While Simple Simulator Manager facilitates efficient local testing, it is essential to conduct thorough testing on real devices before releasing your apps. ;)

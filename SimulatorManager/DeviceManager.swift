@@ -12,12 +12,13 @@ import os
 // MARK: - Protocols
 
 /// Protocol defining the interface for device management
-protocol DeviceManagerProtocol: AnyObject {
+protocol DeviceManaging: AnyObject {
     var deviceTypes: AnyPublisher<[DeviceType], Never> { get }
     var devices: AnyPublisher<[Device], Never> { get }
     var recentInstalledApps: AnyPublisher<[AppChange], Never> { get }
     
     func updateDevices()
+    func resetAndLoadDevices()
     func updateSpecificDevice(_ updatedDevice: Device)
     func getDevice(withUdid udid: String) -> Device?
     func updateRecentApps(_ changes: [AppChange])
@@ -27,7 +28,7 @@ enum SimulatorPaths {
     static let userDefaultsPath = "Library/Preferences"
 }
 
-class DeviceManager: ObservableObject, DeviceManagerProtocol {
+class DeviceManager: ObservableObject, DeviceManaging {
     var deviceTypes: AnyPublisher<[DeviceType], Never> {
         deviceTypesPublisher.eraseToAnyPublisher()
     }
@@ -58,10 +59,17 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
         loadDevices()
     }
     
+    func resetAndLoadDevices() {
+        devicesPublisher.value.removeAll()
+        deviceTypesPublisher.value.removeAll()
+        recentInstalledAppsPublisher.value.removeAll()
+        loadDevices()
+    }
+    
     func updateSpecificDevice(_ updatedDevice: Device) {
         // Reload apps for the specific device
-        appDiscoveryService.loadApps(for: updatedDevice)
-        appDiscoveryService.loadAppGroups(for: updatedDevice)
+        updatedDevice.apps = appDiscoveryService.loadApps(for: updatedDevice)
+        updatedDevice.appGroups = appDiscoveryService.loadAppGroups(for: updatedDevice)
         
         // Update the device in the devices array
         let currentDevices = devicesPublisher.value
@@ -111,8 +119,17 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
         
         recentInstalledAppsPublisher.value = currentInstalledApps
     }
+}
+
+// MARK: - Extensions
+
+private extension DeviceManager {
+    var simulatorFolderURL: URL? {
+        let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
+        return libraryPath.first?.appending(path: "Developer/CoreSimulator/Devices")
+    }
     
-    private func removeDuplicateChanges(from changes: [AppChange]) -> [AppChange] {
+    func removeDuplicateChanges(from changes: [AppChange]) -> [AppChange] {
         var seen: Set<String> = []
         var uniqueChanges: [AppChange] = []
         
@@ -128,7 +145,7 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
     }
     
     /// Populate initial recent apps from already installed apps
-    private func populateInitialRecentApps(_ appChanges: [AppChange]) {
+    func populateInitialRecentApps(_ appChanges: [AppChange]) {
         guard !appChanges.isEmpty else { return }
 
         // Sort by timestamp (most recent first)
@@ -141,15 +158,6 @@ class DeviceManager: ObservableObject, DeviceManagerProtocol {
         let uniqueChanges = removeDuplicateChanges(from: limitedChanges)
 
         recentInstalledAppsPublisher.value = uniqueChanges
-    }
-}
-
-// MARK: - Extensions
-
-private extension DeviceManager {
-    var simulatorFolderURL: URL? {
-        let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
-        return libraryPath.first?.appending(path: "Developer/CoreSimulator/Devices")
     }
     
     func bindDeviceTypes() {
@@ -178,11 +186,12 @@ private extension DeviceManager {
         var allInitialAppChanges: [AppChange] = []
         
         newDevices.forEach { device in
-            appDiscoveryService.loadApps(for: device)
-            appDiscoveryService.loadAppGroups(for: device)
+            let appsAndTimeStamps = appDiscoveryService.loadAppsAndTimestamps(for: device)
+            device.apps = appsAndTimeStamps.apps
+            device.appGroups = appDiscoveryService.loadAppGroups(for: device)
             
             // Load apps with timestamps for initial recent apps
-            let appChanges = appDiscoveryService.loadAppsWithTimestamps(for: device)
+            let appChanges = appsAndTimeStamps.appChanges
             allInitialAppChanges.append(contentsOf: appChanges)
         }
         

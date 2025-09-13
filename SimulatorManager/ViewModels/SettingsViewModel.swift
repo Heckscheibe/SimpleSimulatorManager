@@ -108,6 +108,7 @@ private extension SettingsViewModel {
                     hasWatch: platforms.contains(.watch)
                 )
             }
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] (availability: DeviceAvailability) in
                 self?.hasAppleTVDevices = availability.hasAppleTV
                 self?.hasVisionProDevices = availability.hasVisionPro

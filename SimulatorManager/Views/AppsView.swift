@@ -15,7 +15,7 @@ struct AppsView: View {
         if !viewModel.device.hasAppsInstalled {
             Text("Apps")
         }
-        ForEach(viewModel.device.apps, id: \.id) { app in
+        ForEach(viewModel.apps, id: \.id) { app in
             Menu(app.displayName) {
                 Button {
                     viewModel.didSelectAppDocumentFolder(for: app)

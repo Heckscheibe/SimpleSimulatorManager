@@ -16,14 +16,16 @@ class SimulatorManagerViewModel: ObservableObject, FolderOpening {
     @Published var recentAppChanges: [AppChange] = []
     @Published var recentInstalledApps: [AppChange] = []
     
-    private let deviceManager: DeviceManagerProtocol
-    private let deviceAppMonitoringService: DeviceAppMonitoringServiceProtocol
+    private let deviceManager: DeviceManaging
+    private let simulatorResetService: SimulatorResetService
+    private let deviceAppMonitoringService: DeviceAppMonitoring
     private var cancellables: Set<AnyCancellable> = []
     
-    init(deviceManager: DeviceManagerProtocol = DeviceManager(),
-         deviceAppMonitoringService: DeviceAppMonitoringServiceProtocol? = nil) {
+    init(deviceManager: DeviceManaging,
+         simulatorResetService: SimulatorResetService) {
         self.deviceManager = deviceManager
-        self.deviceAppMonitoringService = deviceAppMonitoringService ?? DeviceAppMonitoringService(deviceManager: deviceManager)
+        self.simulatorResetService = simulatorResetService
+        self.deviceAppMonitoringService = DeviceAppMonitoringService(deviceManager: deviceManager)
         bind()
     }
 }
@@ -31,15 +33,26 @@ class SimulatorManagerViewModel: ObservableObject, FolderOpening {
 private extension SimulatorManagerViewModel {
     func bind() {
         deviceManager.devices
+            .receive(on: DispatchQueue.main)
             .assign(to: \.devices, on: self)
             .store(in: &cancellables)
         
         deviceManager.deviceTypes
+            .receive(on: DispatchQueue.main)
             .assign(to: \.deviceTypes, on: self)
             .store(in: &cancellables)
         
         deviceManager.recentInstalledApps
+            .receive(on: DispatchQueue.main)
             .assign(to: \.recentInstalledApps, on: self)
+            .store(in: &cancellables)
+        
+        simulatorResetService.didResetAllSimulators
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.deviceManager.resetAndLoadDevices()
+//                self?.deviceAppMonitoringService.resetMonitoring()
+            }
             .store(in: &cancellables)
     }
 }

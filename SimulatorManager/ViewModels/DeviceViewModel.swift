@@ -14,10 +14,33 @@ class DeviceViewModel: ObservableObject, FolderOpening {
         self.device = device
     }
     
-    func didSelect(appGroup: AppGroup) {
-        guard let url = appGroup.url else {
-            return
-        }
-        openFolderAt(url)
+    // MARK: - Device Properties
+    
+    var hasAppsInstalled: Bool {
+        device.hasAppsInstalled
+    }
+    
+    var osVersion: String {
+        device.osVersion
+    }
+    
+    var apps: [any SimulatorApp] {
+        device.apps
+    }
+    
+    var appGroups: [AppGroup] {
+        device.appGroups
+    }
+    
+    // MARK: - Folder Existence Checks
+    
+    var hasAppsFolder: Bool {
+        guard let url = device.appDataFolder else { return false }
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+    
+    var hasAppPackagesFolder: Bool {
+        guard let url = device.appPackagesFolder else { return false }
+        return FileManager.default.fileExists(atPath: url.path)
     }
 }

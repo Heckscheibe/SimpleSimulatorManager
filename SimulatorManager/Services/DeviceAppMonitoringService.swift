@@ -12,27 +12,33 @@ import os
 // MARK: - Protocol
 
 /// Protocol defining the interface for device app monitoring
-protocol DeviceAppMonitoringServiceProtocol: AnyObject {
-    func stopMonitoring()
+protocol DeviceAppMonitoring: AnyObject {
+    func resetMonitoring()
 }
 
 /// Service that monitors simulator app changes and integrates with DeviceManager
-class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoringServiceProtocol {
+class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
     // MARK: - Properties
     
-    private let deviceManager: DeviceManagerProtocol
+    private let deviceManager: DeviceManaging
     private var appFolderMonitors: [String: AppFolderMonitor] = [:] // UUID -> Monitor
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
     
-    init(deviceManager: DeviceManagerProtocol) {
+    init(deviceManager: DeviceManaging) {
         self.deviceManager = deviceManager
         setupDeviceMonitoring()
     }
     
     // MARK: - Public Methods
-    func stopMonitoring() {
+    
+    func resetMonitoring() {
+        stopMonitoring()
+        setupDeviceMonitoring()
+    }
+    
+    private func stopMonitoring() {
         // Clear all monitors which will stop monitoring
         appFolderMonitors.removeAll()
     }
@@ -74,7 +80,6 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoringServicePr
         let monitor = AppFolderMonitor(device: device)
         
         monitor.appfolderDidChange
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] changedDevice in
                 self?.handleDeviceAppFolderChange(changedDevice)
             }
@@ -84,6 +89,9 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoringServicePr
     }
     
     private func handleDeviceAppFolderChange(_ device: Device) {
+        // Remove and recreate the monitor for this device to ensure we're monitoring the correct folder
+        appFolderMonitors.removeValue(forKey: device.udid)
+        
         // Refresh only the specific device's apps when its app container folder changes
         let previousApps = device.apps
         deviceManager.updateSpecificDevice(device)
@@ -93,9 +101,12 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoringServicePr
             return
         }
         
+        // Recreate the monitor for the updated device
+        updateMonitorForDevice(updatedDevice)
+        
         let currentApps = updatedDevice.apps
-        let previousAppIds = Set(previousApps.map(\.bundleIdentifier))
-        let currentAppIds = Set(currentApps.map(\.bundleIdentifier))
+        let previousAppIds = Set(previousApps.map { $0.bundleIdentifier })
+        let currentAppIds = Set(currentApps.map { $0.bundleIdentifier })
         
         var newChanges: [AppChange] = []
         

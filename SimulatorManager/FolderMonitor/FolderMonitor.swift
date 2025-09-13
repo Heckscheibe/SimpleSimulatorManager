@@ -55,9 +55,6 @@ final class FolderMonitor: Sendable {
     /// Simple change notification (backward compatibility)
     let folderDidChange: PassthroughSubject<Void, Never> = .init()
 
-    /// Detailed change information
-    let detailedChanges: PassthroughSubject<[FolderChange], Never> = .init()
-
     /// Error notifications
     let errors: PassthroughSubject<MonitorError, Never> = .init()
 
@@ -134,7 +131,6 @@ final class FolderMonitor: Sendable {
             if !changes.isEmpty {
                 DispatchQueue.main.async {
                     self.folderDidChange.send(())
-                    self.detailedChanges.send(changes)
                 }
             }
         }
@@ -158,7 +154,7 @@ final class FolderMonitor: Sendable {
         // Define a dispatch source monitoring the directory for additions, deletions, and renamings.
         folderMonitorSource = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: monitoredFolderFileDescriptor,
-            eventMask: [.write, .delete],
+            eventMask: [.write, .delete, .extend],
             queue: folderMonitorQueue
         )
 

@@ -94,6 +94,9 @@ platform :mac do
     UI.message("- #{ZIP_NAME}.zip")
     UI.message("")
     UI.success("You can now upload these files to your GitHub release.")
+    
+    # Open the release folder in Finder
+    sh("open ../release")
   end
 
   end
