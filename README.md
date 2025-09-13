@@ -30,7 +30,8 @@ This tool simplifies the process by offering an intuitive interface for managing
 
 **Note:** visionOS simulators are supported, but app discovery and management is currently not available for visionOS apps due to platform-specific differences.
 
-<img width="692" alt="Screenshot 2024-03-15 at 08 45 09" src="https://github.com/Heckscheibe/SimpleSimulatorManager/assets/9963191/5dead621-5d1f-4831-8f03-a485f4e71683">
+<img width="475" height="669" alt="Screenshot 2025-09-04 at 22 12 55" src="https://github.com/user-attachments/assets/ecb3b0a1-1397-417f-a3ec-02bbb0a17293" />
+
 
 
 
