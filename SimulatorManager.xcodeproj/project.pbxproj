@@ -448,7 +448,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.2.0;
 				MERGEABLE_LIBRARY = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -486,7 +486,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.2.0;
 				MERGEABLE_LIBRARY = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
