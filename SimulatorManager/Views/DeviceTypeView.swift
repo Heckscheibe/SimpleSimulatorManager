@@ -16,35 +16,7 @@ struct DeviceTypeView: View {
         ForEach(viewModel.deviceTypes.filter { settings.visiblePlatforms.contains($0.simulatorPlatform) }) { deviceType in
             Menu(deviceType.name) {
                 ForEach(viewModel.devices.filter { $0.name == deviceType.name }) { device in
-                    if device.hasAppsInstalled {
-                        Menu(device.osVersion) {
-                            Divider()
-                            AppsView(viewModel: DeviceViewModel(device: device))
-                            Divider()
-                            AppGroupsView(viewModel: DeviceViewModel(device: device))
-                            Divider()
-                        }
-                    } else {
-                        Text(device.osVersion)
-                        Text("No apps installed")
-                            .font(.system(size: 12))
-                    }
-                    Button {
-                        viewModel.didSelectSimulatorFolder(for: device)
-                    } label: {
-                        Text("Simulator Folder")
-                    }
-                    Button {
-                        viewModel.didSelectAppsFolder(for: device)
-                    } label: {
-                        Text("App Folder")
-                    }
-                    Button {
-                        viewModel.didSelectAppPackagesFolder(for: device)
-                    } label: {
-                        Text("App Package Folder")
-                    }
-                    Divider()
+                    DeviceView(viewModel: DeviceViewModel(device: device))
                 }
             }
         }
