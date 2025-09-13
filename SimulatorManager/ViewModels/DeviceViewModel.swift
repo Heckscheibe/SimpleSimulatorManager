@@ -14,6 +14,24 @@ class DeviceViewModel: ObservableObject, FolderOpening {
         self.device = device
     }
     
+    // MARK: - Device Properties
+    
+    var hasAppsInstalled: Bool {
+        device.hasAppsInstalled
+    }
+    
+    var osVersion: String {
+        device.osVersion
+    }
+    
+    var apps: [any SimulatorApp] {
+        device.apps
+    }
+    
+    var appGroups: [AppGroup] {
+        device.appGroups
+    }
+    
     // MARK: - Folder Existence Checks
     
     var hasAppsFolder: Bool {

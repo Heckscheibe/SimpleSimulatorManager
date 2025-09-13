@@ -12,7 +12,7 @@ struct AppGroupsView: View {
     @ObservedObject var viewModel: DeviceViewModel
 
     var body: some View {
-        if !viewModel.device.appGroups.isEmpty {
+        if !viewModel.appGroups.isEmpty {
             Text("AppGroups")
         }
         ForEach(viewModel.device.appGroups) { appGroup in

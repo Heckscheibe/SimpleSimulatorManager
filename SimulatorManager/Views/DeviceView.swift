@@ -12,8 +12,8 @@ struct DeviceView: View {
     @ObservedObject var viewModel: DeviceViewModel
     
     var body: some View {
-        if viewModel.device.hasAppsInstalled {
-            Menu(viewModel.device.osVersion) {
+        if viewModel.hasAppsInstalled {
+            Menu(viewModel.osVersion) {
                 Divider()
                 AppsView(viewModel: DeviceViewModel(device: viewModel.device))
                 Divider()
@@ -21,7 +21,7 @@ struct DeviceView: View {
                 Divider()
             }
         } else {
-            Text(viewModel.device.osVersion)
+            Text(viewModel.osVersion)
             Text("No apps installed")
                 .font(.system(size: 12))
         }
