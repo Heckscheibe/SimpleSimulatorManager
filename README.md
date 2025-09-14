@@ -1,5 +1,7 @@
 # Simple Simulator Manager
 
+<img width="128" height="128" alt="AppIcon-macOS-Default-128x128@2x" src="https://github.com/user-attachments/assets/750cc48f-0d71-49d2-bbb0-28b9a1d9d2ae" />
+
 Streamline your development workflow with the Simple Simulator Manager, designed to enhance your experience when working with Apple's simulators.
 
 As a software developer targeting Apple's platform, scenarios arise where utilizing a real device for testing may not be feasible or preferred, especially during initial development phases or for external contractors working on behalf of a different company. The intricate process of device registration within the Apple developer portal adds complexity and effort, making simulators an appealing choice.
