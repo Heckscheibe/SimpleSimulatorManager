@@ -37,7 +37,7 @@ This tool simplifies the process by offering an intuitive interface for managing
 
 
 ## Security and Privacy
-To access the local file system, Simple Simulator Manager disables the [Hardened Runtime](https://developer.apple.com/documentation/security/hardened_runtime) of macOS and turns off the app sandbox. This involves a potentially risky entitlement and is the reason why this tool can't be released in the official App Store. The entire code of the app is openly available in this repository, allowing users to review it and ensure that none of their data is used inappropriately or sent anywhere. The app operates entirely offline (except for the GitHub update check), ensuring a secure and private development environment.
+To access the local file system, Simple Simulator Manager disables the [App Sandbox](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.app-sandbox). This is a potentially risky entitlement and is the reason why this tool can't be released in the official App Store. The entire code of the app is openly available in this repository, allowing users to review it and ensure that none of their data is used inappropriately or sent anywhere. The app operates entirely offline (except for the GitHub update check), ensuring a secure and private development environment.
 
 
 **Note:** While Simple Simulator Manager facilitates efficient local testing, it is essential to conduct thorough testing on real devices before releasing your apps. ;)
