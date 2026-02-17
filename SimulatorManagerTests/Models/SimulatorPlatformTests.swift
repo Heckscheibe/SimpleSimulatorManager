@@ -8,7 +8,8 @@
 import Testing
 @testable import SimulatorManager
 
-@Suite("SimulatorPlatform Tests") struct SimulatorPlatformTests {
+@Suite("SimulatorPlatform Tests")
+struct SimulatorPlatformTests {
     // MARK: - iPhone Platform Tests
     
     @Test("SimulatorPlatform correctly identifies iPhone devices", arguments: [
@@ -20,7 +21,8 @@ import Testing
         "com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation",
         "iPhone-12-mini",
         "iPhone-13-Pro"
-    ]) func testIPhoneDeviceIdentification(identifier: String) {
+    ])
+    func iPhoneDeviceIdentification(identifier: String) {
         let platform = SimulatorPlatform(from: identifier)
         #expect(platform == .iPhone, "Expected iPhone platform for identifier: \(identifier)")
     }
@@ -35,7 +37,8 @@ import Testing
         "com.apple.CoreSimulator.SimDeviceType.iPad-mini-6th-generation",
         "iPad-Pro-12-9",
         "iPad-Air"
-    ]) func testIPadDeviceIdentification(identifier: String) {
+    ])
+    func iPadDeviceIdentification(identifier: String) {
         let platform = SimulatorPlatform(from: identifier)
         #expect(platform == .iPad, "Expected iPad platform for identifier: \(identifier)")
     }
@@ -50,7 +53,8 @@ import Testing
         "com.apple.CoreSimulator.SimDeviceType.Apple-Watch-SE-2nd-generation-44mm",
         "Apple-Watch-Series-8",
         "Apple-Watch-Ultra"
-    ]) func testAppleWatchDeviceIdentification(identifier: String) {
+    ])
+    func appleWatchDeviceIdentification(identifier: String) {
         let platform = SimulatorPlatform(from: identifier)
         #expect(platform == .watch, "Expected watch platform for identifier: \(identifier)")
     }
@@ -63,7 +67,8 @@ import Testing
         "com.apple.CoreSimulator.SimDeviceType.Apple-TV-4K-at-1080p-3rd-generation",
         "Apple-TV-4K",
         "Apple-TV-HD"
-    ]) func testAppleTVDeviceIdentification(identifier: String) {
+    ])
+    func appleTVDeviceIdentification(identifier: String) {
         let platform = SimulatorPlatform(from: identifier)
         #expect(platform == .appleTV, "Expected appleTV platform for identifier: \(identifier)")
     }
@@ -74,7 +79,8 @@ import Testing
         "com.apple.CoreSimulator.SimDeviceType.Apple-Vision-Pro",
         "Apple-Vision-Pro-1st-generation",
         "Apple-Vision-Pro"
-    ]) func testAppleVisionProDeviceIdentification(identifier: String) {
+    ])
+    func appleVisionProDeviceIdentification(identifier: String) {
         let platform = SimulatorPlatform(from: identifier)
         #expect(platform == .visionPro, "Expected visionPro platform for identifier: \(identifier)")
     }
@@ -87,7 +93,8 @@ import Testing
         "GenericSimulator",
         "",
         "com.apple.CoreSimulator.SimDeviceType.iPod-touch-7th-generation"
-    ]) func testIPodTouchFallback(identifier: String) {
+    ])
+    func iPodTouchFallback(identifier: String) {
         let platform = SimulatorPlatform(from: identifier)
         #expect(platform == .iPodTouch, "Expected iPodTouch platform (fallback) for identifier: \(identifier)")
     }
@@ -100,7 +107,8 @@ import Testing
         ("iPhone-15", SimulatorPlatform.iPhone), // correct case should work
         ("ipad-pro", SimulatorPlatform.iPodTouch), // lowercase should fall back
         ("iPad-Pro", SimulatorPlatform.iPad) // correct case should work
-    ]) func testCaseSensitivity(testCase: (identifier: String, expectedPlatform: SimulatorPlatform)) {
+    ])
+    func caseSensitivity(testCase: (identifier: String, expectedPlatform: SimulatorPlatform)) {
         let platform = SimulatorPlatform(from: testCase.identifier)
         #expect(
             platform == testCase.expectedPlatform,
@@ -114,7 +122,8 @@ import Testing
         ("TestApple-WatchDevice", SimulatorPlatform.watch),
         ("CustomApple-TVSetup", SimulatorPlatform.appleTV),
         ("MyApple-Vision-ProTest", SimulatorPlatform.visionPro)
-    ]) func testPartialMatches(testCase: (identifier: String, expectedPlatform: SimulatorPlatform)) {
+    ])
+    func partialMatches(testCase: (identifier: String, expectedPlatform: SimulatorPlatform)) {
         let platform = SimulatorPlatform(from: testCase.identifier)
         #expect(
             platform == testCase.expectedPlatform,
@@ -128,7 +137,8 @@ import Testing
         ("Apple-WatchSeries8", SimulatorPlatform.watch),
         ("Apple-TVHD", SimulatorPlatform.appleTV),
         ("Apple-Vision-ProMax", SimulatorPlatform.visionPro)
-    ]) func testMultipleKeywords(testCase: (identifier: String, expectedPlatform: SimulatorPlatform)) {
+    ])
+    func multipleKeywords(testCase: (identifier: String, expectedPlatform: SimulatorPlatform)) {
         let platform = SimulatorPlatform(from: testCase.identifier)
         #expect(
             platform == testCase.expectedPlatform,
@@ -143,7 +153,8 @@ import Testing
         ("com.apple.CoreSimulator.SimDeviceType.Apple-TV-4K", SimulatorPlatform.appleTV),
         ("com.apple.CoreSimulator.SimDeviceType.Apple-Vision-Pro", SimulatorPlatform.visionPro),
         ("unknown.identifier", SimulatorPlatform.iPodTouch)
-    ]) func testDeterministicBehavior(testCase: (identifier: String, expectedPlatform: SimulatorPlatform)) {
+    ])
+    func deterministicBehavior(testCase: (identifier: String, expectedPlatform: SimulatorPlatform)) {
         // Run the same initialization multiple times to ensure consistent results
         let platforms = (1 ... 10).map { _ in
             SimulatorPlatform(from: testCase.identifier)
@@ -174,7 +185,8 @@ import Testing
         ("com.apple.CoreSimulator.SimDeviceType.Apple-Watch-Ultra-2-49mm", SimulatorPlatform.watch),
         ("com.apple.CoreSimulator.SimDeviceType.Apple-TV-4K-3rd-generation", SimulatorPlatform.appleTV),
         ("com.apple.CoreSimulator.SimDeviceType.Apple-Vision-Pro", SimulatorPlatform.visionPro)
-    ]) func testRealSimulatorIdentifiers(testCase: (identifier: String, expectedPlatform: SimulatorPlatform)) {
+    ])
+    func realSimulatorIdentifiers(testCase: (identifier: String, expectedPlatform: SimulatorPlatform)) {
         let platform = SimulatorPlatform(from: testCase.identifier)
         #expect(
             platform == testCase.expectedPlatform,

@@ -10,7 +10,8 @@ import Testing
 import Combine
 @testable import SimulatorManager
 
-@Suite("SimulatorManagerViewModel Edge Cases") struct SimulatorManagerViewModelEdgeCaseTests {
+@Suite("SimulatorManagerViewModel Edge Cases")
+struct SimulatorManagerViewModelEdgeCaseTests {
     private var mockDeviceManager: MockDeviceManager
     private var mockMonitoringService: MockDeviceAppMonitoringService
     private var viewModel: SimulatorManagerViewModel
@@ -26,7 +27,8 @@ import Combine
     
     // MARK: - Edge Case Tests
     
-    @Test("ViewModel handles empty device list gracefully") func testEmptyDeviceList() async {
+    @Test("ViewModel handles empty device list gracefully")
+    func emptyDeviceList() async {
         // Given
         mockDeviceManager.setMockDevices([])
         
@@ -37,7 +39,8 @@ import Combine
         #expect(viewModel.devices.isEmpty)
     }
     
-    @Test("ViewModel handles device with nil URL") func testDeviceWithNilURL() {
+    @Test("ViewModel handles device with nil URL")
+    func deviceWithNilURL() {
         // Given
         var device = TestDataHelpers.createMockDevice()
         // Device URL is nil by default in our test helper
@@ -47,7 +50,8 @@ import Combine
         viewModel.didSelectAppsFolder(for: device)
     }
     
-    @Test("ViewModel handles rapid successive updates") func testRapidSuccessiveUpdates() async {
+    @Test("ViewModel handles rapid successive updates")
+    func rapidSuccessiveUpdates() async {
         // Given
         let devices1 = [TestDataHelpers.createMockDevice(udid: "device-1")]
         let devices2 = TestDataHelpers.createMockDevices()
@@ -66,7 +70,8 @@ import Combine
         #expect(viewModel.devices.first?.udid == "device-final")
     }
     
-    @Test("ViewModel handles large number of app changes") func testLargeNumberOfAppChanges() async {
+    @Test("ViewModel handles large number of app changes")
+    func largeNumberOfAppChanges() async {
         // Given - Create many app changes
         let device = TestDataHelpers.createMockDevice()
         var appChanges: [AppChange] = []
@@ -99,7 +104,8 @@ import Combine
         #expect(bundleIds.contains("com.test.app99"))
     }
     
-    @Test("ViewModel handles duplicate app changes") func testDuplicateAppChanges() async {
+    @Test("ViewModel handles duplicate app changes")
+    func duplicateAppChanges() async {
         // Given
         let app = TestDataHelpers.createMockApp(bundleIdentifier: "com.duplicate.app")
         let device = TestDataHelpers.createMockDevice()
@@ -132,7 +138,8 @@ import Combine
         #expect(timestamps.count == 2)
     }
     
-    @Test("ViewModel handles mixed device platforms") func testMixedDevicePlatforms() async {
+    @Test("ViewModel handles mixed device platforms")
+    func mixedDevicePlatforms() async {
         // Given
         let devices = [
             TestDataHelpers.createMockDevice(udid: "ios-device", simulatorPlatform: .iPhone),
@@ -155,7 +162,8 @@ import Combine
         #expect(platforms.contains(.appleTV))
     }
     
-    @Test("ViewModel maintains state consistency during concurrent access") func testConcurrentAccess() async {
+    @Test("ViewModel maintains state consistency during concurrent access")
+    func concurrentAccess() async {
         // Given
         let devices = TestDataHelpers.createMockDevices()
         

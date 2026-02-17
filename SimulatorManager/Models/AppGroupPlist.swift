@@ -19,6 +19,7 @@ struct AppGroupPlist: DecodableURLContainer {
         guard let index = identifier.firstIndex(of: ".") else {
             return ""
         }
+
         return String(identifier.suffix(from: identifier.index(after: index)))
     }
     

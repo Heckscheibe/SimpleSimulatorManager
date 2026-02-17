@@ -13,7 +13,7 @@ class SettingsViewModel: ObservableObject {
     private var simulatorManagerViewModel: SimulatorManagerViewModel
     private var cancellables = Set<AnyCancellable>()
     
-    // Constants for platform names
+    /// Constants for platform names
     private enum PlatformText {
         static let appleTV = "Apple TV"
         static let visionOS = "visionOS"
@@ -90,7 +90,7 @@ private extension SettingsViewModel {
         let hasWatch: Bool
     }
     
-    // Helper method to generate toggle text
+    /// Helper method to generate toggle text
     static func toggleText(for platform: String, isVisible: Bool) -> String {
         return isVisible ? "Hide \(platform)" : "Show \(platform)"
     }

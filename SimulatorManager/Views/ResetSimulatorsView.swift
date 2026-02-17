@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ResetSimulatorsView: View {
     @ObservedObject var viewModel: ResetSimulatorsViewModel
-    
     var body: some View {
         Button {
             viewModel.resetAllSimulators()

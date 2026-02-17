@@ -14,14 +14,19 @@ class ResetSimulatorsViewModel: ObservableObject {
     private let deviceManager: DeviceManaging
     private let simulatorResetService: SimulatorResetService
     
-    init(deviceManager: DeviceManaging,
-         simulatorResetService: SimulatorResetService) {
+    init(
+        deviceManager: DeviceManaging,
+        simulatorResetService: SimulatorResetService
+    ) {
         self.deviceManager = deviceManager
         self.simulatorResetService = simulatorResetService
     }
     
-    @MainActor func resetAllSimulators() {
-        guard !isResettingSimulators else { return }
+    @MainActor
+    func resetAllSimulators() {
+        guard !isResettingSimulators else {
+            return
+        }
         
         isResettingSimulators = true
         

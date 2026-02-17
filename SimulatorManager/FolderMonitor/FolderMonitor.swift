@@ -70,7 +70,10 @@ final class FolderMonitor: Sendable {
 
     private func buildInitialCache() {
         cacheQueue.async(flags: .barrier) { [weak self] in
-            guard let self else { return }
+            guard let self else {
+                return
+            }
+
             self.fileModificationCache = self.scanDirectory(at: self.url)
         }
     }
@@ -103,7 +106,9 @@ final class FolderMonitor: Sendable {
 
     private func detectChanges() {
         cacheQueue.async { [weak self] in
-            guard let self else { return }
+            guard let self else {
+                return
+            }
 
             let currentState = self.scanDirectory(at: self.url)
             var changes: [FolderChange] = []
@@ -165,7 +170,10 @@ final class FolderMonitor: Sendable {
 
         // Define a cancel handler to ensure the directory is closed when the source is cancelled.
         folderMonitorSource?.setCancelHandler { [weak self] in
-            guard let strongSelf = self else { return }
+            guard let strongSelf = self else {
+                return
+            }
+
             close(strongSelf.monitoredFolderFileDescriptor)
             strongSelf.monitoredFolderFileDescriptor = -1
             strongSelf.folderMonitorSource = nil
@@ -180,6 +188,7 @@ final class FolderMonitor: Sendable {
         guard folderMonitorSource != nil else {
             throw MonitorError.notMonitoring
         }
+
         folderMonitorSource?.cancel()
     }
 

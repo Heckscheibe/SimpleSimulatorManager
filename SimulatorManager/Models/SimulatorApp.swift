@@ -32,12 +32,14 @@ final class SimulatoriOSApp: SimulatorApp {
     
     let hasWatchApp: Bool
     
-    init(displayName: String,
-         bundleIdentifier: String,
-         appDocumentsFolderURL: URL?,
-         appPackageURL: URL?,
-         hasWatchApp: Bool,
-         hasUserDefaults: Bool) {
+    init(
+        displayName: String,
+        bundleIdentifier: String,
+        appDocumentsFolderURL: URL?,
+        appPackageURL: URL?,
+        hasWatchApp: Bool,
+        hasUserDefaults: Bool
+    ) {
         self.displayName = displayName
         self.bundleIdentifier = bundleIdentifier
         self.appDocumentsFolderURL = appDocumentsFolderURL
@@ -57,12 +59,14 @@ final class SimulatorWatchOSApp: SimulatorApp {
     
     let companioniOSAppBundleIdentifier: String?
     
-    init(displayName: String,
-         bundleIdentifier: String,
-         appDocumentsFolderURL: URL?,
-         appPackageURL: URL?,
-         hasUserDefaults: Bool,
-         companioniOSAppBundleIdentifier: String?) {
+    init(
+        displayName: String,
+        bundleIdentifier: String,
+        appDocumentsFolderURL: URL?,
+        appPackageURL: URL?,
+        hasUserDefaults: Bool,
+        companioniOSAppBundleIdentifier: String?
+    ) {
         self.displayName = displayName
         self.bundleIdentifier = bundleIdentifier
         self.appDocumentsFolderURL = appDocumentsFolderURL

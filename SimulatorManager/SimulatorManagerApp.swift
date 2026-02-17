@@ -8,7 +8,8 @@
 import SwiftUI
 import os
 
-@main struct SimulatorManagerApp: App {
+@main
+struct SimulatorManagerApp: App {
     @StateObject private var deviceManager: DeviceManager
     @StateObject private var viewModel: SimulatorManagerViewModel
     @StateObject private var settings: Settings

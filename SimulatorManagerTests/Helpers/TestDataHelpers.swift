@@ -11,11 +11,13 @@ import Foundation
 enum TestDataHelpers {
     // MARK: - Device Test Data
     
-    static func createMockDevice(udid: String = "test-device-uuid",
-                                 name: String = "Test Device",
-                                 state: DeviceState = .running,
-                                 simulatorPlatform: SimulatorPlatform = .iPhone,
-                                 osVersion: String = "17.0") -> Device {
+    static func createMockDevice(
+        udid: String = "test-device-uuid",
+        name: String = "Test Device",
+        state: DeviceState = .running,
+        simulatorPlatform: SimulatorPlatform = .iPhone,
+        osVersion: String = "17.0"
+    ) -> Device {
         return Device(
             udid: udid,
             name: name,
@@ -33,9 +35,11 @@ enum TestDataHelpers {
         ]
     }
     
-    static func createiPhoneDevice(udid: String = "iphone-device",
-                                   name: String = "iPhone 15 Pro",
-                                   state: DeviceState = .running) -> Device {
+    static func createiPhoneDevice(
+        udid: String = "iphone-device",
+        name: String = "iPhone 15 Pro",
+        state: DeviceState = .running
+    ) -> Device {
         return createMockDevice(
             udid: udid,
             name: name,
@@ -45,9 +49,11 @@ enum TestDataHelpers {
         )
     }
     
-    static func createiPadDevice(udid: String = "ipad-device",
-                                 name: String = "iPad Pro",
-                                 state: DeviceState = .running) -> Device {
+    static func createiPadDevice(
+        udid: String = "ipad-device",
+        name: String = "iPad Pro",
+        state: DeviceState = .running
+    ) -> Device {
         return createMockDevice(
             udid: udid,
             name: name,
@@ -57,9 +63,11 @@ enum TestDataHelpers {
         )
     }
     
-    static func createWatchDevice(udid: String = "watch-device",
-                                  name: String = "Apple Watch Series 9",
-                                  state: DeviceState = .running) -> Device {
+    static func createWatchDevice(
+        udid: String = "watch-device",
+        name: String = "Apple Watch Series 9",
+        state: DeviceState = .running
+    ) -> Device {
         return createMockDevice(
             udid: udid,
             name: name,
@@ -69,9 +77,11 @@ enum TestDataHelpers {
         )
     }
     
-    static func createAppleTVDevice(udid: String = "appletv-device",
-                                    name: String = "Apple TV 4K",
-                                    state: DeviceState = .running) -> Device {
+    static func createAppleTVDevice(
+        udid: String = "appletv-device",
+        name: String = "Apple TV 4K",
+        state: DeviceState = .running
+    ) -> Device {
         return createMockDevice(
             udid: udid,
             name: name,
@@ -81,9 +91,11 @@ enum TestDataHelpers {
         )
     }
     
-    static func createVisionProDevice(udid: String = "visionpro-device",
-                                      name: String = "Apple Vision Pro",
-                                      state: DeviceState = .running) -> Device {
+    static func createVisionProDevice(
+        udid: String = "visionpro-device",
+        name: String = "Apple Vision Pro",
+        state: DeviceState = .running
+    ) -> Device {
         return createMockDevice(
             udid: udid,
             name: name,
@@ -93,8 +105,10 @@ enum TestDataHelpers {
         )
     }
     
-    static func createOfflineDevice(udid: String = "offline-device",
-                                    name: String = "Offline Device") -> Device {
+    static func createOfflineDevice(
+        udid: String = "offline-device",
+        name: String = "Offline Device"
+    ) -> Device {
         return createMockDevice(
             udid: udid,
             name: name,
@@ -139,8 +153,10 @@ enum TestDataHelpers {
     
     // MARK: - DeviceType Test Data
     
-    static func createMockDeviceType(id: String = "iPhone 15",
-                                     simulatorPlatform: SimulatorPlatform = .iPhone) -> DeviceType {
+    static func createMockDeviceType(
+        id: String = "iPhone 15",
+        simulatorPlatform: SimulatorPlatform = .iPhone
+    ) -> DeviceType {
         return DeviceType(id: id, simulatorPlatform: simulatorPlatform)
     }
     
@@ -154,8 +170,10 @@ enum TestDataHelpers {
     
     // MARK: - App Test Data
     
-    static func createMockApp(bundleIdentifier: String = "com.test.app",
-                              displayName: String = "Test App") -> MockSimulatorApp {
+    static func createMockApp(
+        bundleIdentifier: String = "com.test.app",
+        displayName: String = "Test App"
+    ) -> MockSimulatorApp {
         return MockSimulatorApp(
             bundleIdentifier: bundleIdentifier,
             displayName: displayName
@@ -164,10 +182,12 @@ enum TestDataHelpers {
     
     // MARK: - AppChange Test Data
     
-    static func createMockAppChange(app: any SimulatorApp = createMockApp(),
-                                    device: Device = createMockDevice(),
-                                    changeType: ChangeType = .installed,
-                                    timestamp: Date = Date()) -> AppChange {
+    static func createMockAppChange(
+        app: any SimulatorApp = createMockApp(),
+        device: Device = createMockDevice(),
+        changeType: ChangeType = .installed,
+        timestamp: Date = Date()
+    ) -> AppChange {
         return AppChange(
             app: app,
             device: device,

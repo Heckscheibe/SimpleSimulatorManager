@@ -30,17 +30,16 @@ class AppDiscoveryService {
         }
         
         let appGroupFolderURLs = getContentOfDirectoryAt(url: appGroupsFolderURL)
-        let appGroups = appGroupFolderURLs.compactMap { url in
+        return appGroupFolderURLs.compactMap { url in
             let appGroupFilePath = url.appendingPathComponent(MetaDataPlist.fileName)
             do {
                 let appGroupPlist = try CustomPropertyListDecoder().decode(AppGroupPlist.self, at: appGroupFilePath)
                 
                 let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
-                let appGroup = AppGroup(identifier: appGroupPlist.identifier,
-                                        uuid: appGroupPlist.uuid,
-                                        hasUserDefaults: hasUserDefaults,
-                                        url: appGroupPlist.url)
-                return appGroup
+                return AppGroup(identifier: appGroupPlist.identifier,
+                                uuid: appGroupPlist.uuid,
+                                hasUserDefaults: hasUserDefaults,
+                                url: appGroupPlist.url)
                 
             } catch {
                 os_log("Failed to decode AppGroup due to error: \(error)")
@@ -54,7 +53,6 @@ class AppDiscoveryService {
                     $0.contains(appGroup.name)
                 })
         }
-        return appGroups
     }
     
     /// Load apps and their corresponding app changes with timestamps
@@ -65,6 +63,7 @@ class AppDiscoveryService {
         guard let appDataFolderURL = device.appDataFolder else {
             return ([], [])
         }
+
         let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
         
         var apps: [any SimulatorApp] = []
@@ -123,9 +122,10 @@ class AppDiscoveryService {
         guard let appPackageFolderPath = device.appPackagesFolder else {
             return []
         }
+
         let appPackageURLs = getContentOfDirectoryAt(url: appPackageFolderPath)
         
-        let infoPlists = appPackageURLs.compactMap { url -> AppInfoPlist? in
+        return appPackageURLs.compactMap { url -> AppInfoPlist? in
             let appFolderContent = getContentOfDirectoryAt(url: url)
             guard let appBundle = appFolderContent.filter({ $0.path.hasSuffix(".app") }).first else {
                 return nil
@@ -145,8 +145,6 @@ class AppDiscoveryService {
                 return nil
             }
         }
-        
-        return infoPlists
     }
     
     func getContentOfDirectoryAt(url: URL) -> [URL] {
@@ -155,10 +153,9 @@ class AppDiscoveryService {
         }
         
         do {
-            let urls = try FileManager.default
+            return try FileManager.default
                 .contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
                 .filter { $0.lastPathComponent != ".DS_Store" }
-            return urls
         } catch {
             os_log("Failed to get content at path \(url) due to error \(error)")
             return []
