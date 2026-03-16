@@ -20,7 +20,7 @@ ZIP_NAME = "SimulatorManager"
 default_platform(:mac)
 
 platform :mac do
-  desc "Build and sign the app for distribution outside Mac App Store"
+  desc "Build and sign the macOS app for Developer ID distribution"
   lane :build do
     # For macOS Developer ID, we'll manage certificates manually
     # Ensure Developer ID certificate is installed in keychain
@@ -44,7 +44,7 @@ platform :mac do
     UI.success("✅ Build completed successfully!")
   end
 
-  desc "Build and prepare for GitHub release"
+  desc "Set the release version, build the app, create the ZIP, and open the release folder"
   lane :release do
     # Ask for release version
     release_version = prompt(text: "Enter the release version (e.g. 1.2.3):")
