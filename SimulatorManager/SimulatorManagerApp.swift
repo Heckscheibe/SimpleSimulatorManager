@@ -12,6 +12,7 @@ import os
 struct SimulatorManagerApp: App {
     @StateObject private var deviceManager: DeviceManager
     @StateObject private var viewModel: SimulatorManagerViewModel
+    @StateObject private var resetSimulatorsViewModel: ResetSimulatorsViewModel
     @StateObject private var settings: Settings
     
     private let simulatorResetService: SimulatorResetService
@@ -21,11 +22,14 @@ struct SimulatorManagerApp: App {
         let simulatorResetService = SimulatorResetService()
         let viewModel = SimulatorManagerViewModel(deviceManager: deviceManager,
                                                   simulatorResetService: simulatorResetService)
+        let resetSimulatorsViewModel = ResetSimulatorsViewModel(deviceManager: deviceManager,
+                                                                simulatorResetService: simulatorResetService)
         let settings = Settings()
         
         self.simulatorResetService = simulatorResetService
         self._deviceManager = StateObject(wrappedValue: deviceManager)
         self._viewModel = StateObject(wrappedValue: viewModel)
+        self._resetSimulatorsViewModel = StateObject(wrappedValue: resetSimulatorsViewModel)
         self._settings = StateObject(wrappedValue: settings)
     }
     
@@ -37,8 +41,7 @@ struct SimulatorManagerApp: App {
             Divider()
             SettingsView(viewModel: SettingsViewModel(settings: settings, simulatorManagerViewModel: viewModel))
             Divider()
-            ResetSimulatorsView(viewModel: ResetSimulatorsViewModel(deviceManager: deviceManager,
-                                                                    simulatorResetService: simulatorResetService))
+            ResetSimulatorsView(viewModel: resetSimulatorsViewModel)
             Divider()
             GitHubView()
             Divider()

@@ -21,13 +21,29 @@ class ResetSimulatorsViewModel: ObservableObject {
         self.deviceManager = deviceManager
         self.simulatorResetService = simulatorResetService
     }
+
+    var resetButtonText: String {
+        if isResettingSimulators {
+            return "Resetting..."
+        }
+
+        return "Reset All Simulators (Destructive)"
+    }
+
+    var resetButtonIcon: String {
+        if isResettingSimulators {
+            return "hourglass"
+        }
+
+        return "arrow.clockwise"
+    }
     
     @MainActor
     func resetAllSimulators() {
         guard !isResettingSimulators else {
             return
         }
-        
+
         isResettingSimulators = true
         
         Task {
