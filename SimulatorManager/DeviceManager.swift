@@ -146,7 +146,9 @@ private extension DeviceManager {
     
     /// Populate initial recent apps from already installed apps
     func populateInitialRecentApps(_ appChanges: [AppChange]) {
-        guard !appChanges.isEmpty else { return }
+        guard !appChanges.isEmpty else {
+            return
+        }
 
         // Sort by timestamp (most recent first)
         let sortedChanges = appChanges.sorted { $0.timestamp > $1.timestamp }
@@ -167,7 +169,10 @@ private extension DeviceManager {
     }
     
     func loadDevices() {
-        guard let url = simulatorFolderURL else { return }
+        guard let url = simulatorFolderURL else {
+            return
+        }
+
         let urls = getContentOfDirectoryAt(url: url)
 
         let newDevices: [Device] = urls.reduce(into: []) { devices, url in
@@ -205,10 +210,9 @@ private extension DeviceManager {
         }
         
         do {
-            let urls = try FileManager.default
+            return try FileManager.default
                 .contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
                 .filter { $0.lastPathComponent != ".DS_Store" }
-            return urls
         } catch {
             os_log("Failed to get content at path \(url) due to error \(error)")
             return []

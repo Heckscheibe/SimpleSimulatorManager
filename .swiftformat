@@ -1,4 +1,15 @@
---swiftversion 5.9
+--swiftversion 6.0
+
+# enable optional rules
+--enable singlePropertyPerLine
+--enable wrapMultilineFunctionChains
+--enable wrapConditionalBodies
+--enable wrapEnumCases 
+--enable wrapMultilineConditionalAssignment
+--enable unusedPrivateDeclarations
+--enable blankLinesAfterGuardStatements
+
+# disable default rules
 --disable blankLinesAroundMark
 --disable extensionAccessControl
 --disable preferKeyPath
@@ -11,15 +22,19 @@
 --disable conditionalAssignment
 --disable hoistAwait
 --disable preferForLoop
---wrapparameters after-first
---wrapcollections before-first
---typeattributes same-line
---funcattributes same-line
---storedvarattrs same-line
---computedvarattrs same-line
+
+# options
+--wrap-parameters before-first
+--wrap-collections before-first
+--wrap-enum-cases with-values
+--func-attributes prev-line
+--type-attributes prev-line
+--stored-var-attributes same-line
+--computed-var-attributes prev-line
 --trimwhitespace nonblank-lines
 --commas inline
---exclude **/Pods
+
+# exclude paths
 --exclude **/DerivedData
 --exclude **/vendor
 --exclude fastlane/actions/implementations/ProjectFactory/**

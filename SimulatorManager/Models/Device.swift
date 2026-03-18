@@ -28,7 +28,7 @@ class Device: ObservableObject, DecodableURLContainer {
     let simulatorPlatform: SimulatorPlatform
     let osVersion: String
     
-    // not decoded properties
+    /// not decoded properties
     var dataFolder: URL? {
         url?.appendingPathComponent("data")
     }
@@ -85,7 +85,8 @@ class Device: ObservableObject, DecodableURLContainer {
     // MARK: - Helper Methods
     
     private static func extractOSVersion(from runtime: String) -> String {
-        return runtime.components(separatedBy: ".").last?
+        return runtime.components(separatedBy: ".")
+            .last?
             .components(separatedBy: "-")
             .enumerated()
             .reduce(into: "") { partialResult, osVersion in

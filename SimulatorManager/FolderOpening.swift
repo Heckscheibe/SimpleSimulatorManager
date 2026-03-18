@@ -20,6 +20,7 @@ extension FolderOpening {
         guard let url = app.appPackageURL?.deletingLastPathComponent() else {
             return
         }
+
         openFolderAt(url)
     }
 
@@ -27,6 +28,7 @@ extension FolderOpening {
         guard let url = app.appDocumentsFolderURL else {
             return
         }
+
         openFolderAt(url)
     }
     
@@ -34,6 +36,7 @@ extension FolderOpening {
         guard let url = app.appDocumentsFolderURL?.appendingPathComponent(SimulatorPaths.userDefaultsPath) else {
             return
         }
+
         openFolderAt(url)
     }
     
@@ -41,6 +44,7 @@ extension FolderOpening {
         guard let url = appGroup.url?.appendingPathComponent(SimulatorPaths.userDefaultsPath) else {
             return
         }
+
         openFolderAt(url)
     }
     
@@ -48,6 +52,7 @@ extension FolderOpening {
         guard let url = device.url else {
             return
         }
+
         openFolderAt(url)
     }
     
@@ -55,6 +60,7 @@ extension FolderOpening {
         guard let url = device.appDataFolder else {
             return
         }
+
         openFolderAt(url)
     }
     
@@ -62,6 +68,7 @@ extension FolderOpening {
         guard let url = device.appPackagesFolder else {
             return
         }
+
         openFolderAt(url)
     }
     
@@ -69,6 +76,7 @@ extension FolderOpening {
         guard let url = appGroup.url else {
             return
         }
+
         openFolderAt(url)
     }
 }

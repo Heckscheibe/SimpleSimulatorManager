@@ -9,7 +9,8 @@ import Testing
 import Combine
 @testable import SimulatorManager
 
-@Suite("SimulatorManagerViewModel Tests") struct SimulatorManagerViewModelTests {
+@Suite("SimulatorManagerViewModel Tests")
+struct SimulatorManagerViewModelTests {
     // MARK: - Test Properties
     
     private var mockDeviceManager: MockDeviceManager
@@ -29,13 +30,15 @@ import Combine
     
     // MARK: - Initialization Tests
     
-    @Test("ViewModel initializes with empty arrays") func testInitialState() {
+    @Test("ViewModel initializes with empty arrays")
+    func initialState() {
         #expect(viewModel.devices.isEmpty)
         #expect(viewModel.deviceTypes.isEmpty)
         #expect(viewModel.recentAppChanges.isEmpty)
     }
     
-    @Test("ViewModel binds to device manager publishers on initialization") func testPublisherBinding() async {
+    @Test("ViewModel binds to device manager publishers on initialization")
+    func publisherBinding() async {
         // Given
         let mockDevices = TestDataHelpers.createMockDevices()
         let mockDeviceTypes = TestDataHelpers.createMockDeviceTypes()
@@ -61,7 +64,8 @@ import Combine
     
     // MARK: - Device Management Tests
     
-    @Test("didSelectSimulatorFolder opens folder for device with valid URL") func testDidSelectSimulatorFolderWithValidURL() {
+    @Test("didSelectSimulatorFolder opens folder for device with valid URL")
+    func didSelectSimulatorFolderWithValidURL() {
         // Given
         var device = TestDataHelpers.createMockDevice()
         // Note: In a real test, we'd need to mock the folder opening functionality
@@ -71,7 +75,8 @@ import Combine
         viewModel.didSelectSimulatorFolder(for: device)
     }
     
-    @Test("didSelectAppsFolder opens apps folder for device with valid URL") func testDidSelectAppsFolderWithValidURL() {
+    @Test("didSelectAppsFolder opens apps folder for device with valid URL")
+    func didSelectAppsFolderWithValidURL() {
         // Given
         var device = TestDataHelpers.createMockDevice()
         
@@ -81,7 +86,8 @@ import Combine
     
     // MARK: - Reactive Data Flow Tests
     
-    @Test("ViewModel updates when devices change") func testDevicesUpdate() async {
+    @Test("ViewModel updates when devices change")
+    func devicesUpdate() async {
         // Given
         let initialDevices = [TestDataHelpers.createMockDevice(udid: "device-1")]
         mockDeviceManager.setMockDevices(initialDevices)
@@ -105,7 +111,8 @@ import Combine
         #expect(viewModel.devices.map(\.udid).contains("device-3"))
     }
     
-    @Test("ViewModel updates when device types change") func testDeviceTypesUpdate() async {
+    @Test("ViewModel updates when device types change")
+    func deviceTypesUpdate() async {
         // Given
         let initialDeviceTypes = [TestDataHelpers.createMockDeviceType()]
         mockDeviceManager.setMockDeviceTypes(initialDeviceTypes)
@@ -129,7 +136,8 @@ import Combine
         #expect(viewModel.deviceTypes.map(\.id).contains("Apple Watch"))
     }
     
-    @Test("ViewModel updates when recent app changes occur") func testRecentAppChangesUpdate() async {
+    @Test("ViewModel updates when recent app changes occur")
+    func recentAppChangesUpdate() async {
         // Given - Start with empty changes
         #expect(viewModel.recentAppChanges.isEmpty)
         
@@ -154,7 +162,8 @@ import Combine
     
     // MARK: - Integration Tests
     
-    @Test("ViewModel correctly handles multiple simultaneous updates") func testMultipleSimultaneousUpdates() async {
+    @Test("ViewModel correctly handles multiple simultaneous updates")
+    func multipleSimultaneousUpdates() async {
         // Given
         let devices = TestDataHelpers.createMockDevices()
         let deviceTypes = TestDataHelpers.createMockDeviceTypes()
@@ -178,7 +187,8 @@ import Combine
         #expect(viewModel.deviceTypes.map(\.id).sorted() == ["Apple Watch", "iPad Pro", "iPhone 15"])
     }
     
-    @Test("ViewModel maintains proper memory management") func testMemoryManagement() {
+    @Test("ViewModel maintains proper memory management")
+    func memoryManagement() {
         // Given - Create a new view model instance
         var localViewModel: SimulatorManagerViewModel? = SimulatorManagerViewModel(
             deviceManager: mockDeviceManager,

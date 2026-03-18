@@ -12,7 +12,7 @@ protocol DecodableURLContainer: Decodable {
 }
 
 class CustomPropertyListDecoder: PropertyListDecoder, Sendable, @unchecked Sendable {
-    func decode<T>(_ type: T.Type, at url: URL) throws -> T where T: DecodableURLContainer {
+    func decode<T: DecodableURLContainer>(_ type: T.Type, at url: URL) throws -> T {
         let data = try Data(contentsOf: url)
         var object = try decode(T.self, from: data)
         object.url = url.deletingLastPathComponent()

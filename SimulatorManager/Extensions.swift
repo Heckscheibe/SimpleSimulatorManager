@@ -19,7 +19,8 @@ extension FileManager {
 
 extension Process {
     /// Execute a shell command and return the result
-    @discardableResult static func execute(command: String, arguments: [String] = []) throws -> String {
+    @discardableResult
+    static func execute(command: String, arguments: [String] = []) throws -> String {
         let process = Process()
         let pipe = Pipe()
         

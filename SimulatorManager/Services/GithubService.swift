@@ -8,7 +8,8 @@
 import Foundation
 import AppKit
 
-@MainActor class GithubService: ObservableObject {
+@MainActor
+class GithubService: ObservableObject {
     @Published var isUpdateAvailable = false
     var latestRelease: GitHubRelease?
     var isChecking = false
@@ -50,7 +51,9 @@ import AppKit
 
 private extension GithubService {
     func checkForUpdates() async {
-        guard !isChecking else { return }
+        guard !isChecking else {
+            return
+        }
         
         isChecking = true
         

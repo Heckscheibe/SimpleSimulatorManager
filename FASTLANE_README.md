@@ -1,6 +1,6 @@
 # Fastlane Setup for SimpleSimulatorManager
 
-This document describes how to set up and use Fastlane for building and signing the SimpleSimulatorManager macOS app for distribution outside the Mac App Store.
+This document describes the current Fastlane workflow for building and signing the SimpleSimulatorManager macOS app for Developer ID distribution outside the Mac App Store.
 
 ## Prerequisites
 
@@ -24,36 +24,29 @@ bundle install
 ### 2. Configure Environment Variables
 
 ```bash
-# Copy the template and edit with your values
-cp .env.template .env
-
-# Edit .env with your Apple Developer credentials
+# Create a .env file in the repository root
 # DO NOT commit this file to git
 ```
 
-Fill in your `.env` file with:
-- `FASTLANE_USER`: Your Apple ID email
-- `FASTLANE_TEAM_ID`: Your Apple Developer Team ID
-- `MATCH_PASSWORD`: A secure password for encrypting certificates
+The current Fastfile reads these values from the environment:
+- `CODESIGNING_IDENTITY`: Your Developer ID Application signing identity
+- `PROVISIONING_PROFILE_NAME`: The provisioning profile name for `com.nicolashiller.SimpleSimulatorManager`
 
-### 3. Update Appfile
-
-Edit `fastlane/Appfile` and replace:
-- `your-apple-id@example.com` with your Apple ID
-- `YOUR_TEAM_ID` with your Apple Developer Team ID
-
-### 4. Create Certificates (First Time Only)
-
-⚠️ **Important**: Only run this command once, and only if you don't already have Developer ID certificates.
+Use this template for your `.env` file:
 
 ```bash
-fastlane create_certificates
+# Fastlane signing configuration
+CODESIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+PROVISIONING_PROFILE_NAME="SimpleSimulatorManager Developer ID"
 ```
 
-This will:
-- Create a new Developer ID certificate
-- Store it in your signing repository
-- Install it on your machine
+### 3. Install Signing Assets
+
+Before running Fastlane, make sure these assets are already available on your machine:
+- A valid Developer ID Application certificate in your keychain
+- A provisioning profile matching `com.nicolashiller.SimpleSimulatorManager`
+
+The current repository does not define certificate management lanes such as `setup_signing` or `create_certificates`. Signing assets must be prepared outside this Fastlane configuration.
 
 ## Building the App
 
@@ -62,7 +55,7 @@ This will:
 For a simple build and sign:
 
 ```bash
-fastlane build
+bundle exec fastlane mac build
 ```
 
 ### Full Release Build
@@ -70,7 +63,7 @@ fastlane build
 For a complete release with ZIP files:
 
 ```bash
-fastlane release
+bundle exec fastlane mac release
 ```
 
 This will create:
@@ -78,19 +71,8 @@ This will create:
 
 ## Lanes Available
 
-- `fastlane build` - Build and sign the app
-- `fastlane setup_signing` - Download and install certificates
-- `fastlane create_certificates` - Create new certificates (first time only)
-- `fastlane release` - Build and prepare files for GitHub release
-
-## Signing Repository
-
-Your certificates are stored in: https://github.com/Heckscheibe/SimpleSimulatorManagerSigning
-
-This repository contains:
-- Developer ID certificates (encrypted)
-- Provisioning profiles
-- Match metadata
+- `fastlane mac build` - Build and sign the macOS app for Developer ID distribution
+- `fastlane mac release` - Set the release version, build the app, create the ZIP, and open the release folder
 
 ## Troubleshooting
 
@@ -98,41 +80,32 @@ This repository contains:
 
 If you encounter certificate issues:
 
-```bash
-# Re-download certificates
-fastlane setup_signing
-
-# Or force update certificates
-fastlane setup_signing --force
-```
+1. Verify that your Developer ID certificate is installed in Keychain Access.
+2. Verify that the provisioning profile name in `.env` matches the profile used for `com.nicolashiller.SimpleSimulatorManager`.
+3. Confirm that `CODESIGNING_IDENTITY` exactly matches the identity shown by the system.
 
 ### Build Issues
 
 1. Ensure your Xcode project builds successfully in Xcode first
 2. Check that the scheme "SimulatorManager" exists and is shared
-3. Verify your Apple Developer account is active
-
-### Match Password
-
-If you forget your match password:
-1. You'll need to revoke and recreate all certificates
-2. Run `fastlane create_certificates --force`
+3. Verify that your `.env` file is present in the repository root
+4. Verify that your signing certificate and provisioning profile are installed locally
+5. Verify that the placeholder values in `.env` have been replaced with your real signing details
 
 ## Security Notes
 
 - Never commit your `.env` file
-- Keep your match password secure
-- The signing repository is private and encrypted
-- Only team members should have access to the signing repository
+- Keep your signing identity details private
+- Limit access to signing certificates and provisioning profiles
 
 ## GitHub Release Workflow
 
-After running `fastlane release`:
+After running `bundle exec fastlane mac release`:
 
 1. Files will be in the `release/` directory
 2. Create a new release on GitHub
-3. Upload `SimulatorManager.dmg` and `SimulatorManager.zip`
-4. Users can download and install the DMG directly
+3. Upload `SimulatorManager.zip`
+4. Users can download the ZIP and move the app into their Applications folder
 
 ## Distribution Notes
 

@@ -9,20 +9,25 @@ import SwiftUI
 
 struct ResetSimulatorsView: View {
     @ObservedObject var viewModel: ResetSimulatorsViewModel
-    
+
     var body: some View {
-        Button {
-            viewModel.resetAllSimulators()
-        } label: {
+        Menu {
             if viewModel.isResettingSimulators {
-                HStack {
-                    Text("Resetting...")
-                }
+                Text("Resetting...")
             } else {
-                Image(systemName: "arrow.clockwise")
-                Text("Reset All Simulators")
+                Button("Confirm Reset All Simulators", role: .destructive) {
+                    viewModel.resetAllSimulators()
+                }
             }
+        } label: {
+            buttonLabel
         }
         .disabled(viewModel.isResettingSimulators)
+    }
+
+    @ViewBuilder
+    private var buttonLabel: some View {
+        Image(systemName: viewModel.resetButtonIcon)
+        Text(viewModel.resetButtonText)
     }
 }

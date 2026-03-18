@@ -21,7 +21,7 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 [bundle exec] fastlane mac build
 ```
 
-Build and sign the app for distribution outside Mac App Store
+Build and sign the macOS app for Developer ID distribution
 
 ### mac release
 
@@ -29,7 +29,7 @@ Build and sign the app for distribution outside Mac App Store
 [bundle exec] fastlane mac release
 ```
 
-Build and prepare for GitHub release
+Set the release version, build the app, create the ZIP, and open the release folder
 
 ----
 

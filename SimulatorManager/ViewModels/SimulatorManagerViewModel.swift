@@ -21,8 +21,10 @@ class SimulatorManagerViewModel: ObservableObject, FolderOpening {
     private let deviceAppMonitoringService: DeviceAppMonitoring
     private var cancellables: Set<AnyCancellable> = []
     
-    init(deviceManager: DeviceManaging,
-         simulatorResetService: SimulatorResetService) {
+    init(
+        deviceManager: DeviceManaging,
+        simulatorResetService: SimulatorResetService
+    ) {
         self.deviceManager = deviceManager
         self.simulatorResetService = simulatorResetService
         self.deviceAppMonitoringService = DeviceAppMonitoringService(deviceManager: deviceManager)

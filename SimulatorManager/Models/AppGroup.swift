@@ -12,6 +12,7 @@ class AppGroup {
         guard let index = identifier.firstIndex(of: ".") else {
             return ""
         }
+
         return String(identifier.suffix(from: identifier.index(after: index)))
     }
 
@@ -21,10 +22,12 @@ class AppGroup {
 
     var url: URL?
     
-    init(identifier: String,
-         uuid: String,
-         hasUserDefaults: Bool,
-         url: URL? = nil) {
+    init(
+        identifier: String,
+        uuid: String,
+        hasUserDefaults: Bool,
+        url: URL? = nil
+    ) {
         self.identifier = identifier
         self.uuid = uuid
         self.hasUserDefaults = hasUserDefaults

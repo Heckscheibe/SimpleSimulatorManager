@@ -35,12 +35,18 @@ class DeviceViewModel: ObservableObject, FolderOpening {
     // MARK: - Folder Existence Checks
     
     var hasAppsFolder: Bool {
-        guard let url = device.appDataFolder else { return false }
+        guard let url = device.appDataFolder else {
+            return false
+        }
+
         return FileManager.default.fileExists(atPath: url.path)
     }
     
     var hasAppPackagesFolder: Bool {
-        guard let url = device.appPackagesFolder else { return false }
+        guard let url = device.appPackagesFolder else {
+            return false
+        }
+
         return FileManager.default.fileExists(atPath: url.path)
     }
 }
