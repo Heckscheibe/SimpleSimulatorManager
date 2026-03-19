@@ -78,6 +78,12 @@ class MockDeviceManager: DeviceManaging {
                     return existingKey == appKey
                 }
                 currentInstalled.append(change)
+            case .updated:
+                currentInstalled.removeAll { existing in
+                    let existingKey = "\(existing.app.bundleIdentifier)-\(existing.device.udid)"
+                    return existingKey == appKey
+                }
+                currentInstalled.append(change)
             case .removed:
                 currentInstalled.removeAll { existing in
                     let existingKey = "\(existing.app.bundleIdentifier)-\(existing.device.udid)"

@@ -459,6 +459,7 @@
 				MARKETING_VERSION = 1.2.0;
 				MERGEABLE_LIBRARY = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
+				PRODUCT_MODULE_NAME = SimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Simple Simulator Manager Development";
@@ -511,6 +512,7 @@
 				MARKETING_VERSION = 1.2.0;
 				MERGEABLE_LIBRARY = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
+				PRODUCT_MODULE_NAME = SimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Simple Simulator Manager Distribution";
@@ -530,17 +532,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 37;
 				DEAD_CODE_STRIPPING = YES;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = C26VF67R9C;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimulatorManagerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimulatorManager.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SimulatorManager";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Simulator Manager.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Simulator Manager";
 			};
 			name = Debug;
 		};
@@ -548,17 +552,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 37;
 				DEAD_CODE_STRIPPING = YES;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = C26VF67R9C;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimulatorManagerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimulatorManager.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SimulatorManager";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Simulator Manager.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Simulator Manager";
 			};
 			name = Release;
 		};

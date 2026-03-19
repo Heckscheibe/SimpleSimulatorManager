@@ -10,6 +10,7 @@ import Combine
 @testable import SimulatorManager
 
 @Suite("SimulatorManagerViewModel Tests")
+@MainActor
 struct SimulatorManagerViewModelTests {
     // MARK: - Test Properties
     
@@ -148,16 +149,17 @@ struct SimulatorManagerViewModelTests {
         // Allow Combine to process
         try? await Task.sleep(nanoseconds: 200_000_000)
         
-        // Then
-        #expect(viewModel.recentAppChanges.count == 2)
+        // Then - The view model surfaces the resulting installed-app list
+        #expect(viewModel.recentInstalledApps.count == 1)
+        #expect(viewModel.recentAppChanges.count == 1)
         
-        let appIdentifiers = viewModel.recentAppChanges.map(\.app.bundleIdentifier)
+        let appIdentifiers = viewModel.recentInstalledApps.map(\.app.bundleIdentifier)
         #expect(appIdentifiers.contains("com.test.app1"))
-        #expect(appIdentifiers.contains("com.test.app2"))
+        #expect(!appIdentifiers.contains("com.test.app2"))
         
-        let changeTypes = viewModel.recentAppChanges.map(\.changeType)
+        let changeTypes = viewModel.recentInstalledApps.map(\.changeType)
         #expect(changeTypes.contains(.installed))
-        #expect(changeTypes.contains(.removed))
+        #expect(!changeTypes.contains(.removed))
     }
     
     // MARK: - Integration Tests

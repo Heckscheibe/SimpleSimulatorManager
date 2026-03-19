@@ -53,6 +53,10 @@ class DeviceViewModel: ObservableObject, FolderOpening {
         currentAction != nil
     }
 
+    var canEraseDevice: Bool {
+        device.state == .off && !isPerformingAction
+    }
+
     var currentActionTitle: String {
         currentAction?.progressTitle ?? ""
     }
@@ -76,6 +80,11 @@ class DeviceViewModel: ObservableObject, FolderOpening {
     }
 
     func eraseDevice() {
+        guard device.state == .off else {
+            actionErrorMessage = "Shut down \(device.name) before erasing it."
+            return
+        }
+
         performAction(.erase)
     }
 }

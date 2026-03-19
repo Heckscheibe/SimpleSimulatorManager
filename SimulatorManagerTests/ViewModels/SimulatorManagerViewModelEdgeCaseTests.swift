@@ -11,6 +11,7 @@ import Combine
 @testable import SimulatorManager
 
 @Suite("SimulatorManagerViewModel Edge Cases")
+@MainActor
 struct SimulatorManagerViewModelEdgeCaseTests {
     private var mockDeviceManager: MockDeviceManager
     private var mockMonitoringService: MockDeviceAppMonitoringService
@@ -166,24 +167,32 @@ struct SimulatorManagerViewModelEdgeCaseTests {
     func concurrentAccess() async {
         // Given
         let devices = TestDataHelpers.createMockDevices()
+        let mockDeviceManager = self.mockDeviceManager
+        let viewModel = self.viewModel
         
         // When - Simulate concurrent access
         await withTaskGroup(of: Void.self) { group in
             group.addTask {
-                self.mockDeviceManager.setMockDevices(devices)
+                await MainActor.run {
+                    mockDeviceManager.setMockDevices(devices)
+                }
             }
             
             group.addTask {
                 // Simulate UI accessing the properties
-                _ = self.viewModel.devices
-                _ = self.viewModel.deviceTypes
-                _ = self.viewModel.recentAppChanges
+                await MainActor.run {
+                    _ = viewModel.devices
+                    _ = viewModel.deviceTypes
+                    _ = viewModel.recentAppChanges
+                }
             }
             
             group.addTask {
                 // Simulate another UI access
-                for device in self.viewModel.devices {
-                    self.viewModel.didSelectSimulatorFolder(for: device)
+                await MainActor.run {
+                    for device in viewModel.devices {
+                        viewModel.didSelectSimulatorFolder(for: device)
+                    }
                 }
             }
         }

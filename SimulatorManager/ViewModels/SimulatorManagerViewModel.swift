@@ -49,17 +49,24 @@ private extension SimulatorManagerViewModel {
     func bind() {
         deviceManager.devices
             .receive(on: DispatchQueue.main)
-            .assign(to: \.devices, on: self)
+            .sink { [weak self] devices in
+                self?.devices = devices
+            }
             .store(in: &cancellables)
         
         deviceManager.deviceTypes
             .receive(on: DispatchQueue.main)
-            .assign(to: \.deviceTypes, on: self)
+            .sink { [weak self] deviceTypes in
+                self?.deviceTypes = deviceTypes
+            }
             .store(in: &cancellables)
         
         deviceManager.recentInstalledApps
             .receive(on: DispatchQueue.main)
-            .assign(to: \.recentInstalledApps, on: self)
+            .sink { [weak self] recentInstalledApps in
+                self?.recentInstalledApps = recentInstalledApps
+                self?.recentAppChanges = recentInstalledApps
+            }
             .store(in: &cancellables)
         
         simulatorResetService.didResetAllSimulators
