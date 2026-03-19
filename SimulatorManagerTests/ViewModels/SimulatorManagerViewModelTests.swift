@@ -204,4 +204,24 @@ struct SimulatorManagerViewModelTests {
         // Then - Should be deallocated
         #expect(weakViewModel == nil)
     }
+
+    @Test("ViewModel reuses cached device view models and refreshes their device")
+    func cachedDeviceViewModels() async throws {
+        let initialDevice = TestDataHelpers.createMockDevice(udid: "device-1", name: "Initial Device", state: .off)
+        let refreshedDevice = TestDataHelpers.createMockDevice(udid: "device-1", name: "Refreshed Device", state: .running)
+
+        mockDeviceManager.setMockDevices([initialDevice])
+        try await Task.sleep(nanoseconds: 200_000_000)
+
+        let initialViewModel = viewModel.makeDeviceViewModel(for: initialDevice)
+
+        mockDeviceManager.setMockDevices([refreshedDevice])
+        try await Task.sleep(nanoseconds: 200_000_000)
+
+        let refreshedViewModel = viewModel.makeDeviceViewModel(for: refreshedDevice)
+
+        #expect(initialViewModel === refreshedViewModel)
+        #expect(refreshedViewModel.device.name == "Refreshed Device")
+        #expect(refreshedViewModel.device.state == .running)
+    }
 }

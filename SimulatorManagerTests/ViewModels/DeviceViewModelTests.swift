@@ -11,7 +11,7 @@ import Testing
 
 @Suite("DeviceViewModel Tests")
 struct DeviceViewModelTests {
-    @Test("Erase action is available for powered off simulators")
+    @Test("Erase action is available when no action is running")
     @MainActor
     func eraseAvailability() {
         let device = TestDataHelpers.createOfflineDevice()
@@ -53,18 +53,30 @@ struct DeviceViewModelTests {
         #expect(!viewModel.isPerformingAction)
     }
 
-    @Test("Erase requires a shut down simulator")
+    @Test("Erasing a running device shuts it down before erasing")
     @MainActor
-    func eraseRequiresShutDown() {
+    func eraseShutsDownRunningDevice() async throws {
+        let deviceManager = MockDeviceManager()
+        let service = MockSimulatorDeviceActionService()
+        let refreshedDevice = TestDataHelpers.createOfflineDevice(udid: "test-device-uuid")
         let viewModel = DeviceViewModel(
             device: TestDataHelpers.createMockDevice(state: .running),
-            deviceManager: MockDeviceManager(),
-            simulatorResetService: MockSimulatorDeviceActionService()
+            deviceManager: deviceManager,
+            simulatorResetService: service
         )
 
-        viewModel.eraseDevice()
+        deviceManager.setMockDevices([refreshedDevice])
 
-        #expect(viewModel.actionErrorMessage == "Shut down Test Device before erasing it.")
+        viewModel.eraseDevice()
+        try await Task.sleep(nanoseconds: 200_000_000)
+
+        let shutDownDeviceUdid = await service.shutDownDeviceUdid
+        let erasedDeviceUdid = await service.erasedDeviceUdid
+
+        #expect(shutDownDeviceUdid == "test-device-uuid")
+        #expect(erasedDeviceUdid == "test-device-uuid")
+        #expect(deviceManager.updateSpecificDeviceCalled)
+        #expect(viewModel.actionErrorMessage == nil)
         #expect(!viewModel.isPerformingAction)
     }
 

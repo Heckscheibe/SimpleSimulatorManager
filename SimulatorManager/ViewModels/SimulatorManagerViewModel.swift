@@ -23,6 +23,7 @@ class SimulatorManagerViewModel: FolderOpening {
     @ObservationIgnored private let simulatorResetService: SimulatorResetServing
     @ObservationIgnored private let deviceAppMonitoringService: DeviceAppMonitoring
     @ObservationIgnored private var cancellables: Set<AnyCancellable> = []
+    @ObservationIgnored private var deviceViewModels: [String: DeviceViewModel] = [:]
     
     init(
         deviceManager: DeviceManaging,
@@ -36,11 +37,18 @@ class SimulatorManagerViewModel: FolderOpening {
     }
 
     func makeDeviceViewModel(for device: Device) -> DeviceViewModel {
-        DeviceViewModel(
+        if let existingViewModel = deviceViewModels[device.udid] {
+            existingViewModel.device = device
+            return existingViewModel
+        }
+
+        let deviceViewModel = DeviceViewModel(
             device: device,
             deviceManager: deviceManager,
             simulatorResetService: simulatorResetService
         )
+        deviceViewModels[device.udid] = deviceViewModel
+        return deviceViewModel
     }
 }
 
@@ -50,6 +58,7 @@ private extension SimulatorManagerViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] devices in
                 self?.devices = devices
+                self?.syncDeviceViewModels(with: devices)
             }
             .store(in: &cancellables)
         
@@ -75,5 +84,14 @@ private extension SimulatorManagerViewModel {
 //                self?.deviceAppMonitoringService.resetMonitoring()
             }
             .store(in: &cancellables)
+    }
+
+    func syncDeviceViewModels(with devices: [Device]) {
+        let activeUdids = Set(devices.map(\.udid))
+        deviceViewModels = deviceViewModels.filter { activeUdids.contains($0.key) }
+
+        for device in devices {
+            deviceViewModels[device.udid]?.device = device
+        }
     }
 }
