@@ -9,7 +9,8 @@ import Foundation
 import SwiftUI
 
 struct SettingsView: View {
-    @ObservedObject var viewModel: SettingsViewModel
+    let viewModel: SettingsViewModel
+    @ObservedObject var settings: Settings
     
     var body: some View {
         Button(action: {

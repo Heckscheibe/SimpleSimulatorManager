@@ -6,17 +6,20 @@
 //
 
 import Foundation
+import Observation
 import os
 
-class ResetSimulatorsViewModel: ObservableObject {
-    @Published var isResettingSimulators = false
+@MainActor
+@Observable
+class ResetSimulatorsViewModel {
+    var isResettingSimulators = false
     
-    private let deviceManager: DeviceManaging
-    private let simulatorResetService: SimulatorResetService
+    @ObservationIgnored private let deviceManager: DeviceManaging
+    @ObservationIgnored private let simulatorResetService: SimulatorResetServing
     
     init(
         deviceManager: DeviceManaging,
-        simulatorResetService: SimulatorResetService
+        simulatorResetService: SimulatorResetServing
     ) {
         self.deviceManager = deviceManager
         self.simulatorResetService = simulatorResetService
@@ -38,7 +41,6 @@ class ResetSimulatorsViewModel: ObservableObject {
         return "arrow.clockwise"
     }
     
-    @MainActor
     func resetAllSimulators() {
         guard !isResettingSimulators else {
             return
@@ -54,9 +56,7 @@ class ResetSimulatorsViewModel: ObservableObject {
                 os_log("Failed to reset simulators: \(error.localizedDescription)")
             }
             deviceManager.resetAndLoadDevices()
-            await MainActor.run {
-                isResettingSimulators = false
-            }
+            isResettingSimulators = false
         }
     }
 }

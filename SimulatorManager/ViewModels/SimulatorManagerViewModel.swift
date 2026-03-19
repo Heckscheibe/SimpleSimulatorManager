@@ -6,32 +6,31 @@
 //
 
 import Foundation
-import os
 import AppKit
 import Combine
+import Observation
+import os
 
 @MainActor
-class SimulatorManagerViewModel: ObservableObject, FolderOpening {
-    @Published var deviceTypes: [DeviceType] = []
-    @Published var devices: [Device] = []
-    @Published var recentAppChanges: [AppChange] = []
-    @Published var recentInstalledApps: [AppChange] = []
+@Observable
+class SimulatorManagerViewModel: FolderOpening {
+    var deviceTypes: [DeviceType] = []
+    var devices: [Device] = []
+    var recentAppChanges: [AppChange] = []
+    var recentInstalledApps: [AppChange] = []
     
-    private let deviceManager: DeviceManaging
-    private let simulatorResetService: SimulatorResetService
-    private let simulatorDeviceActionService: SimulatorDeviceActionServing
-    private let deviceAppMonitoringService: DeviceAppMonitoring
-    private var cancellables: Set<AnyCancellable> = []
+    @ObservationIgnored private let deviceManager: DeviceManaging
+    @ObservationIgnored private let simulatorResetService: SimulatorResetServing
+    @ObservationIgnored private let deviceAppMonitoringService: DeviceAppMonitoring
+    @ObservationIgnored private var cancellables: Set<AnyCancellable> = []
     
     init(
         deviceManager: DeviceManaging,
-        simulatorResetService: SimulatorResetService = SimulatorResetService(),
-        simulatorDeviceActionService: SimulatorDeviceActionServing = SimulatorDeviceActionService(),
+        simulatorResetService: SimulatorResetServing = SimulatorResetService(),
         deviceAppMonitoringService: DeviceAppMonitoring? = nil
     ) {
         self.deviceManager = deviceManager
         self.simulatorResetService = simulatorResetService
-        self.simulatorDeviceActionService = simulatorDeviceActionService
         self.deviceAppMonitoringService = deviceAppMonitoringService ?? DeviceAppMonitoringService(deviceManager: deviceManager)
         bind()
     }
@@ -40,7 +39,7 @@ class SimulatorManagerViewModel: ObservableObject, FolderOpening {
         DeviceViewModel(
             device: device,
             deviceManager: deviceManager,
-            simulatorDeviceActionService: simulatorDeviceActionService
+            simulatorResetService: simulatorResetService
         )
     }
 }

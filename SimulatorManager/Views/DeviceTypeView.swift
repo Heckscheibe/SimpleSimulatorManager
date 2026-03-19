@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct DeviceTypeView: View {
-    @ObservedObject var viewModel: SimulatorManagerViewModel
+    let viewModel: SimulatorManagerViewModel
     @ObservedObject var settings: Settings
     
     var body: some View {

@@ -6,14 +6,13 @@
 //
 
 import SwiftUI
-import Combine
 
 struct RecentAppsView: View {
-    @ObservedObject var viewModel: SimulatorManagerViewModel
+    let viewModel: SimulatorManagerViewModel
     @ObservedObject var settings: Settings
     
     var body: some View {
-        if Settings().showRecentApps {
+        if settings.showRecentApps {
             if !viewModel.recentInstalledApps.isEmpty {
                 Text("Recent Apps")
                 ForEach(viewModel.recentInstalledApps, id: \.id) { appChange in

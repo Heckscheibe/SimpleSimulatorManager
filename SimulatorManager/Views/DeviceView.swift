@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct DeviceView: View {
-    @ObservedObject var viewModel: DeviceViewModel
+    let viewModel: DeviceViewModel
     
     var body: some View {
         Text(viewModel.stateDescription)

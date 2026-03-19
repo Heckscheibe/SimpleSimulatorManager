@@ -6,25 +6,27 @@
 //
 
 import Foundation
+import Observation
 import os
 
 @MainActor
-class DeviceViewModel: ObservableObject, FolderOpening {
-    @Published var device: Device
-    @Published private(set) var currentAction: SimulatorDeviceAction?
-    @Published private(set) var actionErrorMessage: String?
+@Observable
+class DeviceViewModel: FolderOpening {
+    var device: Device
+    private(set) var currentAction: SimulatorDeviceAction?
+    private(set) var actionErrorMessage: String?
 
-    private let deviceManager: DeviceManaging
-    private let simulatorDeviceActionService: SimulatorDeviceActionServing
+    @ObservationIgnored private let deviceManager: DeviceManaging
+    @ObservationIgnored private let simulatorResetService: SimulatorResetServing
 
     init(
         device: Device,
         deviceManager: DeviceManaging,
-        simulatorDeviceActionService: SimulatorDeviceActionServing
+        simulatorResetService: SimulatorResetServing
     ) {
         self.device = device
         self.deviceManager = deviceManager
-        self.simulatorDeviceActionService = simulatorDeviceActionService
+        self.simulatorResetService = simulatorResetService
     }
     
     // MARK: - Device Properties
@@ -80,11 +82,6 @@ class DeviceViewModel: ObservableObject, FolderOpening {
     }
 
     func eraseDevice() {
-        guard device.state == .off else {
-            actionErrorMessage = "Shut down \(device.name) before erasing it."
-            return
-        }
-
         performAction(.erase)
     }
 }
@@ -100,15 +97,15 @@ private extension DeviceViewModel {
 
         let deviceUdid = device.udid
         let deviceName = device.name
-        let actionService = simulatorDeviceActionService
+        let resetService = simulatorResetService
 
-        Task { [weak self, actionService, deviceUdid, deviceName] in
+        Task { [weak self, resetService, deviceUdid, deviceName] in
             guard let self else {
                 return
             }
 
             do {
-                try await actionService.erase(deviceUdid: deviceUdid)
+                try await resetService.shutDownAndEraseSimulator(deviceUdid: deviceUdid)
 
                 deviceManager.updateSpecificDevice(device)
 

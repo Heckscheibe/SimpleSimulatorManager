@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ResetSimulatorsView: View {
-    @ObservedObject var viewModel: ResetSimulatorsViewModel
+    let viewModel: ResetSimulatorsViewModel
 
     var body: some View {
         Menu {

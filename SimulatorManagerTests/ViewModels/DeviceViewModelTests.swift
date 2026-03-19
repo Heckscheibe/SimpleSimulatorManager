@@ -18,7 +18,7 @@ struct DeviceViewModelTests {
         let viewModel = DeviceViewModel(
             device: device,
             deviceManager: MockDeviceManager(),
-            simulatorDeviceActionService: MockSimulatorDeviceActionService()
+            simulatorResetService: MockSimulatorDeviceActionService()
         )
 
         #expect(viewModel.canEraseDevice)
@@ -34,7 +34,7 @@ struct DeviceViewModelTests {
         let viewModel = DeviceViewModel(
             device: device,
             deviceManager: deviceManager,
-            simulatorDeviceActionService: service
+            simulatorResetService: service
         )
 
         deviceManager.setMockDevices([refreshedDevice])
@@ -42,8 +42,10 @@ struct DeviceViewModelTests {
         viewModel.eraseDevice()
         try await Task.sleep(nanoseconds: 200_000_000)
 
+        let shutDownDeviceUdid = await service.shutDownDeviceUdid
         let erasedDeviceUdid = await service.erasedDeviceUdid
 
+        #expect(shutDownDeviceUdid == "device-1")
         #expect(erasedDeviceUdid == "device-1")
         #expect(deviceManager.updateSpecificDeviceCalled)
         #expect(viewModel.device.state == .off)
@@ -57,7 +59,7 @@ struct DeviceViewModelTests {
         let viewModel = DeviceViewModel(
             device: TestDataHelpers.createMockDevice(state: .running),
             deviceManager: MockDeviceManager(),
-            simulatorDeviceActionService: MockSimulatorDeviceActionService()
+            simulatorResetService: MockSimulatorDeviceActionService()
         )
 
         viewModel.eraseDevice()
@@ -81,7 +83,7 @@ struct DeviceViewModelTests {
         let viewModel = DeviceViewModel(
             device: TestDataHelpers.createOfflineDevice(),
             deviceManager: MockDeviceManager(),
-            simulatorDeviceActionService: service
+            simulatorResetService: service
         )
 
         viewModel.eraseDevice()
