@@ -67,14 +67,14 @@ class DeviceManager: ObservableObject, DeviceManaging {
     }
     
     func updateSpecificDevice(_ updatedDevice: Device) {
-        // Reload apps for the specific device
-        updatedDevice.apps = appDiscoveryService.loadApps(for: updatedDevice)
-        updatedDevice.appGroups = appDiscoveryService.loadAppGroups(for: updatedDevice)
-        
-        // Update the device in the devices array
+        guard let refreshedDevice = loadDevice(withUdid: updatedDevice.udid, existingURL: updatedDevice.url) else {
+            os_log("Failed to refresh simulator with udid %@", updatedDevice.udid)
+            return
+        }
+
         let currentDevices = devicesPublisher.value
         let updatedDevices = currentDevices.map { device in
-            device.udid == updatedDevice.udid ? updatedDevice : device
+            device.udid == refreshedDevice.udid ? refreshedDevice : device
         }
         devicesPublisher.value = updatedDevices
     }
@@ -202,6 +202,25 @@ private extension DeviceManager {
         
         // Populate initial recent apps
         populateInitialRecentApps(allInitialAppChanges)
+    }
+
+    func loadDevice(withUdid udid: String, existingURL: URL?) -> Device? {
+        guard let deviceDirectoryURL = existingURL ?? simulatorFolderURL?.appendingPathComponent(udid) else {
+            os_log("Missing simulator directory for udid %@", udid)
+            return nil
+        }
+
+        let devicePlistURL = deviceDirectoryURL.appendingPathComponent(Device.devicePlistName)
+
+        do {
+            let device = try CustomPropertyListDecoder().decode(Device.self, at: devicePlistURL)
+            device.apps = appDiscoveryService.loadApps(for: device)
+            device.appGroups = appDiscoveryService.loadAppGroups(for: device)
+            return device
+        } catch {
+            os_log("Failed to reload device with udid %@ due to error %@", udid, String(describing: error))
+            return nil
+        }
     }
     
     func getContentOfDirectoryAt(url: URL) -> [URL] {

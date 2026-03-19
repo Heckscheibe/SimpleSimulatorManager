@@ -8,14 +8,14 @@
 import Foundation
 @testable import SimulatorManager
 
-class MockDeviceAppMonitoringService: DeviceAppMonitoringServiceProtocol {
+class MockDeviceAppMonitoringService: DeviceAppMonitoring {
     // MARK: - Call Tracking
     
-    var stopMonitoringCalled = false
+    var resetMonitoringCalled = false
     
-    // MARK: - DeviceAppMonitoringServiceProtocol Implementation
+    // MARK: - DeviceAppMonitoring Implementation
     
-    func stopMonitoring() {
-        stopMonitoringCalled = true
+    func resetMonitoring() {
+        resetMonitoringCalled = true
     }
 }

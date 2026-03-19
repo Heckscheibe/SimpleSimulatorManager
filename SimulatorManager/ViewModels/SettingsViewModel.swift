@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class SettingsViewModel: ObservableObject {
     private var settings: Settings
     private var simulatorManagerViewModel: SimulatorManagerViewModel
