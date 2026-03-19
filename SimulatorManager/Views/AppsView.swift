@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct AppsView: View {
-    @ObservedObject var viewModel: DeviceViewModel
+    let viewModel: DeviceViewModel
     
     var body: some View {
         if !viewModel.device.hasAppsInstalled {

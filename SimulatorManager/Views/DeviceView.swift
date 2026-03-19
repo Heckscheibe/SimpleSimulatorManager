@@ -9,15 +9,22 @@ import Foundation
 import SwiftUI
 
 struct DeviceView: View {
-    @ObservedObject var viewModel: DeviceViewModel
+    let viewModel: DeviceViewModel
     
     var body: some View {
+        Text(viewModel.stateDescription)
+
+        if let actionErrorMessage = viewModel.actionErrorMessage {
+            Text(actionErrorMessage)
+                .font(.system(size: 12))
+        }
+
         if viewModel.hasAppsInstalled {
             Menu(viewModel.osVersion) {
                 Divider()
-                AppsView(viewModel: DeviceViewModel(device: viewModel.device))
+                AppsView(viewModel: viewModel)
                 Divider()
-                AppGroupsView(viewModel: DeviceViewModel(device: viewModel.device))
+                AppGroupsView(viewModel: viewModel)
                 Divider()
             }
         } else {
@@ -44,6 +51,16 @@ struct DeviceView: View {
                 viewModel.didSelectAppPackagesFolder(for: viewModel.device)
             } label: {
                 Text("App Package Folder")
+            }
+        }
+        
+        if viewModel.isPerformingAction {
+            Text(viewModel.currentActionTitle)
+        } else {
+            Button(role: .destructive) {
+                viewModel.eraseDevice()
+            } label: {
+                Text("Erase Simulator")
             }
         }
         

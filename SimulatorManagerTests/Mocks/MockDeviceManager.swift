@@ -9,7 +9,7 @@ import Foundation
 import Combine
 @testable import SimulatorManager
 
-class MockDeviceManager: DeviceManagerProtocol {
+class MockDeviceManager: DeviceManaging {
     // MARK: - Publishers
     
     private let deviceTypesSubject = CurrentValueSubject<[DeviceType], Never>([])
@@ -38,6 +38,7 @@ class MockDeviceManager: DeviceManagerProtocol {
     // MARK: - Call Tracking
     
     var updateDevicesCalled = false
+    var resetAndLoadDevicesCalled = false
     var updateSpecificDeviceCalled = false
     var getDeviceCalled = false
     var updateRecentAppsCalled = false
@@ -77,6 +78,12 @@ class MockDeviceManager: DeviceManagerProtocol {
                     return existingKey == appKey
                 }
                 currentInstalled.append(change)
+            case .updated:
+                currentInstalled.removeAll { existing in
+                    let existingKey = "\(existing.app.bundleIdentifier)-\(existing.device.udid)"
+                    return existingKey == appKey
+                }
+                currentInstalled.append(change)
             case .removed:
                 currentInstalled.removeAll { existing in
                     let existingKey = "\(existing.app.bundleIdentifier)-\(existing.device.udid)"
@@ -92,6 +99,16 @@ class MockDeviceManager: DeviceManagerProtocol {
     
     func updateDevices() {
         updateDevicesCalled = true
+    }
+
+    func resetAndLoadDevices() {
+        resetAndLoadDevicesCalled = true
+        mockDevices = []
+        mockDeviceTypes = []
+        mockRecentInstalledApps = []
+        devicesSubject.send([])
+        deviceTypesSubject.send([])
+        recentInstalledAppsSubject.send([])
     }
     
     func updateSpecificDevice(_ updatedDevice: Device) {
@@ -115,5 +132,10 @@ class MockDeviceManager: DeviceManagerProtocol {
         updateRecentAppsCalled = true
         lastAddedChanges = changes
         mockRecentAppChanges.append(contentsOf: changes)
+    }
+
+    func setMockRecentAppChanges(_ changes: [AppChange]) {
+        mockRecentAppChanges = changes
+        recentInstalledAppsSubject.send(changes)
     }
 }

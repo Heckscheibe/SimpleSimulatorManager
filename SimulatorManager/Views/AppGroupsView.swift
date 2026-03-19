@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct AppGroupsView: View {
-    @ObservedObject var viewModel: DeviceViewModel
+    let viewModel: DeviceViewModel
 
     var body: some View {
         if !viewModel.appGroups.isEmpty {

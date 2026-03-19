@@ -11,15 +11,16 @@ import os
 @main
 struct SimulatorManagerApp: App {
     @StateObject private var deviceManager: DeviceManager
-    @StateObject private var viewModel: SimulatorManagerViewModel
-    @StateObject private var resetSimulatorsViewModel: ResetSimulatorsViewModel
+    @State private var viewModel: SimulatorManagerViewModel
+    @State private var resetSimulatorsViewModel: ResetSimulatorsViewModel
+    @State private var settingsViewModel: SettingsViewModel
     @StateObject private var settings: Settings
     
-    private let simulatorResetService: SimulatorResetService
+    private let simulatorResetService: SimulatorResetServing
         
     init() {
         let deviceManager = DeviceManager()
-        let simulatorResetService = SimulatorResetService()
+        let simulatorResetService: SimulatorResetServing = SimulatorResetService()
         let viewModel = SimulatorManagerViewModel(deviceManager: deviceManager,
                                                   simulatorResetService: simulatorResetService)
         let resetSimulatorsViewModel = ResetSimulatorsViewModel(deviceManager: deviceManager,
@@ -28,8 +29,10 @@ struct SimulatorManagerApp: App {
         
         self.simulatorResetService = simulatorResetService
         self._deviceManager = StateObject(wrappedValue: deviceManager)
-        self._viewModel = StateObject(wrappedValue: viewModel)
-        self._resetSimulatorsViewModel = StateObject(wrappedValue: resetSimulatorsViewModel)
+        self._viewModel = State(initialValue: viewModel)
+        self._resetSimulatorsViewModel = State(initialValue: resetSimulatorsViewModel)
+        self._settingsViewModel = State(initialValue: SettingsViewModel(settings: settings,
+                                                                        simulatorManagerViewModel: viewModel))
         self._settings = StateObject(wrappedValue: settings)
     }
     
@@ -39,7 +42,7 @@ struct SimulatorManagerApp: App {
             Divider()
             DeviceTypeView(viewModel: viewModel, settings: settings)
             Divider()
-            SettingsView(viewModel: SettingsViewModel(settings: settings, simulatorManagerViewModel: viewModel))
+            SettingsView(viewModel: settingsViewModel, settings: settings)
             Divider()
             ResetSimulatorsView(viewModel: resetSimulatorsViewModel)
             Divider()
