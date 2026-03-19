@@ -56,7 +56,7 @@ class DeviceViewModel: FolderOpening {
     }
 
     var canEraseDevice: Bool {
-        device.state == .off && !isPerformingAction
+        !isPerformingAction
     }
 
     var currentActionTitle: String {

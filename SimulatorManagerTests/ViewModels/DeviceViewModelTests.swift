@@ -11,10 +11,10 @@ import Testing
 
 @Suite("DeviceViewModel Tests")
 struct DeviceViewModelTests {
-    @Test("Erase action is available for powered off simulators")
+    @Test("Erase action is available regardless of simulator state")
     @MainActor
     func eraseAvailability() {
-        let device = TestDataHelpers.createOfflineDevice()
+        let device = TestDataHelpers.createMockDevice(state: .running)
         let viewModel = DeviceViewModel(
             device: device,
             deviceManager: MockDeviceManager(),
@@ -50,21 +50,6 @@ struct DeviceViewModelTests {
         #expect(deviceManager.updateSpecificDeviceCalled)
         #expect(viewModel.device.state == .off)
         #expect(viewModel.actionErrorMessage == nil)
-        #expect(!viewModel.isPerformingAction)
-    }
-
-    @Test("Erase requires a shut down simulator")
-    @MainActor
-    func eraseRequiresShutDown() {
-        let viewModel = DeviceViewModel(
-            device: TestDataHelpers.createMockDevice(state: .running),
-            deviceManager: MockDeviceManager(),
-            simulatorResetService: MockSimulatorDeviceActionService()
-        )
-
-        viewModel.eraseDevice()
-
-        #expect(viewModel.actionErrorMessage == "Shut down Test Device before erasing it.")
         #expect(!viewModel.isPerformingAction)
     }
 
