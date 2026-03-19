@@ -11,10 +11,10 @@ import Testing
 
 @Suite("DeviceViewModel Tests")
 struct DeviceViewModelTests {
-    @Test("Erase action is available when no action is running")
+    @Test("Erase action is available regardless of simulator state")
     @MainActor
     func eraseAvailability() {
-        let device = TestDataHelpers.createOfflineDevice()
+        let device = TestDataHelpers.createMockDevice(state: .running)
         let viewModel = DeviceViewModel(
             device: device,
             deviceManager: MockDeviceManager(),
