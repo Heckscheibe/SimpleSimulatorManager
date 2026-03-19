@@ -55,10 +55,6 @@ class DeviceViewModel: FolderOpening {
         currentAction != nil
     }
 
-    var canEraseDevice: Bool {
-        !isPerformingAction
-    }
-
     var currentActionTitle: String {
         currentAction?.progressTitle ?? ""
     }

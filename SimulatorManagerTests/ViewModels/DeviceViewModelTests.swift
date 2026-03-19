@@ -11,19 +11,6 @@ import Testing
 
 @Suite("DeviceViewModel Tests")
 struct DeviceViewModelTests {
-    @Test("Erase action is available regardless of simulator state")
-    @MainActor
-    func eraseAvailability() {
-        let device = TestDataHelpers.createMockDevice(state: .running)
-        let viewModel = DeviceViewModel(
-            device: device,
-            deviceManager: MockDeviceManager(),
-            simulatorResetService: MockSimulatorDeviceActionService()
-        )
-
-        #expect(viewModel.canEraseDevice)
-    }
-
     @Test("Erasing a device refreshes it through the device manager")
     @MainActor
     func eraseRefreshesDevice() async throws {
