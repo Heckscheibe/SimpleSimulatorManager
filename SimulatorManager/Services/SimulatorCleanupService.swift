@@ -78,7 +78,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             loadedDirectoryRecords.count
         )
 
-        let candidates = try Self.buildCleanupCandidates(
+        let candidates = Self.buildCleanupCandidates(
             simctlDevices: loadedSimctlDevices,
             availableRuntimeIdentifiers: loadedRuntimeIdentifiers,
             directoryRecords: loadedDirectoryRecords
