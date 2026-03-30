@@ -49,7 +49,6 @@ struct SimulatorDirectoryRecord: Sendable, Equatable {
     let udid: String
     let directoryURL: URL
     let metadataStatus: MetadataStatus
-    let diskUsageBytes: Int64?
 
     var metadata: SimulatorDirectoryMetadata? {
         guard case let .decoded(metadata) = metadataStatus else {
@@ -248,7 +247,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             simulatorPlatform: metadata?.simulatorPlatform ?? SimulatorPlatform(from: device.deviceTypeIdentifier),
             osVersion: metadata?.osVersion ?? SimulatorPaths.formattedOSVersion(from: device.runtimeIdentifier),
             lastBootedAt: metadata?.lastBootedAt,
-            diskUsageBytes: device.dataPathSize ?? directoryRecord?.diskUsageBytes,
+            diskUsageBytes: device.dataPathSize ?? directoryRecord.flatMap { calculateDirectorySize(at: $0.directoryURL) },
             reasons: reasons,
             detailMessage: device.availabilityError,
             deletionMethod: .simctlDelete(device.udid)
@@ -293,7 +292,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             simulatorPlatform: simulatorPlatform,
             osVersion: osVersion,
             lastBootedAt: lastBootedAt,
-            diskUsageBytes: directoryRecord.diskUsageBytes,
+            diskUsageBytes: calculateDirectorySize(at: directoryRecord.directoryURL),
             reasons: reasons,
             detailMessage: detailMessage,
             deletionMethod: .trashDirectory(directoryRecord.directoryURL)
@@ -307,14 +306,12 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
 
         let udid = directoryURL.lastPathComponent
         let metadataURL = directoryURL.appendingPathComponent(SimulatorPaths.devicePlistName)
-        let diskUsageBytes = calculateDirectorySize(at: directoryURL)
 
         guard FileManager.default.fileExists(atPath: metadataURL.path) else {
             return SimulatorDirectoryRecord(
                 udid: udid,
                 directoryURL: directoryURL,
-                metadataStatus: .missingDevicePlist,
-                diskUsageBytes: diskUsageBytes
+                metadataStatus: .missingDevicePlist
             )
         }
 
@@ -331,15 +328,13 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             return SimulatorDirectoryRecord(
                 udid: metadata.udid,
                 directoryURL: directoryURL,
-                metadataStatus: .decoded(metadata),
-                diskUsageBytes: diskUsageBytes
+                metadataStatus: .decoded(metadata)
             )
         } catch {
             return SimulatorDirectoryRecord(
                 udid: udid,
                 directoryURL: directoryURL,
-                metadataStatus: .unreadableDevicePlist,
-                diskUsageBytes: diskUsageBytes
+                metadataStatus: .unreadableDevicePlist
             )
         }
     }
