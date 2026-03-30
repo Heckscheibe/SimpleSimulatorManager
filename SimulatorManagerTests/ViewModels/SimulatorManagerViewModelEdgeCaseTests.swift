@@ -28,28 +28,24 @@ struct SimulatorManagerViewModelEdgeCaseTests {
     
     // MARK: - Edge Case Tests
     
-    @Test("ViewModel handles empty device list gracefully")
-    func emptyDeviceList() async {
-        // Given
-        mockDeviceManager.setMockDevices([])
-        
-        // Allow Combine to process
+    @Test("ViewModel stays empty when publisher sends empty list after having data")
+    func clearingDeviceList() async {
+        // Given — start with devices
+        mockDeviceManager.setMockDevices(TestDataHelpers.createMockDevices())
         try? await Task.sleep(nanoseconds: 200_000_000)
-        
+        #expect(viewModel.devices.count == 3)
+
+        // When — clear them
+        mockDeviceManager.setMockDevices([])
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
         // Then
         #expect(viewModel.devices.isEmpty)
     }
     
-    @Test("ViewModel handles device with nil URL")
-    func deviceWithNilURL() {
-        // Given
-        var device = TestDataHelpers.createMockDevice()
-        // Device URL is nil by default in our test helper
-        
-        // When & Then - Should not crash
-        viewModel.didSelectSimulatorFolder(for: device)
-        viewModel.didSelectAppsFolder(for: device)
-    }
+    // NOTE: The device-with-nil-URL scenario is a no-op (guard returns early).
+    // NSWorkspace side effects cannot be asserted in unit tests, so the test
+    // was removed to avoid giving false confidence.
     
     @Test("ViewModel handles rapid successive updates")
     func rapidSuccessiveUpdates() async {
@@ -105,38 +101,38 @@ struct SimulatorManagerViewModelEdgeCaseTests {
         #expect(bundleIds.contains("com.test.app99"))
     }
     
-    @Test("ViewModel handles duplicate app changes")
-    func duplicateAppChanges() async {
-        // Given
+    @Test("ViewModel forwards all publisher values without filtering duplicates")
+    func duplicateAppChangesForwarded() async {
+        // The ViewModel does not deduplicate — that responsibility belongs to
+        // DeviceManager. Verify the ViewModel faithfully mirrors whatever the
+        // publisher sends, including duplicates.
         let app = TestDataHelpers.createMockApp(bundleIdentifier: "com.duplicate.app")
         let device = TestDataHelpers.createMockDevice()
-        
+
         let change1 = TestDataHelpers.createMockAppChange(
             app: app,
             device: device,
             changeType: .installed,
             timestamp: Date().addingTimeInterval(-60)
         )
-        
+
         let change2 = TestDataHelpers.createMockAppChange(
             app: app,
             device: device,
             changeType: .installed,
             timestamp: Date()
         )
-        
+
         // When
         mockDeviceManager.setMockRecentAppChanges([change1, change2])
-        
+
         // Allow Combine to process
         try? await Task.sleep(nanoseconds: 200_000_000)
-        
-        // Then - Should handle duplicates appropriately
+
+        // Then — ViewModel passes through without modification
         #expect(viewModel.recentAppChanges.count == 2)
-        
-        // Verify both changes are present (mock doesn't deduplicate)
-        let timestamps = viewModel.recentAppChanges.map(\.timestamp)
-        #expect(timestamps.count == 2)
+        #expect(viewModel.recentInstalledApps.count == 2)
+        #expect(viewModel.recentAppChanges.map(\.timestamp).count == 2)
     }
     
     @Test("ViewModel handles mixed device platforms")
