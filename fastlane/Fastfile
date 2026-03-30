@@ -16,6 +16,10 @@
 # App and archive names
 APP_NAME = "Simulator Manager"
 ZIP_NAME = "SimulatorManager"
+PROJECT_ROOT = File.expand_path("..", __dir__)
+BUILD_DIR = File.join(PROJECT_ROOT, "build")
+RELEASE_DIR = File.join(PROJECT_ROOT, "release")
+PROJECT_FILE = File.join(PROJECT_ROOT, "SimulatorManager.xcodeproj")
 
 default_platform(:mac)
 
@@ -27,7 +31,7 @@ platform :mac do
 
     # Build the app with automatic signing (Developer ID will be used automatically)
     build_mac_app(
-      project: "SimulatorManager.xcodeproj",
+      project: PROJECT_FILE,
       scheme: "SimulatorManager",
       configuration: "Release",
       export_method: "developer-id",
@@ -38,7 +42,7 @@ platform :mac do
           "com.nicolashiller.SimpleSimulatorManager" => ENV["PROVISIONING_PROFILE_NAME"]
         }
       },
-      output_directory: "./build",
+      output_directory: BUILD_DIR,
       output_name: APP_NAME
     )
     UI.success("✅ Build completed successfully!")
@@ -48,11 +52,16 @@ platform :mac do
   lane :release do
     # Ask for release version
     release_version = prompt(text: "Enter the release version (e.g. 1.2.3):")
+
+    sh("rm -rf '#{BUILD_DIR}' '#{RELEASE_DIR}'")
     
     # Bump the build number and set the version
-    increment_version_number(version_number: release_version)
+    increment_version_number(
+      xcodeproj: PROJECT_FILE,
+      version_number: release_version
+    )
     increment_build_number(
-      xcodeproj: "SimulatorManager.xcodeproj"
+      xcodeproj: PROJECT_FILE
     )
     UI.success("🔢 Version set to #{release_version} and build number incremented.")
 
@@ -60,34 +69,31 @@ platform :mac do
     build
 
     # Find the actual app location
-    app_path = Dir.glob("../build/**/*.app").first
+    app_path = Dir.glob(File.join(BUILD_DIR, "**", "#{APP_NAME}.app")).first
     if app_path.nil?
       UI.error("❌ Could not find SimulatorManager.app for ZIP creation")
-      sh("find ../build -name '*.app*' -type d")
+      sh("find '#{BUILD_DIR}' -name '*.app*' -type d")
       raise "App not found in build directory"
     end
 
     # Create a zip file for GitHub releases
+    zip_path = File.join(BUILD_DIR, "#{ZIP_NAME}.zip")
     zip(
-      path: "build/#{APP_NAME}.app",
-      output_path: "build/#{ZIP_NAME}.zip"
+      path: app_path,
+      output_path: zip_path
     )
 
-    # Find the actual ZIP file location
-    zip_path = nil
-    if File.exist?("../build/#{ZIP_NAME}.zip")
-      zip_path = "../build/#{ZIP_NAME}.zip"
-    else
-      # Find any zip files in build directory
-      zip_files = Dir.glob("../build/**/*.zip")
-      zip_path = zip_files.first if !zip_files.empty?
+    unless File.exist?(zip_path)
+      UI.error("❌ Could not find #{ZIP_NAME}.zip after ZIP creation")
+      sh("find '#{BUILD_DIR}' -name '*.zip' -type f")
+      raise "ZIP not found in build directory"
     end
-    
+
     UI.message("📦 Found ZIP at: #{zip_path}")
 
     # Copy files to a release directory
-    sh("mkdir -p ../release")
-    sh("cp '#{zip_path}' ../release/#{ZIP_NAME}.zip")
+    sh("mkdir -p '#{RELEASE_DIR}'")
+    sh("cp '#{zip_path}' '#{File.join(RELEASE_DIR, "#{ZIP_NAME}.zip")}'")
 
     UI.success("🎉 Build completed successfully!")
     UI.message("Files available in ./release/:")
@@ -96,7 +102,7 @@ platform :mac do
     UI.success("You can now upload these files to your GitHub release.")
     
     # Open the release folder in Finder
-    sh("open ../release")
+    sh("open '#{RELEASE_DIR}'")
   end
 
   end
