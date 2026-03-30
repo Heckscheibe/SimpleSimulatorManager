@@ -119,6 +119,20 @@ struct SimulatorCleanupCandidate: Identifiable, Sendable, Hashable {
         return ByteCountFormatter.string(fromByteCount: diskUsageBytes, countStyle: .file)
     }
 
+    var versionGroupTitle: String {
+        osVersion ?? "Unknown OS"
+    }
+
+    var versionSortComponents: [Int] {
+        guard let osVersion else {
+            return []
+        }
+
+        return osVersion
+            .split(whereSeparator: { !$0.isNumber })
+            .compactMap { Int($0) }
+    }
+
     func updatingDiskUsageBytes(_ diskUsageBytes: Int64?) -> SimulatorCleanupCandidate {
         SimulatorCleanupCandidate(
             id: id,

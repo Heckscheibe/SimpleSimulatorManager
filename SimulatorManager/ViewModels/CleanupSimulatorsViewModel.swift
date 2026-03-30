@@ -5,6 +5,19 @@ import os
 @MainActor
 @Observable
 final class CleanupSimulatorsViewModel {
+    struct CandidateGroup: Identifiable, Equatable {
+        let title: String
+        let candidates: [SimulatorCleanupCandidate]
+
+        var id: String {
+            title
+        }
+
+        var count: Int {
+            candidates.count
+        }
+    }
+
     var cleanupCandidates: [SimulatorCleanupCandidate] = []
     var errorMessage: String?
     var isLoadingCleanupCandidates = false
@@ -44,6 +57,19 @@ final class CleanupSimulatorsViewModel {
         }
 
         return cleanupCandidates.isEmpty ? "trash.slash" : "exclamationmark.triangle"
+    }
+
+    var cleanupCandidateGroups: [CandidateGroup] {
+        let groupedCandidates = Dictionary(grouping: cleanupCandidates, by: \.versionGroupTitle)
+
+        return groupedCandidates
+            .map { title, candidates in
+                CandidateGroup(
+                    title: title,
+                    candidates: candidates.sorted(by: compareCandidates)
+                )
+            }
+            .sorted(by: compareGroups)
     }
 
     func loadCleanupCandidatesIfNeeded() {
@@ -89,35 +115,101 @@ final class CleanupSimulatorsViewModel {
     }
 
     func delete(_ candidate: SimulatorCleanupCandidate) {
-        guard deletingCandidateIDs.insert(candidate.id).inserted else {
-            os_log("Cleanup delete ignored because candidate %{public}@ is already being deleted", candidate.id)
+        delete(candidates: [candidate], scopeDescription: "candidate \(candidate.id)")
+    }
+
+    func deleteAllCleanupCandidates() {
+        delete(candidates: cleanupCandidates, scopeDescription: "all cleanup candidates")
+    }
+
+    func deleteAll(in group: CandidateGroup) {
+        delete(candidates: group.candidates, scopeDescription: "group \(group.title)")
+    }
+
+    func isDeleting(_ candidate: SimulatorCleanupCandidate) -> Bool {
+        deletingCandidateIDs.contains(candidate.id)
+    }
+
+    func isDeleting(_ group: CandidateGroup) -> Bool {
+        group.candidates.contains { deletingCandidateIDs.contains($0.id) }
+    }
+
+    private func delete(candidates: [SimulatorCleanupCandidate], scopeDescription: String) {
+        let candidatesToDelete = reserveDeletionIDs(for: candidates)
+
+        guard !candidatesToDelete.isEmpty else {
+            os_log("Cleanup delete ignored because no candidates were available for %{public}@", scopeDescription)
             return
         }
 
-        os_log("Cleanup delete starting for candidate %{public}@ (%{public}@)", candidate.id, candidate.name)
+        os_log(
+            "Cleanup delete starting for %{public}@ count=%{public}ld",
+            scopeDescription,
+            candidatesToDelete.count
+        )
         errorMessage = nil
 
         Task {
             defer {
-                deletingCandidateIDs.remove(candidate.id)
-                os_log("Cleanup delete finished for candidate %{public}@", candidate.id)
+                for candidate in candidatesToDelete {
+                    deletingCandidateIDs.remove(candidate.id)
+                }
+                os_log(
+                    "Cleanup delete finished for %{public}@ count=%{public}ld",
+                    scopeDescription,
+                    candidatesToDelete.count
+                )
             }
 
             do {
-                try await cleanupService.deleteCleanupCandidate(candidate)
-                os_log("Cleanup delete succeeded for candidate %{public}@", candidate.id)
+                for candidate in candidatesToDelete {
+                    try await cleanupService.deleteCleanupCandidate(candidate)
+                    os_log("Cleanup delete succeeded for candidate %{public}@", candidate.id)
+                }
+
                 deviceManager.resetAndLoadDevices()
                 os_log("Cleanup delete triggered device reload")
                 cleanupCandidates = try await cleanupService.loadCleanupCandidates()
                 os_log("Cleanup delete refreshed candidate list to %{public}ld items", cleanupCandidates.count)
             } catch {
                 errorMessage = error.localizedDescription
-                os_log("Cleanup delete failed for candidate %{public}@: %{public}@", candidate.id, error.localizedDescription)
+                os_log("Cleanup delete failed for %{public}@: %{public}@", scopeDescription, error.localizedDescription)
             }
         }
     }
 
-    func isDeleting(_ candidate: SimulatorCleanupCandidate) -> Bool {
-        deletingCandidateIDs.contains(candidate.id)
+    private func reserveDeletionIDs(for candidates: [SimulatorCleanupCandidate]) -> [SimulatorCleanupCandidate] {
+        var candidatesToDelete: [SimulatorCleanupCandidate] = []
+
+        for candidate in candidates where deletingCandidateIDs.insert(candidate.id).inserted {
+            candidatesToDelete.append(candidate)
+        }
+
+        return candidatesToDelete
+    }
+
+    private func compareCandidates(lhs: SimulatorCleanupCandidate, rhs: SimulatorCleanupCandidate) -> Bool {
+        if lhs.diskUsageBytes != rhs.diskUsageBytes {
+            return (lhs.diskUsageBytes ?? 0) > (rhs.diskUsageBytes ?? 0)
+        }
+
+        return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+    }
+
+    private func compareGroups(lhs: CandidateGroup, rhs: CandidateGroup) -> Bool {
+        let leftComponents = lhs.candidates.first?.versionSortComponents ?? []
+        let rightComponents = rhs.candidates.first?.versionSortComponents ?? []
+        let maxCount = max(leftComponents.count, rightComponents.count)
+
+        for index in 0 ..< maxCount {
+            let leftValue = index < leftComponents.count ? leftComponents[index] : -1
+            let rightValue = index < rightComponents.count ? rightComponents[index] : -1
+
+            if leftValue != rightValue {
+                return leftValue > rightValue
+            }
+        }
+
+        return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
     }
 }

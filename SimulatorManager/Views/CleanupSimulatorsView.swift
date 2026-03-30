@@ -6,6 +6,8 @@ struct CleanupSimulatorsView: View {
 
     var body: some View {
         let cleanupCandidates = viewModel.cleanupCandidates
+        let candidateGroups = viewModel.cleanupCandidateGroups
+        let isDeletingCandidates = !viewModel.deletingCandidateIDs.isEmpty
 
         Menu {
             if let errorMessage = viewModel.errorMessage {
@@ -18,43 +20,65 @@ struct CleanupSimulatorsView: View {
             } else if cleanupCandidates.isEmpty {
                 Text("No invalid simulators found")
             } else {
-                ForEach(Array(cleanupCandidates.enumerated()), id: \.element.id) { _, candidate in
-                    Menu(candidate.name) {
-                        Text(candidate.reasonSummary)
+                Button(role: .destructive) {
+                    viewModel.deleteAllCleanupCandidates()
+                } label: {
+                    Text(isDeletingCandidates ? "Cleaning Up All…" : "Delete All Simulators (\(cleanupCandidates.count))")
+                }
+                .disabled(isDeletingCandidates)
 
-                        if let detailMessage = candidate.detailMessage {
-                            Text(detailMessage)
-                        }
+                Divider()
 
-                        if let platform = candidate.formattedPlatform {
-                            Text("Platform: \(platform)")
+                ForEach(candidateGroups) { group in
+                    Menu("\(group.title) (\(group.count))") {
+                        Button(role: .destructive) {
+                            viewModel.deleteAll(in: group)
+                        } label: {
+                            Text(viewModel.isDeleting(group) ? "Deleting \(group.title)…" : "Delete All in \(group.title) (\(group.count))")
                         }
-
-                        if let osVersion = candidate.osVersion {
-                            Text("OS: \(osVersion)")
-                        }
-
-                        if let formattedDiskUsage = candidate.formattedDiskUsage {
-                            Text("Disk Usage: \(formattedDiskUsage)")
-                        }
-
-                        if let lastBootedAt = candidate.lastBootedAt {
-                            Text("Last Booted: \(lastBootedAt.formatted(date: .abbreviated, time: .shortened))")
-                        }
-
-                        if let udid = candidate.udid {
-                            Text(udid)
-                                .textSelection(.enabled)
-                        }
+                        .disabled(viewModel.isDeleting(group))
 
                         Divider()
 
-                        Button(role: .destructive) {
-                            viewModel.delete(candidate)
-                        } label: {
-                            Text(viewModel.isDeleting(candidate) ? "Deleting…" : "Delete Simulator")
+                        ForEach(group.candidates) { candidate in
+                            Menu(candidate.name) {
+                                Text(candidate.reasonSummary)
+
+                                if let detailMessage = candidate.detailMessage {
+                                    Text(detailMessage)
+                                }
+
+                                if let platform = candidate.formattedPlatform {
+                                    Text("Platform: \(platform)")
+                                }
+
+                                if let osVersion = candidate.osVersion {
+                                    Text("OS: \(osVersion)")
+                                }
+
+                                if let formattedDiskUsage = candidate.formattedDiskUsage {
+                                    Text("Disk Usage: \(formattedDiskUsage)")
+                                }
+
+                                if let lastBootedAt = candidate.lastBootedAt {
+                                    Text("Last Booted: \(lastBootedAt.formatted(date: .abbreviated, time: .shortened))")
+                                }
+
+                                if let udid = candidate.udid {
+                                    Text(udid)
+                                        .textSelection(.enabled)
+                                }
+
+                                Divider()
+
+                                Button(role: .destructive) {
+                                    viewModel.delete(candidate)
+                                } label: {
+                                    Text(viewModel.isDeleting(candidate) ? "Deleting…" : "Delete Simulator")
+                                }
+                                .disabled(viewModel.isDeleting(candidate))
+                            }
                         }
-                        .disabled(viewModel.isDeleting(candidate))
                     }
                 }
             }
@@ -64,7 +88,7 @@ struct CleanupSimulatorsView: View {
             Button("Refresh Cleanup Scan") {
                 viewModel.refreshCleanupCandidates()
             }
-            .disabled(viewModel.isLoadingCleanupCandidates)
+            .disabled(viewModel.isLoadingCleanupCandidates || isDeletingCandidates)
         } label: {
             Label(viewModel.cleanupButtonText, systemImage: viewModel.cleanupButtonIcon)
         }
