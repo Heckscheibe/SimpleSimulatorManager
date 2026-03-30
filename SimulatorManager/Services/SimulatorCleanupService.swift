@@ -107,7 +107,20 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         availableRuntimeIdentifiers: Set<String>,
         directoryRecords: [SimulatorDirectoryRecord]
     ) -> [SimulatorCleanupCandidate] {
-        let directoryRecordsByUDID = Dictionary(uniqueKeysWithValues: directoryRecords.map { ($0.udid, $0) })
+        var directoryRecordsByUDID: [String: SimulatorDirectoryRecord] = [:]
+
+        for record in directoryRecords {
+            if directoryRecordsByUDID[record.udid] != nil {
+                os_log(
+                    "Cleanup service encountered duplicate simulator directory UDID %{public}@; ignoring subsequent entry",
+                    record.udid
+                )
+                continue
+            }
+
+            directoryRecordsByUDID[record.udid] = record
+        }
+
         let simctlUDIDs = Set(simctlDevices.map(\.udid))
 
         var candidates = simctlDevices.compactMap { device in
