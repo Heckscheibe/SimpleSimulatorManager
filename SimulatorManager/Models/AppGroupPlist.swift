@@ -8,8 +8,6 @@
 import Foundation
 
 struct AppGroupPlist: DecodableURLContainer {
-    static let appGroupsPath = "data/Containers/Shared/AppGroup"
-    
     enum CodingKeys: String, CodingKey {
         case identifier = "MCMMetadataIdentifier"
         case uuid = "MCMMetadataUUID"

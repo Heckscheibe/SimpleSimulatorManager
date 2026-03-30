@@ -35,7 +35,7 @@ struct SimulatorDirectoryMetadata: Sendable, Equatable {
     }
 
     var osVersion: String {
-        SimulatorCleanupService.extractOSVersion(from: runtimeIdentifier)
+        SimulatorPaths.formattedOSVersion(from: runtimeIdentifier)
     }
 }
 
@@ -173,13 +173,10 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
     private func loadDirectoryRecords() async throws -> [SimulatorDirectoryRecord] {
         os_log("Cleanup service loading simulator directories")
         return try await Task.detached(priority: .userInitiated) {
-            let devicesDirectoryURL = FileManager.default
-                .homeDirectoryForCurrentUser
-                .appendingPathComponent("Library")
-                .appendingPathComponent("Developer")
-                .appendingPathComponent("CoreSimulator")
-                .appendingPathComponent("Devices")
-
+            guard let devicesDirectoryURL = SimulatorPaths.coreSimulatorDevicesDirectoryURL() else {
+                os_log("Cleanup service could not determine CoreSimulator devices directory URL")
+                return [SimulatorDirectoryRecord]()
+            }
             guard FileManager.default.fileExists(atPath: devicesDirectoryURL.path) else {
                 os_log("Cleanup service found no CoreSimulator devices directory at %{public}@", devicesDirectoryURL.path)
                 return [SimulatorDirectoryRecord]()
@@ -249,7 +246,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             name: device.name,
             udid: device.udid,
             simulatorPlatform: metadata?.simulatorPlatform ?? SimulatorPlatform(from: device.deviceTypeIdentifier),
-            osVersion: metadata?.osVersion ?? extractOSVersion(from: device.runtimeIdentifier),
+            osVersion: metadata?.osVersion ?? SimulatorPaths.formattedOSVersion(from: device.runtimeIdentifier),
             lastBootedAt: metadata?.lastBootedAt,
             diskUsageBytes: device.dataPathSize ?? directoryRecord?.diskUsageBytes,
             reasons: reasons,
@@ -309,7 +306,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         }
 
         let udid = directoryURL.lastPathComponent
-        let metadataURL = directoryURL.appendingPathComponent("device.plist")
+        let metadataURL = directoryURL.appendingPathComponent(SimulatorPaths.devicePlistName)
         let diskUsageBytes = calculateDirectorySize(at: directoryURL)
 
         guard FileManager.default.fileExists(atPath: metadataURL.path) else {
@@ -370,15 +367,6 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         }
 
         return totalSize == 0 ? nil : totalSize
-    }
-
-    static func extractOSVersion(from runtimeIdentifier: String) -> String {
-        let components = runtimeIdentifier.split(separator: ".")
-        guard let lastComponent = components.last else {
-            return runtimeIdentifier
-        }
-
-        return lastComponent.replacingOccurrences(of: "-", with: ".")
     }
 
     private static func sortCandidates(lhs: SimulatorCleanupCandidate, rhs: SimulatorCleanupCandidate) -> Bool {
