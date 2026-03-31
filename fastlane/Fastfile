@@ -21,6 +21,29 @@ BUILD_DIR = File.join(PROJECT_ROOT, "build")
 RELEASE_DIR = File.join(PROJECT_ROOT, "release")
 PROJECT_FILE = File.join(PROJECT_ROOT, "SimulatorManager.xcodeproj")
 
+def notarization_api_key
+  key_id = ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"].to_s.strip
+  issuer_id = ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"].to_s.strip
+  key_filepath = ENV["APP_STORE_CONNECT_API_KEY_KEY_FILEPATH"].to_s.strip
+
+  missing = []
+  missing << "APP_STORE_CONNECT_API_KEY_KEY_ID" if key_id.empty?
+  missing << "APP_STORE_CONNECT_API_KEY_ISSUER_ID" if issuer_id.empty?
+  missing << "APP_STORE_CONNECT_API_KEY_KEY_FILEPATH" if key_filepath.empty?
+
+  unless missing.empty?
+    UI.user_error!("Notarization requires App Store Connect API key credentials. Missing: #{missing.join(', ')}")
+  end
+
+  UI.user_error!("APP_STORE_CONNECT_API_KEY_KEY_FILEPATH points to a missing file: #{key_filepath}") unless File.exist?(key_filepath)
+
+  app_store_connect_api_key(
+    key_id: key_id,
+    issuer_id: issuer_id,
+    key_filepath: key_filepath
+  )
+end
+
 default_platform(:mac)
 
 platform :mac do
@@ -76,6 +99,15 @@ platform :mac do
       raise "App not found in build directory"
     end
 
+    UI.message("🧾 Submitting app for notarization...")
+    notarize(
+      package: app_path,
+      api_key: notarization_api_key,
+      use_notarytool: true,
+      print_log: true
+    )
+    UI.success("✅ Notarization completed successfully!")
+
     # Create a zip file for GitHub releases
     zip_path = File.join(BUILD_DIR, "#{ZIP_NAME}.zip")
     zip(
@@ -95,9 +127,9 @@ platform :mac do
     sh("mkdir -p '#{RELEASE_DIR}'")
     sh("cp '#{zip_path}' '#{File.join(RELEASE_DIR, "#{ZIP_NAME}.zip")}'")
 
-    UI.success("🎉 Build completed successfully!")
+    UI.success("🎉 Build and notarization completed successfully!")
     UI.message("Files available in ./release/:")
-    UI.message("- #{ZIP_NAME}.zip")
+    UI.message("- #{ZIP_NAME}.zip (notarized)")
     UI.message("")
     UI.success("You can now upload these files to your GitHub release.")
     
