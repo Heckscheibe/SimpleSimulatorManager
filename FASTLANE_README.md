@@ -29,8 +29,12 @@ bundle install
 ```
 
 The current Fastfile reads these values from the environment:
+
 - `CODESIGNING_IDENTITY`: Your Developer ID Application signing identity
 - `PROVISIONING_PROFILE_NAME`: The provisioning profile name for `com.nicolashiller.SimpleSimulatorManager`
+- `APP_STORE_CONNECT_API_KEY_KEY_ID`: App Store Connect API key identifier
+- `APP_STORE_CONNECT_API_KEY_ISSUER_ID`: App Store Connect API issuer identifier
+- `APP_STORE_CONNECT_API_KEY_KEY_FILEPATH`: Absolute path to the `.p8` private key file used for notarization
 
 Use this template for your `.env` file:
 
@@ -38,13 +42,20 @@ Use this template for your `.env` file:
 # Fastlane signing configuration
 CODESIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)"
 PROVISIONING_PROFILE_NAME="SimpleSimulatorManager Developer ID"
+
+# Required notarization authentication
+APP_STORE_CONNECT_API_KEY_KEY_ID="ABC123XYZ"
+APP_STORE_CONNECT_API_KEY_ISSUER_ID="00000000-0000-0000-0000-000000000000"
+APP_STORE_CONNECT_API_KEY_KEY_FILEPATH="/absolute/path/to/AuthKey_ABC123XYZ.p8"
 ```
 
 ### 3. Install Signing Assets
 
 Before running Fastlane, make sure these assets are already available on your machine:
+
 - A valid Developer ID Application certificate in your keychain
 - A provisioning profile matching `com.nicolashiller.SimpleSimulatorManager`
+- App Store Connect API key credentials, including the `.p8` private key file
 
 The current repository does not define certificate management lanes such as `setup_signing` or `create_certificates`. Signing assets must be prepared outside this Fastlane configuration.
 
@@ -66,13 +77,16 @@ For a complete release with ZIP files:
 bundle exec fastlane mac release
 ```
 
-This will create:
-- `release/SimulatorManager.zip` - ZIP archive for GitHub releases
+This will:
+
+- build and sign the app
+- notarize and staple the app with Apple
+- create `release/SimulatorManager.zip` from the stapled app bundle
 
 ## Lanes Available
 
 - `fastlane mac build` - Build and sign the macOS app for Developer ID distribution
-- `fastlane mac release` - Set the release version, build the app, create the ZIP, and open the release folder
+- `fastlane mac release` - Set the release version, build the app, notarize it, create the ZIP, and open the release folder
 
 ## Troubleshooting
 
@@ -92,6 +106,15 @@ If you encounter certificate issues:
 4. Verify that your signing certificate and provisioning profile are installed locally
 5. Verify that the placeholder values in `.env` have been replaced with your real signing details
 
+### Notarization Issues
+
+If notarization fails:
+
+1. Verify `APP_STORE_CONNECT_API_KEY_KEY_ID`, `APP_STORE_CONNECT_API_KEY_ISSUER_ID`, and `APP_STORE_CONNECT_API_KEY_KEY_FILEPATH`
+2. Confirm that the `.p8` key file exists at the configured path
+3. Check that the API key has access to the developer account used for notarization
+4. Check the fastlane output for the notarization log, which is printed on failure and on successful runs with warnings
+
 ## Security Notes
 
 - Never commit your `.env` file
@@ -110,7 +133,7 @@ After running `bundle exec fastlane mac release`:
 ## Distribution Notes
 
 Since this app is distributed outside the Mac App Store:
+
 - It's signed with a Developer ID certificate
-- Users may see a security warning on first launch
-- Users should right-click → Open to bypass Gatekeeper
-- No notarization is performed (as noted, sandbox is disabled)
+- The release ZIP contains a stapled notarized app bundle
+- Gatekeeper should accept the app without the old notarization warning, assuming signing credentials remain valid

@@ -24,10 +24,6 @@ protocol DeviceManaging: AnyObject {
     func updateRecentApps(_ changes: [AppChange])
 }
 
-enum SimulatorPaths {
-    static let userDefaultsPath = "Library/Preferences"
-}
-
 class DeviceManager: ObservableObject, DeviceManaging {
     var deviceTypes: AnyPublisher<[DeviceType], Never> {
         deviceTypesPublisher.eraseToAnyPublisher()
@@ -125,8 +121,7 @@ class DeviceManager: ObservableObject, DeviceManaging {
 
 private extension DeviceManager {
     var simulatorFolderURL: URL? {
-        let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
-        return libraryPath.first?.appending(path: "Developer/CoreSimulator/Devices")
+        SimulatorPaths.coreSimulatorDevicesDirectoryURL()
     }
     
     func removeDuplicateChanges(from changes: [AppChange]) -> [AppChange] {
@@ -176,7 +171,7 @@ private extension DeviceManager {
         let urls = getContentOfDirectoryAt(url: url)
 
         let newDevices: [Device] = urls.reduce(into: []) { devices, url in
-            let url = url.appendingPathComponent(Device.devicePlistName)
+            let url = url.appendingPathComponent(SimulatorPaths.devicePlistName)
                 
             do {
                 let device = try CustomPropertyListDecoder().decode(Device.self, at: url)
@@ -210,7 +205,7 @@ private extension DeviceManager {
             return nil
         }
 
-        let devicePlistURL = deviceDirectoryURL.appendingPathComponent(Device.devicePlistName)
+        let devicePlistURL = deviceDirectoryURL.appendingPathComponent(SimulatorPaths.devicePlistName)
 
         do {
             let device = try CustomPropertyListDecoder().decode(Device.self, at: devicePlistURL)

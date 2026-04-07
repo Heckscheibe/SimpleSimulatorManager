@@ -9,9 +9,6 @@ import Foundation
 import os
 
 class Device: ObservableObject, DecodableURLContainer {
-    static let devicePlistName = "device.plist"
-    static let appGroupFolderPath = "data/Containers/Shared/AppGroup"
-    
     enum CodingKeys: String, CodingKey {
         case udid = "UDID"
         case name
@@ -30,19 +27,19 @@ class Device: ObservableObject, DecodableURLContainer {
     
     /// not decoded properties
     var dataFolder: URL? {
-        url?.appendingPathComponent("data")
+        url?.appendingPathComponent(SimulatorPaths.dataFolderName)
     }
     
     var appDataFolder: URL? {
-        dataFolder?.appendingPathComponent("/Containers/Data/Application")
+        dataFolder?.appendingPathComponent(SimulatorPaths.appDataApplicationsPath)
     }
     
     var appPackagesFolder: URL? {
-        dataFolder?.appendingPathComponent("/Containers/Bundle/Application")
+        dataFolder?.appendingPathComponent(SimulatorPaths.appBundleApplicationsPath)
     }
     
     var appGroupsFolder: URL? {
-        url?.appendingPathComponent(Device.appGroupFolderPath)
+        url?.appendingPathComponent(SimulatorPaths.appGroupsPath)
     }
     
     var hasAppsInstalled: Bool {
@@ -68,7 +65,7 @@ class Device: ObservableObject, DecodableURLContainer {
         
         // Determine simulatorPlatform and osVersion based on decoded values
         simulatorPlatform = SimulatorPlatform(from: deviceType)
-        osVersion = Device.extractOSVersion(from: runtime)
+        osVersion = SimulatorPaths.formattedOSVersion(from: runtime)
     }
     
     // MARK: - Custom Initializer
@@ -80,24 +77,6 @@ class Device: ObservableObject, DecodableURLContainer {
         self.osVersion = osVersion
         self.simulatorPlatform = simulatorPlatform
         self.state = state
-    }
-    
-    // MARK: - Helper Methods
-    
-    private static func extractOSVersion(from runtime: String) -> String {
-        return runtime.components(separatedBy: ".")
-            .last?
-            .components(separatedBy: "-")
-            .enumerated()
-            .reduce(into: "") { partialResult, osVersion in
-                if osVersion.offset == 0 {
-                    partialResult = osVersion.element
-                } else if osVersion.offset == 1 {
-                    partialResult.append(" \(osVersion.element)")
-                } else if osVersion.offset == 2 {
-                    partialResult.append(".\(osVersion.element)")
-                }
-            } ?? ""
     }
 }
 

@@ -26,9 +26,9 @@ echo "🔨 Building app..."
 bundle exec fastlane release
 
 echo ""
-echo "✅ Build completed successfully!"
+echo "✅ Build and notarization completed successfully!"
 echo ""
 echo "📁 Files created in ./release/:"
-echo "   - SimulatorManager.zip (for GitHub releases)"
+echo "   - SimulatorManager.zip (notarized, for GitHub releases)"
 echo ""
 echo "🎉 Ready to upload to GitHub releases!"
