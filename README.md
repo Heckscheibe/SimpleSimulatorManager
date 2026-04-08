@@ -10,9 +10,9 @@ Developers often opt for Xcode's built-in simulators due to their swift feedback
 
 However, locating your app's folder in the local file system poses a challenge. Enter the Simple Simulator Manager, a tool crafted to assist in this aspect!
 
-This tool simplifies the process by offering an intuitive interface for managing apps installed on local simulators. 
+This tool simplifies the process by offering an intuitive interface for managing apps installed on local simulators. It also helps with simulator maintenance through per-device actions, cleanup of invalid simulator entries, and safer destructive workflows.
 
-## Current features
+## Features
 - Comprehensive list of installed simulators, categorized by device type and OS version
 - Swift access to
   - simulator and application folders
@@ -26,13 +26,27 @@ This tool simplifies the process by offering an intuitive interface for managing
 - Simulator reset functionality
   - Bulk reset of all simulators with progress tracking
   - Clean slate for testing scenarios
+- Per-simulator management actions
+  - Erase a specific simulator directly from the device menu
+- Simulator cleanup utilities
+  - Detect unavailable, orphaned, and otherwise invalid simulators
+  - Review deletion reasons, disk usage, and last boot time before removal
+  - Remove cleanup candidates individually, by OS version, or all at once
+- Additional safety for destructive actions
+  - Confirmation step before resetting all simulators
 - Option to Show/Hide platforms in the list
   - only installed platforms are shown
 - Update indicator
 
 **Note:** visionOS simulators are supported, but app discovery and management is currently not available for visionOS apps due to platform-specific differences.
 
-<img width="475" height="669" alt="Screenshot 2025-09-04 at 22 12 55" src="https://github.com/user-attachments/assets/ad74a567-8a8b-4cab-8624-c721dfaac0a5" />
+Cleanup tools for invalid or orphaned simulators, including grouped bulk deletion and detailed removal reasons.
+
+<img width="860" alt="Cleanup simulators screenshot" src="Screenshots/Screenshot 1.jpeg" />
+
+Recent apps with quick access to app containers and packages across simulators.
+
+<img width="380" alt="Recent apps screenshot" src="Screenshots/Screenshot 2.jpeg" />
 
 
 
