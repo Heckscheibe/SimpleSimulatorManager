@@ -36,5 +36,3 @@
 
 # exclude paths
 --exclude **/DerivedData
---exclude **/vendor
---exclude fastlane/actions/implementations/ProjectFactory/**
