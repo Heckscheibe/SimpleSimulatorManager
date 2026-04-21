@@ -59,3 +59,5 @@ To access the local file system, Simple Simulator Manager disables the [App Sand
 **Note:** While Simple Simulator Manager facilitates efficient local testing, it is essential to conduct thorough testing on real devices before releasing your apps. ;)
 
 *Inspired by [XSimulatorMngr](https://github.com/wcb133/XSimulatorMngr) which was discontinued. I have used this program before, and it helped me a lot.*
+
+[![Swift for Swifts](https://img.shields.io/badge/SWIFT-FOR%20SWIFTS-F6AF41?style=flat&labelColor=476B64&logo=swift&logoColor=F6AF41)](https://swiftforswifts.org)
