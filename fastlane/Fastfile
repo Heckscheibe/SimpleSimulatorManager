@@ -21,6 +21,12 @@ BUILD_DIR = File.join(PROJECT_ROOT, "build")
 RELEASE_DIR = File.join(PROJECT_ROOT, "release")
 PROJECT_FILE = File.join(PROJECT_ROOT, "SimulatorManager.xcodeproj")
 
+# Homebrew tap (Heckscheibe/homebrew-tap). Defaults to a clone sitting next to this
+# repo; override with HOMEBREW_TAP_PATH. The cask is updated locally and pushed using
+# the maintainer's own git credentials, so no CI secret is required.
+HOMEBREW_TAP_PATH = ENV["HOMEBREW_TAP_PATH"] || File.expand_path("homebrew-tap", File.dirname(PROJECT_ROOT))
+HOMEBREW_CASK_FILE = File.join(HOMEBREW_TAP_PATH, "Casks", "simple-simulator-manager.rb")
+
 def notarization_api_key
   key_id = ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"].to_s.strip
   issuer_id = ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"].to_s.strip
@@ -132,9 +138,45 @@ platform :mac do
     UI.message("- #{ZIP_NAME}.zip (notarized)")
     UI.message("")
     UI.success("You can now upload these files to your GitHub release.")
-    
+
+    # Update the Homebrew cask to point at this version (sha256 of the notarized zip).
+    bump_homebrew_cask(
+      version: release_version,
+      zip_path: File.join(RELEASE_DIR, "#{ZIP_NAME}.zip")
+    )
+
     # Open the release folder in Finder
     sh("open '#{RELEASE_DIR}'")
+  end
+
+  desc "Update and push the Homebrew cask (version + sha256) for a given release"
+  lane :bump_homebrew_cask do |options|
+    cask_version = options[:version] || prompt(text: "Cask version (e.g. 1.2.3):")
+    zip_path = options[:zip_path] || File.join(RELEASE_DIR, "#{ZIP_NAME}.zip")
+
+    UI.user_error!("ZIP not found at #{zip_path}") unless File.exist?(zip_path)
+
+    unless File.exist?(HOMEBREW_CASK_FILE)
+      UI.important("⚠️  Skipping Homebrew cask update: #{HOMEBREW_CASK_FILE} not found.")
+      UI.important("    Clone Heckscheibe/homebrew-tap next to this repo or set HOMEBREW_TAP_PATH, then run: fastlane bump_homebrew_cask version:#{cask_version}")
+      next
+    end
+
+    require "digest"
+    sha = Digest::SHA256.file(zip_path).hexdigest
+    UI.message("🔐 SHA256: #{sha}")
+
+    contents = File.read(HOMEBREW_CASK_FILE)
+    contents = contents.sub(/version "[^"]*"/, "version \"#{cask_version}\"")
+    contents = contents.sub(/sha256 "[^"]*"/, "sha256 \"#{sha}\"")
+    File.write(HOMEBREW_CASK_FILE, contents)
+
+    sh("git -C '#{HOMEBREW_TAP_PATH}' add Casks/simple-simulator-manager.rb")
+    sh("git -C '#{HOMEBREW_TAP_PATH}' commit -m 'simple-simulator-manager #{cask_version}'")
+    sh("git -C '#{HOMEBREW_TAP_PATH}' push")
+
+    UI.success("🍺 Homebrew cask updated to #{cask_version} and pushed.")
+    UI.important("ℹ️  Make sure the GitHub release asset SimulatorManager.zip is uploaded for v#{cask_version} so the cask URL resolves.")
   end
 
   end

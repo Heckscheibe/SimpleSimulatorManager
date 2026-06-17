@@ -52,6 +52,22 @@ Recent apps with quick access to app containers and packages across simulators.
 
 
 
+## Installation
+
+Install via [Homebrew](https://brew.sh):
+
+```bash
+brew install --cask heckscheibe/tap/simple-simulator-manager
+```
+
+To update later:
+
+```bash
+brew upgrade --cask simple-simulator-manager
+```
+
+Alternatively, download the latest notarized build from the [Releases](https://github.com/Heckscheibe/SimpleSimulatorManager/releases) page and move `Simulator Manager.app` to your Applications folder.
+
 ## Security and Privacy
 To access the local file system, Simple Simulator Manager disables the [App Sandbox](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.app-sandbox). This is a potentially risky entitlement and is the reason why this tool can't be released in the official App Store. The entire code of the app is openly available in this repository, allowing users to review it and ensure that none of their data is used inappropriately or sent anywhere. The app operates entirely offline (except for the GitHub update check), ensuring a secure and private development environment.
 
