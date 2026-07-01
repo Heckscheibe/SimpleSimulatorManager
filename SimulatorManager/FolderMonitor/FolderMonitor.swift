@@ -5,196 +5,180 @@
 //  Created by Nicolas Hiller on 15.12.23.
 //
 
+import Combine
+import CoreServices
 import Foundation
-@preconcurrency import Combine
+import os
 
-/// Enhanced folder monitor that provides detailed change information
-/// Originally based on https://medium.com/over-engineering/monitoring-a-folder-for-changes-in-ios-dc3f8614f902
-/// but updated using Combine publishers and enhanced for simulator app monitoring
-final class FolderMonitor: Sendable {
+/// Folder monitor built on FSEvents.
+///
+/// FSEvents is path-based rather than file-descriptor-based: it natively supports
+/// recursive monitoring, keeps working when the watched folder is deleted and
+/// recreated (simulator erase), delivers kernel-coalesced events, and does not
+/// consume a file descriptor per watched folder.
+final class FolderMonitor: @unchecked Sendable {
     // MARK: - Types
 
-    enum ChangeType {
-        case added
-        case modified
-        case deleted
-    }
-
-    struct FolderChange {
-        let changeType: ChangeType
-        let url: URL
-        let timestamp: Date
-    }
-
     enum MonitorError: Error {
-        case failedToOpenDirectory(path: String)
+        case failedToStartMonitoring(path: String)
         case alreadyMonitoring
         case notMonitoring
     }
 
-    // MARK: Properties
+    /// Holds everything the FSEvents C callback needs. The stream context retains
+    /// this object (via the context retain/release callbacks), so an in-flight
+    /// callback can never touch deallocated memory even while the monitor itself
+    /// is being torn down.
+    private final class EventSink {
+        let subject: PassthroughSubject<Void, Never>
+        /// Symlink-resolved path of the watched folder, for comparison against
+        /// event paths (FSEvents reports resolved paths, e.g. `/private/var/…`).
+        let watchedPath: String
+        let recursive: Bool
 
-    /// A file descriptor for the monitored directory.
-    private nonisolated(unsafe) var monitoredFolderFileDescriptor: CInt = -1
-    /// A dispatch queue used for sending file changes in the directory.
-    private let folderMonitorQueue = DispatchQueue(label: "FolderMonitorQueue", attributes: .concurrent)
-    /// A dispatch source to monitor a file descriptor created from the directory.
-    private nonisolated(unsafe) var folderMonitorSource: DispatchSourceFileSystemObject?
+        init(subject: PassthroughSubject<Void, Never>, watchedPath: String, recursive: Bool) {
+            self.subject = subject
+            self.watchedPath = watchedPath
+            self.recursive = recursive
+        }
+
+        /// Non-recursive filtering is best-effort: FSEvents delivers file-level paths
+        /// when possible but may coalesce to directory-level events, in which case we
+        /// signal anyway. A spurious signal only costs one debounced device refresh.
+        func handleEvents(paths: [String]) {
+            guard !recursive else {
+                subject.send(())
+                return
+            }
+
+            // Non-recursive: only react to changes of the folder itself or its direct children.
+            for path in paths {
+                let standardized = (path as NSString).standardizingPath
+                if standardized == watchedPath ||
+                    (standardized as NSString).deletingLastPathComponent == watchedPath {
+                    subject.send(())
+                    return
+                }
+            }
+        }
+    }
+
+    // MARK: - Properties
+
     /// URL for the directory being monitored.
     let url: URL
 
-    /// Recursively monitor subdirectories
+    /// Emits whenever a relevant change is detected. Events are sent from a private
+    /// queue; subscribers that update UI state must hop to the main queue.
+    let folderDidChange: PassthroughSubject<Void, Never>
+
     private let recursive: Bool
+    private let latency: TimeInterval
+    private let sink: EventSink
+    private let eventQueue = DispatchQueue(label: "FolderMonitor.events")
+    private let stateLock = NSLock()
+    private var stream: FSEventStreamRef?
 
-    /// Cache of file modification dates for comparison
-    private nonisolated(unsafe) var fileModificationCache: [URL: Date] = [:]
-    private let cacheQueue = DispatchQueue(label: "FolderMonitor.cacheQueue", attributes: .concurrent)
+    // MARK: - Initializers
 
-    // MARK: - Publishers
-
-    /// Simple change notification (backward compatibility)
-    let folderDidChange: PassthroughSubject<Void, Never> = .init()
-
-    /// Error notifications
-    let errors: PassthroughSubject<MonitorError, Never> = .init()
-
-    // MARK: Initializers
-
-    init(url: URL, recursive: Bool = false) {
+    init(url: URL, recursive: Bool = false, latency: TimeInterval = 1.0) {
+        let subject = PassthroughSubject<Void, Never>()
         self.url = url
         self.recursive = recursive
-        self.buildInitialCache()
-    }
-
-    // MARK: - Private Methods
-
-    private func buildInitialCache() {
-        cacheQueue.async(flags: .barrier) { [weak self] in
-            guard let self else {
-                return
-            }
-
-            self.fileModificationCache = self.scanDirectory(at: self.url)
-        }
-    }
-
-    private func scanDirectory(at url: URL) -> [URL: Date] {
-        var cache: [URL: Date] = [:]
-
-        guard let enumerator = FileManager.default.enumerator(
-            at: url,
-            includingPropertiesForKeys: [.contentModificationDateKey, .isDirectoryKey],
-            options: recursive ? [] : [.skipsSubdirectoryDescendants]
-        ) else {
-            return cache
-        }
-
-        for case let fileURL as URL in enumerator {
-            do {
-                let resourceValues = try fileURL.resourceValues(forKeys: [.contentModificationDateKey, .isDirectoryKey])
-                if let modificationDate = resourceValues.contentModificationDate {
-                    cache[fileURL] = modificationDate
-                }
-            } catch {
-                // Skip files we can't read
-                continue
-            }
-        }
-
-        return cache
-    }
-
-    private func detectChanges() {
-        cacheQueue.async { [weak self] in
-            guard let self else {
-                return
-            }
-
-            let currentState = self.scanDirectory(at: self.url)
-            var changes: [FolderChange] = []
-
-            // Find new or modified files
-            for (url, modificationDate) in currentState {
-                if let cachedDate = self.fileModificationCache[url] {
-                    if modificationDate > cachedDate {
-                        changes.append(FolderChange(changeType: .modified, url: url, timestamp: modificationDate))
-                    }
-                } else {
-                    changes.append(FolderChange(changeType: .added, url: url, timestamp: modificationDate))
-                }
-            }
-
-            // Find deleted files
-            for (url, _) in self.fileModificationCache where currentState[url] == nil {
-                changes.append(FolderChange(changeType: .deleted, url: url, timestamp: Date()))
-            }
-
-            // Update cache
-            self.fileModificationCache = currentState
-
-            // Notify subscribers
-            if !changes.isEmpty {
-                DispatchQueue.main.async {
-                    self.folderDidChange.send(())
-                }
-            }
-        }
-    }
-
-    // MARK: Monitoring
-    /// Listen for changes to the directory (if we are not already).
-    func startMonitoring() throws {
-        guard folderMonitorSource == nil,
-              monitoredFolderFileDescriptor == -1 else {
-            throw MonitorError.alreadyMonitoring
-        }
-
-        // Open the directory referenced by URL for monitoring only.
-        monitoredFolderFileDescriptor = open(url.path, O_EVTONLY)
-
-        guard monitoredFolderFileDescriptor != -1 else {
-            throw MonitorError.failedToOpenDirectory(path: url.path)
-        }
-
-        // Define a dispatch source monitoring the directory for additions, deletions, and renamings.
-        folderMonitorSource = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: monitoredFolderFileDescriptor,
-            eventMask: [.write, .delete, .extend],
-            queue: folderMonitorQueue
+        self.latency = latency
+        self.folderDidChange = subject
+        self.sink = EventSink(
+            subject: subject,
+            // Normalize the same way event paths are normalized in handleEvents,
+            // so /var vs. /private/var style differences cannot break the comparison.
+            watchedPath: (url.resolvingSymlinksInPath().path as NSString).standardizingPath,
+            recursive: recursive
         )
-
-        // Define the block to call when a file change is detected.
-        folderMonitorSource?.setEventHandler { [weak self] in
-            self?.detectChanges()
-        }
-
-        // Define a cancel handler to ensure the directory is closed when the source is cancelled.
-        folderMonitorSource?.setCancelHandler { [weak self] in
-            guard let strongSelf = self else {
-                return
-            }
-
-            close(strongSelf.monitoredFolderFileDescriptor)
-            strongSelf.monitoredFolderFileDescriptor = -1
-            strongSelf.folderMonitorSource = nil
-        }
-
-        // Start monitoring the directory via the source.
-        folderMonitorSource?.resume()
     }
-
-    /// Stop listening for changes to the directory, if the source has been created.
-    func stopMonitoring() throws {
-        guard folderMonitorSource != nil else {
-            throw MonitorError.notMonitoring
-        }
-
-        folderMonitorSource?.cancel()
-    }
-
-    // MARK: - Cleanup
 
     deinit {
         try? stopMonitoring()
+    }
+
+    // MARK: - Monitoring
+
+    /// Start listening for changes to the directory (if we are not already).
+    func startMonitoring() throws {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+
+        guard stream == nil else {
+            throw MonitorError.alreadyMonitoring
+        }
+
+        var context = FSEventStreamContext(
+            version: 0,
+            info: Unmanaged.passUnretained(sink).toOpaque(),
+            retain: { info in
+                guard let info else {
+                    return nil
+                }
+
+                _ = Unmanaged<EventSink>.fromOpaque(info).retain()
+                return UnsafeRawPointer(info)
+            },
+            release: { info in
+                guard let info else {
+                    return
+                }
+
+                Unmanaged<EventSink>.fromOpaque(info).release()
+            },
+            copyDescription: nil
+        )
+
+        let callback: FSEventStreamCallback = { _, info, _, eventPaths, _, _ in
+            guard let info else {
+                return
+            }
+
+            let sink = Unmanaged<EventSink>.fromOpaque(info).takeUnretainedValue()
+            let paths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue() as? [String] ?? []
+            sink.handleEvents(paths: paths)
+        }
+
+        let flags = kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagNoDefer
+
+        guard let newStream = FSEventStreamCreate(
+            kCFAllocatorDefault,
+            callback,
+            &context,
+            [url.path] as CFArray,
+            FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
+            latency,
+            FSEventStreamCreateFlags(flags)
+        ) else {
+            throw MonitorError.failedToStartMonitoring(path: url.path)
+        }
+
+        FSEventStreamSetDispatchQueue(newStream, eventQueue)
+
+        guard FSEventStreamStart(newStream) else {
+            FSEventStreamInvalidate(newStream)
+            FSEventStreamRelease(newStream)
+            throw MonitorError.failedToStartMonitoring(path: url.path)
+        }
+
+        stream = newStream
+    }
+
+    /// Stop listening for changes to the directory, if monitoring was started.
+    func stopMonitoring() throws {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+
+        guard let stream else {
+            throw MonitorError.notMonitoring
+        }
+
+        FSEventStreamStop(stream)
+        FSEventStreamInvalidate(stream)
+        FSEventStreamRelease(stream)
+        self.stream = nil
     }
 }

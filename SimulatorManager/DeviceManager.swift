@@ -11,20 +11,27 @@ import os
 
 // MARK: - Protocols
 
-/// Protocol defining the interface for device management
-protocol DeviceManaging: AnyObject {
+/// Protocol defining the interface for device management.
+/// Conformers must be safe to use across isolation domains because device refreshes
+/// are awaited from the main actor while loading happens in the background.
+protocol DeviceManaging: AnyObject, Sendable {
     var deviceTypes: AnyPublisher<[DeviceType], Never> { get }
     var devices: AnyPublisher<[Device], Never> { get }
     var recentInstalledApps: AnyPublisher<[AppChange], Never> { get }
-    
+
     func updateDevices()
     func resetAndLoadDevices()
-    func updateSpecificDevice(_ updatedDevice: Device)
+    /// Reloads the given device from disk off the main thread, publishes the result,
+    /// and returns the refreshed device (or nil if reloading failed).
+    @discardableResult
+    func refreshDevice(_ device: Device) async -> Device?
     func getDevice(withUdid udid: String) -> Device?
     func updateRecentApps(_ changes: [AppChange])
 }
 
-class DeviceManager: ObservableObject, DeviceManaging {
+/// State lives in thread-safe `CurrentValueSubject`s; publisher values are only
+/// mutated on the main queue, and background loading runs on a serial queue.
+class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
     var deviceTypes: AnyPublisher<[DeviceType], Never> {
         deviceTypesPublisher.eraseToAnyPublisher()
     }
@@ -42,6 +49,8 @@ class DeviceManager: ObservableObject, DeviceManaging {
     private let recentInstalledAppsPublisher: CurrentValueSubject<[AppChange], Never> = .init([])
     private var deviceTypeBinding: AnyCancellable?
     private let appDiscoveryService = AppDiscoveryService()
+    /// Serial queue for reloading single devices off the main thread.
+    private let refreshQueue = DispatchQueue(label: "DeviceManager.refreshQueue", qos: .userInitiated)
     
     /// Maximum number of recent installed apps to keep
     private let maxRecentInstalledApps = 20
@@ -62,17 +71,29 @@ class DeviceManager: ObservableObject, DeviceManaging {
         loadDevices()
     }
     
-    func updateSpecificDevice(_ updatedDevice: Device) {
-        guard let refreshedDevice = loadDevice(withUdid: updatedDevice.udid, existingURL: updatedDevice.url) else {
-            os_log("Failed to refresh simulator with udid %@", updatedDevice.udid)
-            return
+    @discardableResult
+    func refreshDevice(_ device: Device) async -> Device? {
+        let udid = device.udid
+        let existingURL = device.url
+
+        let refreshedDevice: Device? = await withCheckedContinuation { continuation in
+            refreshQueue.async { [weak self] in
+                continuation.resume(returning: self?.loadDevice(withUdid: udid, existingURL: existingURL))
+            }
         }
 
-        let currentDevices = devicesPublisher.value
-        let updatedDevices = currentDevices.map { device in
-            device.udid == refreshedDevice.udid ? refreshedDevice : device
+        guard let refreshedDevice else {
+            os_log("Failed to refresh simulator with udid %@", udid)
+            return nil
         }
-        devicesPublisher.value = updatedDevices
+
+        await MainActor.run {
+            devicesPublisher.value = devicesPublisher.value.map { device in
+                device.udid == refreshedDevice.udid ? refreshedDevice : device
+            }
+        }
+
+        return refreshedDevice
     }
     
     func getDevice(withUdid udid: String) -> Device? {

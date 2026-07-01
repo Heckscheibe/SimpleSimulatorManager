@@ -103,9 +103,7 @@ private extension DeviceViewModel {
             do {
                 try await resetService.shutDownAndEraseSimulator(deviceUdid: deviceUdid)
 
-                deviceManager.updateSpecificDevice(device)
-
-                guard let refreshedDevice = deviceManager.getDevice(withUdid: deviceUdid) else {
+                guard let refreshedDevice = await deviceManager.refreshDevice(device) else {
                     throw NSError(
                         domain: "SimulatorDeviceAction",
                         code: -1,

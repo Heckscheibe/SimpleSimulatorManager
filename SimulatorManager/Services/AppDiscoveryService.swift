@@ -82,9 +82,13 @@ class AppDiscoveryService {
                         continue
                     }
                     
-                    // Get the modification date of the app data folder
-                    let timestamp = getFileModificationDate(url: url) ?? Date.distantPast
-                    
+                    // The app data folder changes when the container is touched; the .app bundle
+                    // directory is replaced on install/update. The newer of the two is the best
+                    // "last installed/updated" signal.
+                    let dataFolderDate = getFileModificationDate(url: url)
+                    let bundleDate = infoPlist.url.flatMap { getFileModificationDate(url: $0) }
+                    let timestamp = [dataFolderDate, bundleDate].compactMap { $0 }.max() ?? Date.distantPast
+
                     let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
                     let simulatorApp: any SimulatorApp
                     if infoPlist.isWatchApp {
@@ -93,14 +97,16 @@ class AppDiscoveryService {
                                                            appDocumentsFolderURL: metaDataPlist.url,
                                                            appPackageURL: infoPlist.url,
                                                            hasUserDefaults: hasUserDefaults,
-                                                           companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier)
+                                                           companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier,
+                                                           contentModifiedAt: timestamp)
                     } else {
                         simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
                                                        bundleIdentifier: infoPlist.cfBundleIdentifier,
                                                        appDocumentsFolderURL: metaDataPlist.url,
                                                        appPackageURL: infoPlist.url,
                                                        hasWatchApp: infoPlist.hasCompanionWatchApp,
-                                                       hasUserDefaults: hasUserDefaults)
+                                                       hasUserDefaults: hasUserDefaults,
+                                                       contentModifiedAt: timestamp)
                     }
                     
                     // Add to both collections

@@ -39,7 +39,7 @@ class MockDeviceManager: DeviceManaging {
     
     var updateDevicesCalled = false
     var resetAndLoadDevicesCalled = false
-    var updateSpecificDeviceCalled = false
+    var refreshDeviceCalled = false
     var getDeviceCalled = false
     var updateRecentAppsCalled = false
     
@@ -111,15 +111,19 @@ class MockDeviceManager: DeviceManaging {
         recentInstalledAppsSubject.send([])
     }
     
-    func updateSpecificDevice(_ updatedDevice: Device) {
-        updateSpecificDeviceCalled = true
-        lastUpdatedDevice = updatedDevice
-        
+    @discardableResult
+    func refreshDevice(_ device: Device) async -> Device? {
+        refreshDeviceCalled = true
+        lastUpdatedDevice = device
+
         // Update the device in mock data
-        if let index = mockDevices.firstIndex(where: { $0.udid == updatedDevice.udid }) {
-            mockDevices[index] = updatedDevice
+        if let index = mockDevices.firstIndex(where: { $0.udid == device.udid }) {
+            mockDevices[index] = device
             devicesSubject.send(mockDevices)
+            return device
         }
+
+        return nil
     }
     
     func getDevice(withUdid udid: String) -> Device? {

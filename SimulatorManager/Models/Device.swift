@@ -85,3 +85,7 @@ extension Device: Identifiable {
         udid
     }
 }
+
+/// Devices are populated during discovery before they are shared; once published
+/// they are only mutated on the main queue.
+extension Device: @unchecked Sendable {}
