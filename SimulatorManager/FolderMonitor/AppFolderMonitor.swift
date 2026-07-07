@@ -16,10 +16,14 @@ final class AppFolderMonitor {
     /// so the change is emitted with fresh state without recreating the underlying FSEvents watch.
     private(set) var device: Device
 
-    /// True while no app is installed yet and we are watching the whole data folder recursively.
-    /// Once the dedicated app-packages folder appears, the owner should recreate the monitor to
-    /// switch to the cheaper non-recursive watch.
+    /// True while no app is installed yet and we are watching the whole data folder.
+    /// Once the dedicated app-packages folder appears, the owner should recreate the monitor
+    /// to switch to the narrower watch.
     let isWatchingFallback: Bool
+
+    /// Whether the underlying folder watch actually started. The owner should not cache a
+    /// monitor that failed to start, so it can retry rather than hold a permanently dead one.
+    private(set) var isMonitoring = false
 
     private let folderMonitor: FolderMonitor?
     private var cancellables: Set<AnyCancellable> = []
@@ -28,18 +32,18 @@ final class AppFolderMonitor {
         self.device = device
 
         let url: URL?
-        let recursive: Bool
+        let watchingFallback: Bool
         if let appPackagesFolder = device.appPackagesFolder,
            FileManager.default.directoryExistsAtURL(appPackagesFolder) {
             url = appPackagesFolder
-            recursive = false
+            watchingFallback = false
         } else {
             // The app packages folder only exists once the first app is installed.
-            // Until then, watch the whole data folder recursively so we notice the install.
+            // Until then, watch the whole data folder so we notice the install.
             url = device.dataFolder
-            recursive = true
+            watchingFallback = true
         }
-        self.isWatchingFallback = recursive
+        self.isWatchingFallback = watchingFallback
 
         guard let url else {
             folderMonitor = nil
@@ -47,7 +51,7 @@ final class AppFolderMonitor {
             return
         }
 
-        let monitor = FolderMonitor(url: url, recursive: recursive)
+        let monitor = FolderMonitor(url: url)
         folderMonitor = monitor
 
         monitor.folderDidChange
@@ -63,6 +67,7 @@ final class AppFolderMonitor {
 
         do {
             try monitor.startMonitoring()
+            isMonitoring = true
         } catch {
             os_log("Failed to start monitoring %@ for device %@: %@",
                    url.path,

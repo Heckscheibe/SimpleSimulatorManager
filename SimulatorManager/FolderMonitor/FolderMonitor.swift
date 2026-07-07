@@ -12,10 +12,12 @@ import os
 
 /// Folder monitor built on FSEvents.
 ///
-/// FSEvents is path-based rather than file-descriptor-based: it natively supports
-/// recursive monitoring, keeps working when the watched folder is deleted and
-/// recreated (simulator erase), delivers kernel-coalesced events, and does not
-/// consume a file descriptor per watched folder.
+/// FSEvents is path-based rather than file-descriptor-based: it natively watches the
+/// whole subtree under the given path, keeps working when the watched folder is deleted
+/// and recreated (simulator erase), delivers kernel-coalesced events, and does not
+/// consume a file descriptor per watched folder. Because the watch is inherently
+/// recursive, the monitor signals on any change beneath `url`; callers scope what they
+/// watch by choosing an appropriately narrow `url`.
 final class FolderMonitor: @unchecked Sendable {
     // MARK: - Types
 
@@ -25,41 +27,18 @@ final class FolderMonitor: @unchecked Sendable {
         case notMonitoring
     }
 
-    /// Holds everything the FSEvents C callback needs. The stream context retains
-    /// this object (via the context retain/release callbacks), so an in-flight
-    /// callback can never touch deallocated memory even while the monitor itself
-    /// is being torn down.
+    /// Holds the change subject for the FSEvents C callback. The stream context retains
+    /// this object (via the context retain/release callbacks), so an in-flight callback
+    /// can never touch deallocated memory even while the monitor itself is being torn down.
     private final class EventSink {
-        let subject: PassthroughSubject<Void, Never>
-        /// Symlink-resolved path of the watched folder, for comparison against
-        /// event paths (FSEvents reports resolved paths, e.g. `/private/var/…`).
-        let watchedPath: String
-        let recursive: Bool
+        private let subject: PassthroughSubject<Void, Never>
 
-        init(subject: PassthroughSubject<Void, Never>, watchedPath: String, recursive: Bool) {
+        init(subject: PassthroughSubject<Void, Never>) {
             self.subject = subject
-            self.watchedPath = watchedPath
-            self.recursive = recursive
         }
 
-        /// Non-recursive filtering is best-effort: FSEvents delivers file-level paths
-        /// when possible but may coalesce to directory-level events, in which case we
-        /// signal anyway. A spurious signal only costs one debounced device refresh.
-        func handleEvents(paths: [String]) {
-            guard !recursive else {
-                subject.send(())
-                return
-            }
-
-            // Non-recursive: only react to changes of the folder itself or its direct children.
-            for path in paths {
-                let standardized = (path as NSString).standardizingPath
-                if standardized == watchedPath ||
-                    (standardized as NSString).deletingLastPathComponent == watchedPath {
-                    subject.send(())
-                    return
-                }
-            }
+        func handleEvents() {
+            subject.send(())
         }
     }
 
@@ -68,11 +47,12 @@ final class FolderMonitor: @unchecked Sendable {
     /// URL for the directory being monitored.
     let url: URL
 
-    /// Emits whenever a relevant change is detected. Events are sent from a private
-    /// queue; subscribers that update UI state must hop to the main queue.
-    let folderDidChange: PassthroughSubject<Void, Never>
+    /// Emits on the main queue whenever a change is detected anywhere under `url`.
+    /// Delivery is hopped to main (restoring the pre-FSEvents contract) so subscribers can
+    /// update UI/`@Published` state directly, even though FSEvents fires on a private queue.
+    let folderDidChange: AnyPublisher<Void, Never>
 
-    private let recursive: Bool
+    private let changeSubject: PassthroughSubject<Void, Never>
     private let latency: TimeInterval
     private let sink: EventSink
     private let eventQueue = DispatchQueue(label: "FolderMonitor.events")
@@ -81,19 +61,13 @@ final class FolderMonitor: @unchecked Sendable {
 
     // MARK: - Initializers
 
-    init(url: URL, recursive: Bool = false, latency: TimeInterval = 1.0) {
+    init(url: URL, latency: TimeInterval = 1.0) {
         let subject = PassthroughSubject<Void, Never>()
         self.url = url
-        self.recursive = recursive
         self.latency = latency
-        self.folderDidChange = subject
-        self.sink = EventSink(
-            subject: subject,
-            // Normalize the same way event paths are normalized in handleEvents,
-            // so /var vs. /private/var style differences cannot break the comparison.
-            watchedPath: (url.resolvingSymlinksInPath().path as NSString).standardizingPath,
-            recursive: recursive
-        )
+        self.changeSubject = subject
+        self.folderDidChange = subject.receive(on: DispatchQueue.main).eraseToAnyPublisher()
+        self.sink = EventSink(subject: subject)
     }
 
     deinit {
@@ -132,17 +106,14 @@ final class FolderMonitor: @unchecked Sendable {
             copyDescription: nil
         )
 
-        let callback: FSEventStreamCallback = { _, info, _, eventPaths, _, _ in
+        let callback: FSEventStreamCallback = { _, info, _, _, _, _ in
             guard let info else {
                 return
             }
 
             let sink = Unmanaged<EventSink>.fromOpaque(info).takeUnretainedValue()
-            let paths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue() as? [String] ?? []
-            sink.handleEvents(paths: paths)
+            sink.handleEvents()
         }
-
-        let flags = kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagNoDefer
 
         guard let newStream = FSEventStreamCreate(
             kCFAllocatorDefault,
@@ -151,7 +122,7 @@ final class FolderMonitor: @unchecked Sendable {
             [url.path] as CFArray,
             FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
             latency,
-            FSEventStreamCreateFlags(flags)
+            FSEventStreamCreateFlags(kFSEventStreamCreateFlagNoDefer)
         ) else {
             throw MonitorError.failedToStartMonitoring(path: url.path)
         }

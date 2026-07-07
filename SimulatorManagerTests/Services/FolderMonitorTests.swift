@@ -45,7 +45,7 @@ struct FolderMonitorTests {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let monitor = FolderMonitor(url: directory, recursive: false, latency: 0.1)
+        let monitor = FolderMonitor(url: directory, latency: 0.1)
         try monitor.startMonitoring()
 
         async let changed = waitForChange(of: monitor)
@@ -56,8 +56,8 @@ struct FolderMonitorTests {
         try monitor.stopMonitoring()
     }
 
-    @Test("Detects deep changes when recursive")
-    func detectsRecursiveChange() async throws {
+    @Test("Detects deep changes anywhere under the watched folder")
+    func detectsDeepChange() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
@@ -66,7 +66,7 @@ struct FolderMonitorTests {
             .appendingPathComponent("level2", isDirectory: true)
         try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
 
-        let monitor = FolderMonitor(url: directory, recursive: true, latency: 0.1)
+        let monitor = FolderMonitor(url: directory, latency: 0.1)
         try monitor.startMonitoring()
 
         async let changed = waitForChange(of: monitor)
@@ -77,9 +77,40 @@ struct FolderMonitorTests {
         try monitor.stopMonitoring()
     }
 
-    // Note: there is deliberately no "ignores deep changes when not recursive" test.
-    // FSEvents only provides file-level event granularity on a best-effort basis and
-    // may coalesce to directory-level events, so a strict negative assertion is flaky.
+    @Test("Change notifications are delivered on the main queue")
+    func deliversOnMainQueue() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let monitor = FolderMonitor(url: directory, latency: 0.1)
+        try monitor.startMonitoring()
+
+        let onMain = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            let hasResumed = OnceFlag()
+            var cancellable: AnyCancellable?
+            cancellable = monitor.folderDidChange
+                .sink {
+                    if hasResumed.trySet() {
+                        cancellable?.cancel()
+                        continuation.resume(returning: Thread.isMainThread)
+                    }
+                }
+
+            DispatchQueue.global().asyncAfter(deadline: .now() + 5.0) {
+                if hasResumed.trySet() {
+                    cancellable?.cancel()
+                    continuation.resume(returning: false)
+                }
+            }
+
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+                try? "content".write(to: directory.appendingPathComponent("file.txt"), atomically: true, encoding: .utf8)
+            }
+        }
+
+        #expect(onMain)
+        try monitor.stopMonitoring()
+    }
 
     @Test("Start and stop lifecycle guards")
     func lifecycleGuards() throws {

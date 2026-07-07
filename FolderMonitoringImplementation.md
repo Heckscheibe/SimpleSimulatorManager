@@ -8,10 +8,9 @@ This implementation provides app change monitoring integrated directly into the 
 The base `FolderMonitor` class uses macOS's FSEvents API (`FSEventStreamCreate` scheduled on a private dispatch queue) to monitor filesystem changes:
 
 - **Path-based monitoring**: FSEvents watches paths rather than file descriptors, so monitoring survives the watched folder being deleted and recreated (e.g. simulator erase) and consumes no file descriptors
-- **Native recursion**: deep changes anywhere under the watched folder are detected, which matters for devices whose `Bundle/Application` folder does not exist yet
-- **Non-recursive filtering**: when watching the app packages folder, events are filtered to the folder itself and its direct children (best-effort — FSEvents may coalesce to directory-level events, in which case the monitor signals anyway; a spurious signal only costs one debounced refresh)
+- **Inherently recursive**: FSEvents watches the whole subtree under the given path, so any change beneath it is detected. Callers scope what they observe by choosing a narrow enough `url` (the app packages folder once apps exist, otherwise the data folder). There is no separate non-recursive mode — an FSEvents stream is always recursive
 - **Kernel-coalesced events**: FSEvents batches rapid changes via its latency parameter; no manual directory rescans or modification-date caches are needed
-- **Combine integration**: publishes a `Void` change signal through a `PassthroughSubject`
+- **Main-queue delivery**: `folderDidChange` hops to the main queue via `receive(on:)` so subscribers may update UI/`@Published` state directly
 - **Teardown safety**: the FSEvents stream context retains a small `EventSink` object (not the monitor itself), so in-flight callbacks can never touch deallocated memory
 
 ### 2. AppFolderMonitor Integration

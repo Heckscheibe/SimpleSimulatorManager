@@ -143,6 +143,14 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
 
         let monitor = AppFolderMonitor(device: device)
 
+        // Don't cache a monitor that failed to start (or had no folder to watch): the guard
+        // above would then block any retry forever. Leaving it uncached lets the next
+        // device-list publish attempt monitoring again.
+        guard monitor.isMonitoring else {
+            os_log("Monitoring did not start for device %@; will retry on next update", device.udid)
+            return
+        }
+
         let subscription = monitor.appfolderDidChange
             .sink { [weak self] changedDevice in
                 self?.handleDeviceAppFolderChange(changedDevice)

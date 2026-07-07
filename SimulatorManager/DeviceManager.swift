@@ -109,6 +109,16 @@ class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
     }
     
     func updateRecentApps(_ changes: [AppChange]) {
+        // Publisher values are only mutated on the main queue (see the @unchecked Sendable
+        // note on the type). DeviceManaging is Sendable, so a caller may invoke this off-main;
+        // hop to main to keep the read-modify-write of the recent-apps list race-free.
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.updateRecentApps(changes)
+            }
+            return
+        }
+
         var currentInstalledApps = recentInstalledAppsPublisher.value
         
         for change in changes {
