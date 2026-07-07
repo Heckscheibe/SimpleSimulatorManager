@@ -197,8 +197,12 @@ private extension DeviceManager {
     }
     
     func bindDeviceTypes() {
+        // A single-device refresh re-emits the whole devices array; the device *set* is usually
+        // unchanged, so removeDuplicates avoids recomputing and re-publishing identical device
+        // types (and the downstream UI invalidation) on every app-folder change.
         deviceTypeBinding = devicesPublisher.map { Set($0.map { DeviceType(id: $0.name,
                                                                            simulatorPlatform: $0.simulatorPlatform) }).sorted() }
+            .removeDuplicates()
             .assign(to: \.deviceTypesPublisher.value, on: self)
     }
     

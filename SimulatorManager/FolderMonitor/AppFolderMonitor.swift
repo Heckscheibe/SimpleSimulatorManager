@@ -51,7 +51,9 @@ final class AppFolderMonitor {
             return
         }
 
-        let monitor = FolderMonitor(url: url)
+        // Keep the FSEvents latency small: the 3s debounce below is the coalescing window, so a
+        // large FSEvents latency would stack on top of it (~4s notification delay) for no benefit.
+        let monitor = FolderMonitor(url: url, latency: 0.1)
         folderMonitor = monitor
 
         monitor.folderDidChange
