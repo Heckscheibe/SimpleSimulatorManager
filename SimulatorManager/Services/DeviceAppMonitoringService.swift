@@ -60,8 +60,12 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
         device: Device,
         now: Date = Date()
     ) -> [AppChange] {
-        let previousAppsById = Dictionary(uniqueKeysWithValues: previousApps.map { ($0.bundleIdentifier, $0) })
-        let currentAppsById = Dictionary(uniqueKeysWithValues: currentApps.map { ($0.bundleIdentifier, $0) })
+        // Two containers can share a bundle identifier (a stale install plus a fresh one),
+        // so keep the most-recently-modified entry rather than trapping on duplicate keys.
+        let previousAppsById = Dictionary(previousApps.map { ($0.bundleIdentifier, $0) },
+                                          uniquingKeysWith: Self.mostRecentlyModified)
+        let currentAppsById = Dictionary(currentApps.map { ($0.bundleIdentifier, $0) },
+                                         uniquingKeysWith: Self.mostRecentlyModified)
 
         var changes: [AppChange] = []
 
@@ -92,6 +96,11 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
         }
 
         return changes
+    }
+
+    /// Tie-breaker for two apps sharing a bundle identifier: prefer the newer container.
+    private nonisolated static func mostRecentlyModified(_ lhs: any SimulatorApp, _ rhs: any SimulatorApp) -> any SimulatorApp {
+        (rhs.contentModifiedAt ?? .distantPast) > (lhs.contentModifiedAt ?? .distantPast) ? rhs : lhs
     }
 
     // MARK: - Private Methods
@@ -143,9 +152,9 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
     }
 
     private func handleDeviceAppFolderChange(_ device: Device) {
-        // Remove and recreate the monitor for this device to ensure we're monitoring the correct folder
-        monitoredDevices.removeValue(forKey: device.udid)
-
+        // The monitor stays alive across the refresh (FSEvents survives folder changes), so there
+        // is no unmonitored window. `device` is the monitor's current snapshot, so its apps are the
+        // correct baseline for the diff.
         let previousApps = device.apps
 
         Task { @MainActor [weak self] in
@@ -153,14 +162,14 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
                 return
             }
 
-            // Refresh only the specific device's apps when its app container folder changes
+            // Refresh only the specific device's apps when its app container folder changes.
             guard let updatedDevice = await self.deviceManager.refreshDevice(device) else {
-                // Keep watching with the stale device rather than losing monitoring entirely
-                self.updateMonitorForDevice(device)
+                // Device was removed or could not be reloaded; leave the existing monitor as-is.
+                // A genuinely removed device's monitor is torn down on the next device-list publish.
                 return
             }
 
-            self.updateMonitorForDevice(updatedDevice)
+            self.refreshMonitor(for: updatedDevice)
 
             let changes = Self.computeAppChanges(previousApps: previousApps,
                                                  currentApps: updatedDevice.apps,
@@ -169,6 +178,26 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
             if !changes.isEmpty {
                 self.deviceManager.updateRecentApps(changes)
             }
+        }
+    }
+
+    /// Advance the monitor's device snapshot in place, recreating it only when the watch target
+    /// must change — i.e. the fallback data-folder watch is upgraded to a packages-folder watch
+    /// once the first app is installed.
+    private func refreshMonitor(for device: Device) {
+        guard let monitored = monitoredDevices[device.udid] else {
+            // No monitor (e.g. device briefly dropped out); create one from scratch.
+            updateMonitorForDevice(device)
+            return
+        }
+
+        if monitored.monitor.isWatchingFallback,
+           let packagesFolder = device.appPackagesFolder,
+           FileManager.default.directoryExistsAtURL(packagesFolder) {
+            monitoredDevices.removeValue(forKey: device.udid)
+            updateMonitorForDevice(device)
+        } else {
+            monitored.monitor.update(device: device)
         }
     }
 }

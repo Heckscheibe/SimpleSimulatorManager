@@ -109,6 +109,24 @@ struct DeviceAppMonitoringServiceTests {
         #expect(changes.isEmpty)
     }
 
+    @Test("Duplicate bundle identifiers do not crash and keep the newest container")
+    func duplicateBundleIdentifiersAreTolerated() {
+        let older = app("com.test.dup", modifiedAt: now.addingTimeInterval(-100))
+        let newer = app("com.test.dup", modifiedAt: now.addingTimeInterval(-1))
+
+        // A stale container plus a fresh one share a bundle identifier; this must not trap.
+        let changes = DeviceAppMonitoringService.computeAppChanges(
+            previousApps: [],
+            currentApps: [older, newer],
+            device: device,
+            now: now
+        )
+
+        #expect(changes.count == 1)
+        #expect(changes.first?.changeType == .installed)
+        #expect(changes.first?.timestamp == newer.contentModifiedAt)
+    }
+
     @Test("Mixed install, update, and removal in one event")
     func mixedChanges() {
         let oldDate = now.addingTimeInterval(-100)

@@ -87,13 +87,21 @@ class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
             return nil
         }
 
-        await MainActor.run {
+        // If the device left the list while we were reloading (erased/removed), don't
+        // resurrect it — publish nothing and report the refresh as failed so callers
+        // stop tracking it instead of recreating monitors for a gone device.
+        let didApply = await MainActor.run { () -> Bool in
+            guard devicesPublisher.value.contains(where: { $0.udid == refreshedDevice.udid }) else {
+                return false
+            }
+
             devicesPublisher.value = devicesPublisher.value.map { device in
                 device.udid == refreshedDevice.udid ? refreshedDevice : device
             }
+            return true
         }
 
-        return refreshedDevice
+        return didApply ? refreshedDevice : nil
     }
     
     func getDevice(withUdid udid: String) -> Device? {

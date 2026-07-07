@@ -12,7 +12,15 @@ import os
 final class AppFolderMonitor {
     let appfolderDidChange: PassthroughSubject<Device, Never> = .init()
 
-    private let device: Device
+    /// The most recent device snapshot. Updated in place after each refresh (see `update(device:)`)
+    /// so the change is emitted with fresh state without recreating the underlying FSEvents watch.
+    private(set) var device: Device
+
+    /// True while no app is installed yet and we are watching the whole data folder recursively.
+    /// Once the dedicated app-packages folder appears, the owner should recreate the monitor to
+    /// switch to the cheaper non-recursive watch.
+    let isWatchingFallback: Bool
+
     private let folderMonitor: FolderMonitor?
     private var cancellables: Set<AnyCancellable> = []
 
@@ -31,6 +39,7 @@ final class AppFolderMonitor {
             url = device.dataFolder
             recursive = true
         }
+        self.isWatchingFallback = recursive
 
         guard let url else {
             folderMonitor = nil
@@ -60,6 +69,12 @@ final class AppFolderMonitor {
                    device.udid,
                    String(describing: error))
         }
+    }
+
+    /// Refresh the captured device snapshot without touching the underlying folder watch,
+    /// so the next emitted change diffs against the latest state.
+    func update(device: Device) {
+        self.device = device
     }
 
     deinit {
