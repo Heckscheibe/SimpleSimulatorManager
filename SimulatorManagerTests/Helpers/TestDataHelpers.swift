@@ -226,4 +226,5 @@ struct MockSimulatorApp: SimulatorApp {
     let appPackageURL: URL? = nil
     let iconName: String = "app.icon"
     let hasUserDefaults: Bool = false
+    var contentModifiedAt: Date?
 }

@@ -14,11 +14,18 @@ protocol SimulatorApp: Identifiable, Sendable {
     var appPackageURL: URL? { get }
     var iconName: String { get }
     var hasUserDefaults: Bool { get }
+    /// Most recent modification date of the app's bundle or data container.
+    /// Used to detect whether an app actually changed between two discovery runs.
+    var contentModifiedAt: Date? { get }
 }
 
 extension SimulatorApp {
     var id: String {
         bundleIdentifier
+    }
+
+    var contentModifiedAt: Date? {
+        nil
     }
 }
 
@@ -28,17 +35,19 @@ final class SimulatoriOSApp: SimulatorApp {
     let appDocumentsFolderURL: URL?
     let appPackageURL: URL?
     let hasUserDefaults: Bool
+    let contentModifiedAt: Date?
     let iconName = "iphone.gen3"
-    
+
     let hasWatchApp: Bool
-    
+
     init(
         displayName: String,
         bundleIdentifier: String,
         appDocumentsFolderURL: URL?,
         appPackageURL: URL?,
         hasWatchApp: Bool,
-        hasUserDefaults: Bool
+        hasUserDefaults: Bool,
+        contentModifiedAt: Date? = nil
     ) {
         self.displayName = displayName
         self.bundleIdentifier = bundleIdentifier
@@ -46,6 +55,7 @@ final class SimulatoriOSApp: SimulatorApp {
         self.appPackageURL = appPackageURL
         self.hasWatchApp = hasWatchApp
         self.hasUserDefaults = hasUserDefaults
+        self.contentModifiedAt = contentModifiedAt
     }
 }
 
@@ -55,17 +65,19 @@ final class SimulatorWatchOSApp: SimulatorApp {
     let appDocumentsFolderURL: URL?
     let hasUserDefaults: Bool
     let appPackageURL: URL?
+    let contentModifiedAt: Date?
     let iconName = "applewatch"
-    
+
     let companioniOSAppBundleIdentifier: String?
-    
+
     init(
         displayName: String,
         bundleIdentifier: String,
         appDocumentsFolderURL: URL?,
         appPackageURL: URL?,
         hasUserDefaults: Bool,
-        companioniOSAppBundleIdentifier: String?
+        companioniOSAppBundleIdentifier: String?,
+        contentModifiedAt: Date? = nil
     ) {
         self.displayName = displayName
         self.bundleIdentifier = bundleIdentifier
@@ -73,5 +85,6 @@ final class SimulatorWatchOSApp: SimulatorApp {
         self.appPackageURL = appPackageURL
         self.hasUserDefaults = hasUserDefaults
         self.companioniOSAppBundleIdentifier = companioniOSAppBundleIdentifier
+        self.contentModifiedAt = contentModifiedAt
     }
 }

@@ -65,57 +65,88 @@ class AppDiscoveryService {
         }
 
         let appDataFolderURLs = getContentOfDirectoryAt(url: appDataFolderURL)
-        
+
+        // Decode each data container's metadata exactly once and key it by identifier, so
+        // matching apps to their containers is O(apps + containers) instead of O(apps x containers)
+        // plist decodes. If two containers share an identifier (a stale one plus a fresh one),
+        // keep the more recently modified.
+        let containersByIdentifier = dataContainersByIdentifier(in: appDataFolderURLs)
+
         var apps: [any SimulatorApp] = []
         var appChanges: [AppChange] = []
-        
-        infoPlists.forEach { infoPlist in
-            // using oldschool for in loop to be able to `break` and return early
-            for url in appDataFolderURLs {
-                let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
-                do {
-                    let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
-                    
-                    // this is the check if we found the correct app data folder
-                    // we check the mcmMetadataIdentifier against the infoPlist's bundle identifier
-                    guard metaDataPlist.mcmMetadataIdentifier == infoPlist.cfBundleIdentifier else {
-                        continue
-                    }
-                    
-                    // Get the modification date of the app data folder
-                    let timestamp = getFileModificationDate(url: url) ?? Date.distantPast
-                    
-                    let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
-                    let simulatorApp: any SimulatorApp
-                    if infoPlist.isWatchApp {
-                        simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
-                                                           bundleIdentifier: infoPlist.cfBundleIdentifier,
-                                                           appDocumentsFolderURL: metaDataPlist.url,
-                                                           appPackageURL: infoPlist.url,
-                                                           hasUserDefaults: hasUserDefaults,
-                                                           companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier)
-                    } else {
-                        simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
-                                                       bundleIdentifier: infoPlist.cfBundleIdentifier,
-                                                       appDocumentsFolderURL: metaDataPlist.url,
-                                                       appPackageURL: infoPlist.url,
-                                                       hasWatchApp: infoPlist.hasCompanionWatchApp,
-                                                       hasUserDefaults: hasUserDefaults)
-                    }
-                    
-                    // Add to both collections
-                    apps.append(simulatorApp)
-                    let appChange = AppChange(app: simulatorApp, device: device, changeType: .installed, timestamp: timestamp)
-                    appChanges.append(appChange)
-                    break // Found matching app data, move to next info plist
-                    
-                } catch {
-                    os_log("Failed to decode MetaDataPlist due to error: \(error)")
+
+        for infoPlist in infoPlists {
+            guard let container = containersByIdentifier[infoPlist.cfBundleIdentifier] else {
+                continue
+            }
+
+            // The app data folder changes when the container is touched; the .app bundle
+            // directory is replaced on install/update. The newer of the two is the best
+            // "last installed/updated" signal.
+            let bundleDate = infoPlist.url.flatMap { getFileModificationDate(url: $0) }
+            let timestamp = [container.modificationDate, bundleDate].compactMap { $0 }.max() ?? Date.distantPast
+
+            let hasUserDefaults = !getContentOfDirectoryAt(url: container.folderURL.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
+            let simulatorApp: any SimulatorApp
+            if infoPlist.isWatchApp {
+                simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
+                                                   bundleIdentifier: infoPlist.cfBundleIdentifier,
+                                                   appDocumentsFolderURL: container.metaDataPlist.url,
+                                                   appPackageURL: infoPlist.url,
+                                                   hasUserDefaults: hasUserDefaults,
+                                                   companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier,
+                                                   contentModifiedAt: timestamp)
+            } else {
+                simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
+                                               bundleIdentifier: infoPlist.cfBundleIdentifier,
+                                               appDocumentsFolderURL: container.metaDataPlist.url,
+                                               appPackageURL: infoPlist.url,
+                                               hasWatchApp: infoPlist.hasCompanionWatchApp,
+                                               hasUserDefaults: hasUserDefaults,
+                                               contentModifiedAt: timestamp)
+            }
+
+            // Add to both collections
+            apps.append(simulatorApp)
+            let appChange = AppChange(app: simulatorApp, device: device, changeType: .installed, timestamp: timestamp)
+            appChanges.append(appChange)
+        }
+
+        return (apps, appChanges)
+    }
+
+    /// A simulator data container plus the values derived from it once, so callers don't
+    /// re-read the same metadata plist per app.
+    private struct DataContainer {
+        let metaDataPlist: MetaDataPlist
+        let folderURL: URL
+        let modificationDate: Date?
+    }
+
+    /// Decode every data container's metadata plist once, keyed by its `mcmMetadataIdentifier`.
+    /// On duplicate identifiers the most recently modified container wins.
+    private func dataContainersByIdentifier(in folderURLs: [URL]) -> [String: DataContainer] {
+        var containersByIdentifier: [String: DataContainer] = [:]
+
+        for url in folderURLs {
+            let metaDataPlistURL = url.appendingPathComponent(MetaDataPlist.fileName)
+            do {
+                let metaDataPlist = try CustomPropertyListDecoder().decode(MetaDataPlist.self, at: metaDataPlistURL)
+                let candidate = DataContainer(metaDataPlist: metaDataPlist,
+                                              folderURL: url,
+                                              modificationDate: getFileModificationDate(url: url))
+
+                if let existing = containersByIdentifier[metaDataPlist.mcmMetadataIdentifier],
+                   (existing.modificationDate ?? .distantPast) >= (candidate.modificationDate ?? .distantPast) {
+                    continue
                 }
+                containersByIdentifier[metaDataPlist.mcmMetadataIdentifier] = candidate
+            } catch {
+                os_log("Failed to decode MetaDataPlist due to error: \(error)")
             }
         }
-        
-        return (apps, appChanges)
+
+        return containersByIdentifier
     }
     
     func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {

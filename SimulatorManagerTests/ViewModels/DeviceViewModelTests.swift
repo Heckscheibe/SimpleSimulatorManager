@@ -34,7 +34,7 @@ struct DeviceViewModelTests {
 
         #expect(shutDownDeviceUdid == "device-1")
         #expect(erasedDeviceUdid == "device-1")
-        #expect(deviceManager.updateSpecificDeviceCalled)
+        #expect(deviceManager.refreshDeviceCalled)
         #expect(viewModel.device.state == .off)
         #expect(viewModel.actionErrorMessage == nil)
         #expect(!viewModel.isPerformingAction)
@@ -62,7 +62,7 @@ struct DeviceViewModelTests {
 
         #expect(shutDownDeviceUdid == "test-device-uuid")
         #expect(erasedDeviceUdid == "test-device-uuid")
-        #expect(deviceManager.updateSpecificDeviceCalled)
+        #expect(deviceManager.refreshDeviceCalled)
         #expect(viewModel.actionErrorMessage == nil)
         #expect(!viewModel.isPerformingAction)
     }
