@@ -1,4 +1,20 @@
 # ============================================================================
+# Excluded Paths
+# ============================================================================
+# Keep SwiftLint off generated code, build artifacts, dependencies, and any
+# nested git worktrees (e.g. .claude/worktrees/*) that would otherwise cause
+# every source file to be linted twice and let generated files fail the build.
+excluded:
+  - DerivedData
+  - build
+  - release
+  - .build
+  - .claude
+  - vendor
+  - Pods
+  - Carthage
+
+# ============================================================================
 # Enabled Rules (Alphabetically Sorted)
 # ============================================================================
 only_rules:

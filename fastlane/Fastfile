@@ -97,11 +97,14 @@ platform :mac do
     # Build the app
     build
 
-    # Find the actual app location
-    app_path = Dir.glob(File.join(BUILD_DIR, "**", "#{APP_NAME}.app")).first
-    if app_path.nil?
-      UI.error("❌ Could not find SimulatorManager.app for ZIP creation")
-      sh("find '#{BUILD_DIR}' -name '*.app*' -type d")
+    # The exported app is written directly to BUILD_DIR/APP_NAME.app by build_mac_app.
+    # Don't glob recursively: on the case-insensitive macOS filesystem BUILD_DIR ("build")
+    # collides with Xcode's archive intermediates ("Build/Intermediates.noindex/…"), so a
+    # `**` glob can return an unsigned intermediate .app and break notarization.
+    app_path = File.join(BUILD_DIR, "#{APP_NAME}.app")
+    unless File.exist?(app_path)
+      UI.error("❌ Could not find #{APP_NAME}.app for notarization at #{app_path}")
+      sh("find '#{BUILD_DIR}' -maxdepth 1 -name '*.app' -type d")
       raise "App not found in build directory"
     end
 
@@ -109,7 +112,6 @@ platform :mac do
     notarize(
       package: app_path,
       api_key: notarization_api_key,
-      use_notarytool: true,
       print_log: true
     )
     UI.success("✅ Notarization completed successfully!")

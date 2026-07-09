@@ -87,7 +87,9 @@ fastlane/test_output
 
 # Build outputs
 build/
+Build/
 release/
+.derived-data-log-*
 
 # Bundler
 vendor/bundle

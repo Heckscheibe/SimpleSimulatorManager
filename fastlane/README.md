@@ -31,6 +31,14 @@ Build and sign the macOS app for Developer ID distribution
 
 Set the release version, build the app, create the ZIP, and open the release folder
 
+### mac bump_homebrew_cask
+
+```sh
+[bundle exec] fastlane mac bump_homebrew_cask
+```
+
+Update and push the Homebrew cask (version + sha256) for a given release
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
