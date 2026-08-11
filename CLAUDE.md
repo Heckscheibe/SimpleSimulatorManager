@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Repository
 
 - Product: macOS `MenuBarExtra` SwiftUI app for inspecting and managing apps installed in local Apple simulators
-- Target: macOS 14+ (some targets require 15.0, check `MACOSX_DEPLOYMENT_TARGET` per target)
+- Target: **macOS 15.0+** — the app target and `LSMinimumSystemVersion` are both 15.0; the project-level `MACOSX_DEPLOYMENT_TARGET` of 14.0 is only an inherited default the targets override, so don't quote it as the requirement
 - Not an iOS app; visionOS simulators appear in the UI but app discovery differs by platform
 
 ## Commands
