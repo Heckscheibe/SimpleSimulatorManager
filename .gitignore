@@ -99,6 +99,13 @@ vendor/bundle
 .vscode/
 *.code-workspace
 
+# CodeGraph
+#
+# Local code index — machine specific and recreated on demand. CodeGraph also
+# drops a self-ignoring .codegraph/.gitignore of its own; this entry keeps the
+# directory out of the repository entirely.
+.codegraph/
+
 # Code Injection
 #
 # After new code Injection tools there's a generated folder /iOSInjectionProject

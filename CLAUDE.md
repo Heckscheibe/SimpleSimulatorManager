@@ -61,6 +61,28 @@ Lightweight MVVM with service-based filesystem logic.
 - AppKit usage is fine for Finder/system integration; don't leak iOS-only assumptions into shared code
 - Prefer Combine/`ObservableObject` over the Observation macros unless the codebase is intentionally migrated
 
+## Branch and worktree naming
+
+**Every feature branch and every git worktree must be named after the GitHub issue it implements.** This is mandatory, not a preference.
+
+Use GitHub's own issue-branch format — `<issue-number>-<slugified-issue-title>`, lowercase, hyphen separated:
+
+```
+49-configurable-global-keyboard-shortcut-to-open-the-menu-bar-menu
+50-epic-type-to-filter-search-in-the-menu-bar-menu
+```
+
+This matches the branches GitHub generates from "Create a branch for this issue" and the existing convention in this repo (`32-add-advanced-simulator-utilities`, `33-add-per-device-simulator-actions`).
+
+Rules:
+
+- Work on a feature is **never** committed directly to `develop` — branch first
+- A worktree uses the **same name** as its branch; do not use generated or random names
+- If no issue exists for the work, **create the issue first**, then branch from its number
+- Prefer creating the branch with `gh issue develop <number> --base develop`, which derives the name automatically and links branch to issue
+- Some older branches use a `feature/` prefix (`feature/27-add-confirmation-dialogue-…`); for new work use the bare `<number>-<slug>` form
+- Exceptions, which keep their tool-generated names: `dependabot/*` and `release/*`
+
 ## Testing
 
 - Uses **Swift Testing** (`@Suite`, `@Test`, `#expect`), not XCTest
