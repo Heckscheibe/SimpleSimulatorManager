@@ -8,6 +8,17 @@
 import AppKit
 import SwiftUI
 
+/// Identifies the preferences window scene.
+///
+/// A plain SwiftUI `Settings` scene is not usable here: this app is an agent (`LSUIElement`) whose
+/// only other scene is a `MenuBarExtra`, and in that configuration the `Settings` scene accepts the
+/// `showSettingsWindow:` action — `NSApp.sendAction` returns `true` — without ever creating a
+/// window, so `SettingsLink` and ⌘, silently do nothing. An explicit `Window` scene opened through
+/// `openWindow` behaves correctly.
+enum PreferencesWindow {
+    static let identifier = "preferences"
+}
+
 /// Contents of the settings window.
 ///
 /// The menu keeps its own quick toggles; this window is the place for preferences that cannot be

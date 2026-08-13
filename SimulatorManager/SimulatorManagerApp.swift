@@ -58,9 +58,7 @@ struct SimulatorManagerApp: App {
             DeviceTypeView(viewModel: viewModel, settings: settings)
             Divider()
             SettingsView(viewModel: settingsViewModel, settings: settings)
-            SettingsLink {
-                Text("Settings…")
-            }.keyboardShortcut(",")
+            OpenPreferencesButton()
             Divider()
             CleanupSimulatorsView(viewModel: cleanupSimulatorsViewModel)
             Divider()
@@ -73,12 +71,14 @@ struct SimulatorManagerApp: App {
             }.keyboardShortcut("q")
         }
 
-        // `Settings` resolves to this app's own preferences type, so the SwiftUI scene has to be
-        // spelled out explicitly.
-        SwiftUI.Settings {
+        // A `Window` rather than a SwiftUI `Settings` scene: see `PreferencesWindow` for why the
+        // latter cannot present in this app.
+        Window("Settings", id: PreferencesWindow.identifier) {
             PreferencesView(settings: settings,
                             shortcutController: shortcutController,
                             recorderViewModel: shortcutRecorderViewModel)
         }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
     }
 }
