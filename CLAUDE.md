@@ -53,13 +53,16 @@ Lightweight MVVM with service-based filesystem logic.
 
 ### Patterns to follow
 
-- View models are `ObservableObject` with `@Published` properties and Combine; store subscriptions in `Set<AnyCancellable>`, receive on main queue before assigning published state
+- Two observation patterns coexist by layer — follow the one that matches where you are:
+  - **View models** (`SimulatorManager/ViewModels/`) are `@MainActor @Observable` classes (Swift Observation), held by views with `@State`. Mark injected dependencies and non-UI state `@ObservationIgnored` (see `SimulatorManagerViewModel`)
+  - **Model and service layer** (`DeviceManager`, `Device`, `Settings`, `GithubService`, `DeviceAppMonitoringService`) is `ObservableObject` with `@Published` and Combine, consumed by views via `@StateObject`/`@ObservedObject`
+- Wherever Combine is used, store subscriptions in `Set<AnyCancellable>` (`@ObservationIgnored` inside an `@Observable` view model) and `.receive(on: DispatchQueue.main)` before assigning observed state
 - Keep views thin/presentation-only; discovery, monitoring, reset, and filesystem logic belongs in services/managers
 - New services used by view models should be defined behind a protocol when they need mocking (see `DeviceManaging`, `DeviceAppMonitoring`), with constructor injection
 - Handle missing files/folders/decode failures defensively; log recoverable failures with `os_log` instead of crashing; filter out `.DS_Store` and similar noise
 - Recent-apps behavior in `DeviceManager` must stay: dedupe by bundle identifier + device UDID, sort by most recent timestamp, cap list size; when comparing app changes, diff bundle identifiers and treat an app as updated only if its `contentModifiedAt` moved forward
 - AppKit usage is fine for Finder/system integration; don't leak iOS-only assumptions into shared code
-- Prefer Combine/`ObservableObject` over the Observation macros unless the codebase is intentionally migrated
+- Preserve the layer split above rather than unifying it: don't convert a view model to `ObservableObject`, and don't convert the model/service layer to `@Observable`, without a clear architectural reason
 
 ## Testing
 
@@ -73,4 +76,4 @@ Lightweight MVVM with service-based filesystem logic.
 
 - Favor minimal, localized changes that preserve the current architecture; fix issues at the service/manager layer, not by patching views
 - Don't remove protocol seams used for tests
-- Don't replace Combine-based flows with a different state management approach unless explicitly requested
+- Don't replace the Combine-based flows in the model/service layer with a different state management approach unless explicitly requested
