@@ -83,6 +83,183 @@ struct SimulatorCleanupServiceTests {
         try? FileManager.default.removeItem(at: directoryURL)
     }
 
+    @Test("Unavailable devices without a corroborating failure are not offered for deletion")
+    func unavailableDeviceWithoutCorroboratingFailureIsSkipped() {
+        // A runtime that is still downloading leaves its devices unavailable with no missing
+        // runtime, missing device type or broken metadata. Those recover on their own, and
+        // simctl deletion is irreversible, so they must not show up as candidates.
+        let candidates = SimulatorCleanupService.buildCleanupCandidates(
+            simctlDevices: [
+                SimctlDeviceRecord(
+                    udid: "E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053",
+                    name: "iPhone 16 Pro",
+                    state: "Shutdown",
+                    runtimeIdentifier: "com.apple.CoreSimulator.SimRuntime.iOS-26-1",
+                    deviceTypeIdentifier: "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro",
+                    dataPath: nil,
+                    dataPathSize: 8192,
+                    isAvailable: false,
+                    availabilityError: nil
+                )
+            ],
+            availableRuntimeIdentifiers: ["com.apple.CoreSimulator.SimRuntime.iOS-26-1"],
+            directoryRecords: [
+                SimulatorDirectoryRecord(
+                    udid: "E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053",
+                    directoryURL: URL(fileURLWithPath: "/tmp/E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053"),
+                    metadataStatus: .decoded(
+                        SimulatorDirectoryMetadata(
+                            udid: "E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053",
+                            name: "iPhone 16 Pro",
+                            runtimeIdentifier: "com.apple.CoreSimulator.SimRuntime.iOS-26-1",
+                            deviceTypeIdentifier: "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro",
+                            lastBootedAt: nil
+                        )
+                    )
+                )
+            ]
+        )
+
+        #expect(candidates.isEmpty)
+    }
+
+    @Test("Unavailable devices with a missing device type stay cleanup candidates")
+    func unavailableDeviceWithMissingDeviceType() {
+        // The runtime is installed, so only the device type profile is gone. That is a hard
+        // failure and still qualifies, using the exact wording CoreSimulator reports.
+        let candidates = SimulatorCleanupService.buildCleanupCandidates(
+            simctlDevices: [
+                SimctlDeviceRecord(
+                    udid: "E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053",
+                    name: "iPhone 16 Pro",
+                    state: "Shutdown",
+                    runtimeIdentifier: "com.apple.CoreSimulator.SimRuntime.iOS-26-1",
+                    deviceTypeIdentifier: "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro",
+                    dataPath: nil,
+                    dataPathSize: 4096,
+                    isAvailable: false,
+                    availabilityError: "device type profile not found"
+                )
+            ],
+            availableRuntimeIdentifiers: ["com.apple.CoreSimulator.SimRuntime.iOS-26-1"],
+            directoryRecords: []
+        )
+
+        #expect(candidates.count == 1)
+        #expect(candidates[0].reasons.contains(.missingDeviceType))
+        #expect(!candidates[0].reasons.contains(.missingRuntime))
+    }
+
+    @Test("Unavailable devices with broken directory metadata stay cleanup candidates")
+    func unavailableDeviceWithBrokenMetadata() {
+        let candidates = SimulatorCleanupService.buildCleanupCandidates(
+            simctlDevices: [
+                SimctlDeviceRecord(
+                    udid: "E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053",
+                    name: "iPhone 16 Pro",
+                    state: "Shutdown",
+                    runtimeIdentifier: "com.apple.CoreSimulator.SimRuntime.iOS-26-1",
+                    deviceTypeIdentifier: "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro",
+                    dataPath: nil,
+                    dataPathSize: 4096,
+                    isAvailable: false,
+                    availabilityError: nil
+                )
+            ],
+            availableRuntimeIdentifiers: ["com.apple.CoreSimulator.SimRuntime.iOS-26-1"],
+            directoryRecords: [
+                SimulatorDirectoryRecord(
+                    udid: "E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053",
+                    directoryURL: URL(fileURLWithPath: "/tmp/E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053"),
+                    metadataStatus: .missingDevicePlist
+                )
+            ]
+        )
+
+        #expect(candidates.count == 1)
+        #expect(candidates[0].reasons.contains(.missingDevicePlist))
+    }
+
+    @Test("Duplicate orphaned directory UDIDs produce a single candidate")
+    func duplicateOrphanedDirectoryUDIDsProduceOneCandidate() {
+        // Two directories claiming the same UDID (a copied simulator folder) must not both become
+        // an `orphan-<udid>` candidate: identical IDs collide in the SwiftUI ForEach that renders
+        // the cleanup menu.
+        let udid = "5D91F5D6-6D4A-4D94-8B44-2926AE8E7C10"
+        let candidates = SimulatorCleanupService.buildCleanupCandidates(
+            simctlDevices: [],
+            availableRuntimeIdentifiers: [],
+            directoryRecords: [
+                SimulatorDirectoryRecord(
+                    udid: udid,
+                    directoryURL: URL(fileURLWithPath: "/tmp/\(udid)"),
+                    metadataStatus: .missingDevicePlist
+                ),
+                SimulatorDirectoryRecord(
+                    udid: udid,
+                    directoryURL: URL(fileURLWithPath: "/tmp/copy-of-\(udid)"),
+                    metadataStatus: .unreadableDevicePlist
+                )
+            ],
+            directorySizeProvider: { _ in 1024 }
+        )
+
+        #expect(candidates.count == 1)
+        #expect(Set(candidates.map(\.id)).count == candidates.count)
+        #expect(candidates[0].id == "orphan-\(udid)")
+        #expect(candidates[0].reasons.contains(.missingDevicePlist))
+    }
+
+    @Test("device.plist UDID is decoded from the uppercase key")
+    func devicePlistUDIDIsDecodedFromUppercaseKey() throws {
+        // Real device.plist files spell the key `UDID`; a lowercase mapping silently decodes nil
+        // and falls back to the folder name.
+        let folderName = "5D91F5D6-6D4A-4D94-8B44-2926AE8E7C10"
+        let plistUDID = "E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053"
+        let directoryURL = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent("cleanup-plist-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent(folderName, isDirectory: true)
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directoryURL.deletingLastPathComponent()) }
+
+        let plist: [String: Any] = [
+            "UDID": plistUDID,
+            "name": "iPhone 16 Pro",
+            "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-26-1",
+            "deviceType": "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro"
+        ]
+        let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        try data.write(to: directoryURL.appendingPathComponent(SimulatorPaths.devicePlistName))
+
+        let record = try #require(SimulatorCleanupService.makeDirectoryRecord(for: directoryURL))
+
+        #expect(record.udid == plistUDID)
+        #expect(record.metadata?.name == "iPhone 16 Pro")
+        #expect(record.metadata?.osVersion == "iOS 26.1")
+    }
+
+    @Test("Directory sizing reports an unknown size instead of a truncated one at the entry limit")
+    func directorySizingStopsAtEntryLimit() throws {
+        let directoryURL = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent("cleanup-size-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+
+        for index in 0 ..< 5 {
+            FileManager.default.createFile(
+                atPath: directoryURL.appendingPathComponent("file-\(index).bin").path,
+                contents: Data(repeating: 0, count: 1024)
+            )
+        }
+
+        // Within the limit the real total is reported; past it the size is unknown rather than a
+        // silently short number shown to someone deciding what to delete.
+        #expect(SimulatorCleanupService.calculateDirectorySize(at: directoryURL, entryLimit: 10) != nil)
+        #expect(SimulatorCleanupService.calculateDirectorySize(at: directoryURL, entryLimit: 2) == nil)
+    }
+
     @Test("Duplicate directory UDIDs are ignored after the first record")
     func duplicateDirectoryUDIDsUseFirstRecord() {
         let directoryURL = URL(fileURLWithPath: "/tmp/E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053")
