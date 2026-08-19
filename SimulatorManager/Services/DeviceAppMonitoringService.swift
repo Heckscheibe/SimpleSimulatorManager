@@ -133,9 +133,14 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
         // old clear-then-refill, so nothing else would rebuild them: a monitor left holding the
         // pre-reload snapshot diffs the next folder change against a stale app list and
         // re-reports apps the reload already recorded as installed.
+        //
+        // Only advance the snapshot here — never recreate the watch. Swapping a fallback watch for
+        // the narrower packages-folder one belongs to `refreshMonitor` on the post-event path,
+        // which runs after the debounce has already fired; doing it on an arbitrary publish would
+        // cancel an in-flight debounce and lose the very install that created that folder.
         for device in devices {
-            if monitoredDevices[device.udid] != nil {
-                refreshMonitor(for: device)
+            if let monitored = monitoredDevices[device.udid] {
+                monitored.monitor.update(device: device)
             } else {
                 updateMonitorForDevice(device)
             }

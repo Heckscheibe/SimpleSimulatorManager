@@ -91,9 +91,8 @@ class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
         await MainActor.run {
             // Replace rather than clear-then-refill: clearing up front would leave the menu
             // empty for the whole scan and collapse any open submenu. Device types are derived
-            // from the devices publisher, so they follow automatically; recent apps are reset
-            // explicitly because `populateInitialRecentApps` only ever adds.
-            recentInstalledAppsPublisher.value = []
+            // from the devices publisher, so they follow automatically, and recent apps are
+            // replaced wholesale by `populateInitialRecentApps`.
             publish(loadedDevices)
         }
     }
@@ -207,7 +206,11 @@ private extension DeviceManager {
     
     /// Populate initial recent apps from already installed apps
     func populateInitialRecentApps(_ appChanges: [AppChange]) {
+        // Assign rather than bail out: a reload that finds no apps still has to replace whatever
+        // the previous snapshot left behind, and doing it here keeps the whole recent-apps
+        // replacement to a single emission.
         guard !appChanges.isEmpty else {
+            recentInstalledAppsPublisher.value = []
             return
         }
 
