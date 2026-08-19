@@ -64,7 +64,7 @@ Lightweight MVVM with service-based filesystem logic.
 - AppKit usage is fine for Finder/system integration; don't leak iOS-only assumptions into shared code
 - Preserve the layer split above rather than unifying it: don't convert a view model to `ObservableObject`, and don't convert the model/service layer to `@Observable`, without a clear architectural reason
 
-## Branch and worktree naming
+## Issue, branch and worktree workflow
 
 **Every feature branch and every git worktree must be named after the GitHub issue it implements.** This is mandatory, not a preference.
 
@@ -82,9 +82,18 @@ Rules:
 - Work on a feature is **never** committed directly to `develop` — branch first
 - A worktree uses the **same name** as its branch; do not use generated or random names
 - If no issue exists for the work, **create the issue first**, then branch from its number
+- The issue is the spec: it must carry everything needed to **implement and verify** the change — context, the required behaviour for each part, knock-on effects elsewhere in the app, an explicit verification checklist, and what is deliberately out of scope
+- Maintainers additionally add the issue to the project board and set its Status:
+  `gh project item-add 1 --owner Heckscheibe --url <issue-url>`. Outside contributors skip this — the board is not writable by them
 - Prefer creating the branch with `gh issue develop <number> --base develop`, which derives the name automatically and links branch to issue
 - Some older branches use a `feature/` prefix (`feature/27-add-confirmation-dialogue-…`); for new work use the bare `<number>-<slug>` form
 - Exceptions, which keep their tool-generated names: `dependabot/*` and `release/*`
+
+Pull requests:
+
+- Open against `develop`, never `main`, with `Closes #<number>` in the body so the issue and board item close with the merge
+- A PR's head branch **cannot be changed after it is opened** — a wrongly named branch means closing the PR and reopening it from a correctly named one, so get the branch right before the first push
+- `.github/pull_request_template.md` pre-fills the description; fill in the verification section rather than deleting it
 
 ## Testing
 
