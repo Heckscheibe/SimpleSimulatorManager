@@ -212,6 +212,16 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
            FileManager.default.directoryExistsAtURL(packagesFolder) {
             monitoredDevices.removeValue(forKey: device.udid)
             updateMonitorForDevice(device)
+
+            // `updateMonitorForDevice` deliberately does not cache a monitor that failed to start.
+            // Going blind here would be worse than staying on the broader watch: this device's own
+            // events are what drive the next publish, so nothing would trigger the retry. Put the
+            // working fallback back instead.
+            if monitoredDevices[device.udid] == nil {
+                os_log("Monitoring upgrade did not start for device %@; keeping the fallback watch", device.udid)
+                monitored.monitor.update(device: device)
+                monitoredDevices[device.udid] = monitored
+            }
         } else {
             monitored.monitor.update(device: device)
         }

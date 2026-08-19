@@ -102,13 +102,18 @@ class MockDeviceManager: DeviceManaging {
     }
 
     func resetAndLoadDevices() async {
-        resetAndLoadDevicesCalled = true
-        mockDevices = []
-        mockDeviceTypes = []
-        mockRecentInstalledApps = []
-        devicesSubject.send([])
-        deviceTypesSubject.send([])
-        recentInstalledAppsSubject.send([])
+        // Nonisolated async, so this would otherwise run on a generic executor: mutate state and
+        // publish on the main queue, matching what the real DeviceManager does and keeping the
+        // call-tracking flags safe to read from @MainActor tests.
+        await MainActor.run {
+            resetAndLoadDevicesCalled = true
+            mockDevices = []
+            mockDeviceTypes = []
+            mockRecentInstalledApps = []
+            devicesSubject.send([])
+            deviceTypesSubject.send([])
+            recentInstalledAppsSubject.send([])
+        }
     }
     
     @discardableResult
