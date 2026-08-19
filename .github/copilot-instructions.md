@@ -4,15 +4,16 @@
 
 - GitHub repository: https://github.com/Heckscheibe/SimpleSimulatorManager
 - Product: macOS SwiftUI menu bar app for inspecting and managing apps installed in local Apple simulators
-- Primary target: macOS
+- Primary target: **macOS 15.0+** — the app target and `LSMinimumSystemVersion` are both 15.0; the project-level `MACOSX_DEPLOYMENT_TARGET` of 14.0 is only an inherited default the targets override
 - App style: MenuBarExtra-based utility app, not an iOS app
+- Full conventions and reasoning live in [CLAUDE.md](../CLAUDE.md); this file must stay consistent with it
 
 ## Architecture Overview
 
 Simple Simulator Manager is a SwiftUI macOS app with a lightweight MVVM structure and service-based filesystem logic.
 
 - App entry point: `SimulatorManagerApp` wires shared state and dependencies, including `DeviceManager`, `SimulatorResetService`, and `Settings`
-- View models: Use `ObservableObject` with `@Published` properties and Combine subscriptions
+- View models: `@MainActor @Observable` classes (Swift Observation), held by views with `@State`
 - Central coordinator: `DeviceManager` is the main source of truth for simulator devices, device types, and recent installed apps
 - Filesystem discovery: `AppDiscoveryService` is responsible for scanning simulator folders, reading plist metadata, and constructing app and app-group models
 - Folder monitoring: `DeviceAppMonitoringService` manages per-device `AppFolderMonitor` instances and updates recent apps when simulator app containers change
@@ -24,9 +25,12 @@ Simple Simulator Manager is a SwiftUI macOS app with a lightweight MVVM structur
 
 - Keep SwiftUI views thin and focused on presentation
 - Put discovery, monitoring, reset, and filesystem logic in services or managers, not directly in views
-- Prefer the existing repo pattern of `ObservableObject`, `@Published`, and Combine rather than introducing Observation macros unless the codebase is intentionally migrated
-- For UI-facing Combine pipelines, receive on the main queue before assigning published state
-- Store subscriptions in `Set<AnyCancellable>`
+- Two observation patterns coexist **by layer**; follow the one that matches where you are:
+  - View models in `SimulatorManager/ViewModels/` are `@MainActor @Observable`. Mark injected dependencies and non-UI state `@ObservationIgnored` (see `SimulatorManagerViewModel`)
+  - The model and service layer (`DeviceManager`, `Device`, `Settings`, `GithubService`, `DeviceAppMonitoringService`) stays `ObservableObject` with `@Published` and Combine, consumed via `@StateObject`/`@ObservedObject`
+- Do not unify the two: never convert a view model to `ObservableObject`, and never convert the model or service layer to `@Observable`, without a clear architectural reason
+- For UI-facing Combine pipelines, receive on the main queue before assigning observed state
+- Store subscriptions in `Set<AnyCancellable>` (`@ObservationIgnored` inside an `@Observable` view model)
 
 ### Dependency Injection and Testability
 
@@ -52,7 +56,7 @@ Simple Simulator Manager is a SwiftUI macOS app with a lightweight MVVM structur
   - deduplicate by app bundle identifier plus device UDID
   - sort by most recent timestamp first
   - cap the recent list size
-- When comparing app changes, diff bundle identifiers between previous and current app sets
+- When comparing app changes, diff bundle identifiers between previous and current app sets, and treat an app as updated **only** if its `contentModifiedAt` moved forward
 
 ### Settings and Persistence
 
@@ -63,6 +67,7 @@ Simple Simulator Manager is a SwiftUI macOS app with a lightweight MVVM structur
 ### Platform Constraints
 
 - This is a macOS app, not an iOS app
+- The app sandbox is intentionally **disabled** (`com.apple.security.app-sandbox = false`) — it is required for direct filesystem access to CoreSimulator directories under `~/Library`. Do not re-enable it
 - AppKit usage is acceptable when needed for Finder or system integration
 - Preserve `MenuBarExtra` information architecture unless there is a strong product reason to change it
 - Do not introduce iOS-only assumptions into shared code
@@ -78,10 +83,27 @@ Simple Simulator Manager is a SwiftUI macOS app with a lightweight MVVM structur
 
 ## Build and Tooling
 
+Scheme `SimulatorManager`, project `SimulatorManager.xcodeproj`:
+
+```bash
+xcodebuild -project SimulatorManager.xcodeproj -scheme SimulatorManager build
+xcodebuild -project SimulatorManager.xcodeproj -scheme SimulatorManager test
+```
+
 - Keep code compatible with the Xcode project’s macOS target
 - Respect the existing SwiftFormat and SwiftLint build phases
 - Release automation runs through fastlane via the repository build script
 - Prefer changes that stay formatter- and lint-friendly instead of relying on follow-up cleanup
+
+## Issue, Branch and Pull Request Workflow
+
+- Every feature branch and worktree is named after the GitHub issue it implements, using GitHub's own format: `<issue-number>-<slugified-issue-title>`, lowercase and hyphen separated (for example `49-configurable-global-keyboard-shortcut-to-open-the-menu-bar-menu`)
+- If no issue exists, create it first and branch from its number. The issue is the spec: it carries what to implement *and* how to verify it, including knock-on effects and explicit out-of-scope items
+- Never commit feature work directly to `develop`
+- Open pull requests against `develop`, never `main`, with `Closes #<number>` in the body
+- A pull request's head branch cannot be changed once opened, so the branch name has to be right before the first push
+- `dependabot/*` and `release/*` keep their tool-generated names
+- `.github/pull_request_template.md` pre-fills the description; fill in the verification section rather than deleting it
 
 ## Change Guidance for Copilot
 

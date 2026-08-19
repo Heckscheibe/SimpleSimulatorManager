@@ -138,7 +138,8 @@ see [FASTLANE_README.md](FASTLANE_README.md).
 
 ## Contributing
 
-Issues and pull requests are welcome. Testing conventions are documented in
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build, test
+and submit changes; testing conventions are documented in
 [SimulatorManagerTests/README.md](SimulatorManagerTests/README.md).
 
 ## License
