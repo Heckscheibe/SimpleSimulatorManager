@@ -20,7 +20,10 @@ protocol DeviceManaging: AnyObject, Sendable {
     var recentInstalledApps: AnyPublisher<[AppChange], Never> { get }
 
     func updateDevices()
-    func resetAndLoadDevices()
+    /// Reloads every device from disk off the main thread and publishes the result.
+    /// Returns once the reloaded devices have been published, so callers can keep a
+    /// progress indicator up for as long as the list is still stale.
+    func resetAndLoadDevices() async
     /// Reloads the given device from disk off the main thread, publishes the result,
     /// and returns the refreshed device (or nil if reloading failed).
     @discardableResult
@@ -69,32 +72,29 @@ class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
         loadDevices()
     }
     
-    func resetAndLoadDevices() {
-        // Publisher values are only mutated on the main queue (see the @unchecked Sendable note on
-        // the type). DeviceManaging is Sendable, so a caller may invoke this off-main.
-        guard Thread.isMainThread else {
-            DispatchQueue.main.async { [weak self] in
-                self?.resetAndLoadDevices()
-            }
-            return
-        }
-
+    func resetAndLoadDevices() async {
         // Reload off the main thread. A full load decodes every device, app and app-group plist
         // (a few thousand plists, ~1s on a typical install); running it inline on the caller froze
         // the menu bar UI for the duration of, for example, a cleanup deletion.
-        refreshQueue.async { [weak self] in
-            guard let self, let loadedDevices = self.loadDevicesFromDisk() else {
-                return
+        let loadedDevices: LoadedDevices? = await withCheckedContinuation { continuation in
+            refreshQueue.async { [weak self] in
+                continuation.resume(returning: self?.loadDevicesFromDisk())
             }
+        }
 
-            DispatchQueue.main.async {
-                // Replace rather than clear-then-refill: clearing up front would leave the menu
-                // empty for the whole scan and collapse any open submenu. Device types are derived
-                // from the devices publisher, so they follow automatically; recent apps are reset
-                // explicitly because `populateInitialRecentApps` only ever adds.
-                self.recentInstalledAppsPublisher.value = []
-                self.publish(loadedDevices)
-            }
+        guard let loadedDevices else {
+            return
+        }
+
+        // Publisher values are only mutated on the main queue (see the @unchecked Sendable note on
+        // the type). DeviceManaging is Sendable, so a caller may invoke this off-main.
+        await MainActor.run {
+            // Replace rather than clear-then-refill: clearing up front would leave the menu
+            // empty for the whole scan and collapse any open submenu. Device types are derived
+            // from the devices publisher, so they follow automatically; recent apps are reset
+            // explicitly because `populateInitialRecentApps` only ever adds.
+            recentInstalledAppsPublisher.value = []
+            publish(loadedDevices)
         }
     }
     

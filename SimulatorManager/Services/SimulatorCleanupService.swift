@@ -274,30 +274,42 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         let availabilityError = device.availabilityError?.lowercased()
         var reasons: [SimulatorCleanupReason] = [.unavailable]
 
-        if !availableRuntimeIdentifiers.contains(device.runtimeIdentifier) || availabilityError?.contains("runtime profile not found") == true {
+        // CoreSimulator only reports the profile as *not found* once the runtime is really gone.
+        // A runtime that is merely still downloading, or waiting to be re-fetched after an Xcode
+        // or macOS upgrade, is reported by `simctl list runtimes` as not available and therefore
+        // missing from `availableRuntimeIdentifiers` too — so absence from that set is not by
+        // itself evidence that anything is permanently broken.
+        let runtimeProfileMissing = availabilityError?.contains("runtime profile not found") == true
+        var hasUnrecoverableFailure = runtimeProfileMissing
+
+        if !availableRuntimeIdentifiers.contains(device.runtimeIdentifier) || runtimeProfileMissing {
             reasons.append(.missingRuntime)
         }
 
         if availabilityError?.contains("device type profile not found") == true {
             reasons.append(.missingDeviceType)
+            hasUnrecoverableFailure = true
         }
 
         switch directoryRecord?.metadataStatus {
         case .missingDevicePlist?:
             reasons.append(.missingDevicePlist)
+            hasUnrecoverableFailure = true
         case .unreadableDevicePlist?:
             reasons.append(.unreadableDeviceMetadata)
+            hasUnrecoverableFailure = true
         case .decoded, nil:
             break
         }
 
-        // `isAvailable == false` on its own is not evidence that a simulator is disposable.
-        // CoreSimulator also reports it while a runtime is still downloading, during an Xcode
-        // update, and after a macOS upgrade that needs the runtime re-fetched — states the
-        // simulator recovers from on its own once the runtime is back. Deletion here goes through
-        // `simctl delete`, which is irreversible (unlike the Trash used for orphaned directories),
-        // so require at least one corroborating hard failure before offering to destroy the device.
-        guard reasons.count > 1 else {
+        // `isAvailable == false` on its own is not evidence that a simulator is disposable, and
+        // neither is a runtime that simctl currently reports as unavailable — both are true while
+        // a runtime is downloading, during an Xcode update, and after a macOS upgrade that needs
+        // the runtime re-fetched, all states the simulator recovers from on its own. Deletion here
+        // goes through `simctl delete`, which is irreversible (unlike the Trash used for orphaned
+        // directories), so require a failure the simulator cannot recover from: a runtime or
+        // device type profile CoreSimulator reports as *not found*, or broken directory metadata.
+        guard hasUnrecoverableFailure else {
             os_log(
                 "Cleanup service skipping unavailable simulator %{public}@; no corroborating failure, it may only be temporarily unavailable",
                 device.udid

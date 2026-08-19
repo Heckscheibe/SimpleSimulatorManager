@@ -128,9 +128,17 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
             monitoredDevices.removeValue(forKey: udid)
         }
 
-        // Add monitors for new devices
+        // Add monitors for new devices, and re-point existing monitors at the freshly published
+        // `Device`. A full reload (`resetAndLoadDevices`) replaces every instance in place of the
+        // old clear-then-refill, so nothing else would rebuild them: a monitor left holding the
+        // pre-reload snapshot diffs the next folder change against a stale app list and
+        // re-reports apps the reload already recorded as installed.
         for device in devices {
-            updateMonitorForDevice(device)
+            if monitoredDevices[device.udid] != nil {
+                refreshMonitor(for: device)
+            } else {
+                updateMonitorForDevice(device)
+            }
         }
     }
 

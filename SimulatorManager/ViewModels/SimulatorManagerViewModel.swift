@@ -80,7 +80,9 @@ private extension SimulatorManagerViewModel {
         simulatorResetService.didResetAllSimulators
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.deviceManager.resetAndLoadDevices()
+                Task { [weak self] in
+                    await self?.deviceManager.resetAndLoadDevices()
+                }
 //                self?.deviceAppMonitoringService.resetMonitoring()
             }
             .store(in: &cancellables)

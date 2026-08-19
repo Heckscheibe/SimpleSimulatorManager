@@ -101,7 +101,7 @@ class MockDeviceManager: DeviceManaging {
         updateDevicesCalled = true
     }
 
-    func resetAndLoadDevices() {
+    func resetAndLoadDevices() async {
         resetAndLoadDevicesCalled = true
         mockDevices = []
         mockDeviceTypes = []

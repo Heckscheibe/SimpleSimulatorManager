@@ -29,12 +29,13 @@ struct DeviceManagerReloadTests {
         // A second device appears on disk, so an inline reload would be observable immediately.
         try fixture.writeDevice(udid: "22222222-2222-2222-2222-222222222222", name: "iPad Air 11-inch")
 
-        deviceManager.resetAndLoadDevices()
+        let reload = Task { await deviceManager.resetAndLoadDevices() }
 
-        // Still the pre-reload snapshot: the call only scheduled the work.
+        // Still the pre-reload snapshot: a main-actor `Task` cannot start until this function
+        // suspends, so nothing has been loaded on the caller.
         #expect(publishedDevices.last?.count == 1)
 
-        try await waitUntil { publishedDevices.last?.count == 2 }
+        await reload.value
 
         #expect(publishedDevices.last?.count == 2)
         cancellables.removeAll()
@@ -57,34 +58,12 @@ struct DeviceManagerReloadTests {
             .store(in: &cancellables)
 
         try fixture.writeDevice(udid: "44444444-4444-4444-4444-444444444444", name: "iPad Air 11-inch")
-        deviceManager.resetAndLoadDevices()
-
-        try await waitUntil { publishThreadWasMain.count > 1 }
+        await deviceManager.resetAndLoadDevices()
 
         // Publisher values are only safe to mutate on the main queue, so the hop back matters.
+        #expect(publishThreadWasMain.count > 1)
         #expect(publishThreadWasMain.allSatisfy { $0 })
         cancellables.removeAll()
-    }
-
-    // MARK: - Helpers
-
-    /// Polls instead of sleeping a fixed interval, so the suite stays fast and does not depend on
-    /// how loaded the machine is while the rest of the tests run in parallel.
-    private func waitUntil(
-        timeout: Duration = .seconds(2),
-        _ condition: @MainActor () -> Bool
-    ) async throws {
-        let deadline = ContinuousClock.now + timeout
-
-        while ContinuousClock.now < deadline {
-            if await MainActor.run(body: condition) {
-                return
-            }
-
-            try await Task.sleep(for: .milliseconds(10))
-        }
-
-        Issue.record("Timed out waiting for the expected condition")
     }
 }
 

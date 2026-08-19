@@ -138,9 +138,18 @@ final class CleanupSimulatorsViewModel {
     }
 
     private func delete(candidates: [SimulatorCleanupCandidate], scopeDescription: String) {
-        // Confirm before anything is reserved or deleted: `simctl delete` cannot be undone, while
-        // orphaned directories only move to the Trash and need no prompt.
-        let unrecoverableCount = candidates.count(where: { candidate in
+        let candidatesToDelete = reserveDeletionIDs(for: candidates)
+
+        guard !candidatesToDelete.isEmpty else {
+            os_log("Cleanup delete ignored because no candidates were available for %{public}@", scopeDescription)
+            return
+        }
+
+        // Confirm before anything is deleted: `simctl delete` cannot be undone, while orphaned
+        // directories only move to the Trash and need no prompt. Count the reserved candidates
+        // rather than the requested ones, so the prompt cannot name simulators that another
+        // in-flight batch already claimed and this one will skip.
+        let unrecoverableCount = candidatesToDelete.count(where: { candidate in
             if case .simctlDelete = candidate.deletionMethod {
                 return true
             }
@@ -150,14 +159,10 @@ final class CleanupSimulatorsViewModel {
 
         if unrecoverableCount > 0,
            !destructiveActionConfirmer.confirmPermanentSimulatorDeletion(simulatorCount: unrecoverableCount) {
+            for candidate in candidatesToDelete {
+                deletingCandidateIDs.remove(candidate.id)
+            }
             os_log("Cleanup delete cancelled by the user for %{public}@", scopeDescription)
-            return
-        }
-
-        let candidatesToDelete = reserveDeletionIDs(for: candidates)
-
-        guard !candidatesToDelete.isEmpty else {
-            os_log("Cleanup delete ignored because no candidates were available for %{public}@", scopeDescription)
             return
         }
 
@@ -175,7 +180,12 @@ final class CleanupSimulatorsViewModel {
                 for candidate in candidatesToDelete {
                     deletingCandidateIDs.remove(candidate.id)
                 }
-                errorMessage = failureMessages.isEmpty ? nil : failureMessages.joined(separator: "\n")
+                // Only ever *set* the message. Assigning nil on success would clear an error that
+                // another still-running delete batch just reported for a simulator it could not
+                // remove, leaving the user with no sign that anything failed.
+                if !failureMessages.isEmpty {
+                    errorMessage = failureMessages.joined(separator: "\n")
+                }
                 os_log(
                     "Cleanup delete finished for %{public}@ count=%{public}ld failures=%{public}ld",
                     scopeDescription,
@@ -204,7 +214,7 @@ final class CleanupSimulatorsViewModel {
             // Refresh regardless of the outcome. Anything that *was* deleted must disappear from
             // both the device list and the candidate list, otherwise a retry targets simulators
             // that are already gone and fails again with a more confusing error.
-            deviceManager.resetAndLoadDevices()
+            await deviceManager.resetAndLoadDevices()
             os_log("Cleanup delete triggered device reload")
 
             do {
