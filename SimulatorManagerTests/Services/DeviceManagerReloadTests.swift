@@ -66,35 +66,3 @@ struct DeviceManagerReloadTests {
         cancellables.removeAll()
     }
 }
-
-/// A throwaway CoreSimulator `Devices` directory holding hand-written `device.plist` fixtures.
-private struct DeviceFixtureDirectory {
-    let url: URL
-
-    init() throws {
-        url = FileManager.default
-            .temporaryDirectory
-            .appendingPathComponent("device-manager-fixture-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-    }
-
-    /// Writes the same keys a real `device.plist` carries, including the uppercase `UDID`.
-    func writeDevice(udid: String, name: String) throws {
-        let deviceURL = url.appendingPathComponent(udid, isDirectory: true)
-        try FileManager.default.createDirectory(at: deviceURL, withIntermediateDirectories: true)
-
-        let plist: [String: Any] = [
-            "UDID": udid,
-            "name": name,
-            "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-26-1",
-            "deviceType": "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro",
-            "state": 1
-        ]
-        let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
-        try data.write(to: deviceURL.appendingPathComponent(SimulatorPaths.devicePlistName))
-    }
-
-    func remove() {
-        try? FileManager.default.removeItem(at: url)
-    }
-}
