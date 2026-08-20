@@ -15,11 +15,13 @@ struct SimulatorManagerApp: App {
     @State private var cleanupSimulatorsViewModel: CleanupSimulatorsViewModel
     @State private var resetSimulatorsViewModel: ResetSimulatorsViewModel
     @State private var settingsViewModel: SettingsViewModel
+    @State private var shortcutRecorderViewModel: ShortcutRecorderViewModel
     @StateObject private var settings: Settings
-    
+    @StateObject private var shortcutController: GlobalShortcutController
+
     private let simulatorResetService: SimulatorResetServing
     private let simulatorCleanupService: SimulatorCleanupServing
-        
+
     init() {
         let deviceManager = DeviceManager()
         let simulatorResetService: SimulatorResetServing = SimulatorResetService()
@@ -32,6 +34,10 @@ struct SimulatorManagerApp: App {
                                                                 simulatorResetService: simulatorResetService)
         let settings = Settings()
         
+        let shortcutController = GlobalShortcutController(settings: settings,
+                                                          hotkeyService: GlobalHotkeyService(),
+                                                          menuPresenter: MenuBarMenuPresenter())
+
         self.simulatorResetService = simulatorResetService
         self.simulatorCleanupService = simulatorCleanupService
         self._deviceManager = StateObject(wrappedValue: deviceManager)
@@ -40,7 +46,9 @@ struct SimulatorManagerApp: App {
         self._resetSimulatorsViewModel = State(initialValue: resetSimulatorsViewModel)
         self._settingsViewModel = State(initialValue: SettingsViewModel(settings: settings,
                                                                         simulatorManagerViewModel: viewModel))
+        self._shortcutRecorderViewModel = State(initialValue: ShortcutRecorderViewModel(settings: settings))
         self._settings = StateObject(wrappedValue: settings)
+        self._shortcutController = StateObject(wrappedValue: shortcutController)
     }
     
     var body: some Scene {
@@ -50,6 +58,7 @@ struct SimulatorManagerApp: App {
             DeviceTypeView(viewModel: viewModel, settings: settings)
             Divider()
             SettingsView(viewModel: settingsViewModel, settings: settings)
+            OpenPreferencesButton()
             Divider()
             CleanupSimulatorsView(viewModel: cleanupSimulatorsViewModel)
             Divider()
@@ -61,5 +70,15 @@ struct SimulatorManagerApp: App {
                 NSApplication.shared.terminate(nil)
             }.keyboardShortcut("q")
         }
+
+        // A `Window` rather than a SwiftUI `Settings` scene: see `PreferencesWindow` for why the
+        // latter cannot present in this app.
+        Window("Settings", id: PreferencesWindow.identifier) {
+            PreferencesView(settings: settings,
+                            shortcutController: shortcutController,
+                            recorderViewModel: shortcutRecorderViewModel)
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
     }
 }
