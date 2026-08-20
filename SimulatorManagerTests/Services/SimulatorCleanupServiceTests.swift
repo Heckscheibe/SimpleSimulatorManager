@@ -260,6 +260,68 @@ struct SimulatorCleanupServiceTests {
         #expect(SimulatorCleanupService.calculateDirectorySize(at: directoryURL, entryLimit: 2) == nil)
     }
 
+    @Test("Directory sizing counts hidden files")
+    func directorySizingCountsHiddenFiles() throws {
+        // Simulator containers hold a lot of their bytes in dotfiles and hidden caches, so skipping
+        // hidden entries understated the total someone uses to decide what is worth deleting.
+        let rootURL = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent("cleanup-hidden-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: rootURL) }
+
+        let visibleOnlyURL = rootURL.appendingPathComponent("visible-only", isDirectory: true)
+        let withHiddenURL = rootURL.appendingPathComponent("with-hidden", isDirectory: true)
+        try FileManager.default.createDirectory(at: visibleOnlyURL, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: withHiddenURL, withIntermediateDirectories: true)
+
+        for directoryURL in [visibleOnlyURL, withHiddenURL] {
+            FileManager.default.createFile(
+                atPath: directoryURL.appendingPathComponent("visible.bin").path,
+                contents: Data(repeating: 0, count: 4096)
+            )
+        }
+
+        FileManager.default.createFile(
+            atPath: withHiddenURL.appendingPathComponent(".hidden.bin").path,
+            contents: Data(repeating: 0, count: 4096)
+        )
+
+        // Compared against the same tree without the dotfile rather than against a fixed number,
+        // so the assertion does not depend on the filesystem's allocation block size.
+        let visibleOnlySize = try #require(SimulatorCleanupService.calculateDirectorySize(at: visibleOnlyURL))
+        let withHiddenSize = try #require(SimulatorCleanupService.calculateDirectorySize(at: withHiddenURL))
+
+        #expect(withHiddenSize > visibleOnlySize)
+    }
+
+    @Test("Directory sizing reports an unknown size when part of the tree cannot be read")
+    func directorySizingReportsUnknownWhenEnumerationFails() throws {
+        let directoryURL = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent("cleanup-unreadable-\(UUID().uuidString)", isDirectory: true)
+        let unreadableURL = directoryURL.appendingPathComponent("unreadable", isDirectory: true)
+        try FileManager.default.createDirectory(at: unreadableURL, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: unreadableURL.path)
+            try? FileManager.default.removeItem(at: directoryURL)
+        }
+
+        FileManager.default.createFile(
+            atPath: unreadableURL.appendingPathComponent("hidden-away.bin").path,
+            contents: Data(repeating: 0, count: 4096)
+        )
+        FileManager.default.createFile(
+            atPath: directoryURL.appendingPathComponent("visible.bin").path,
+            contents: Data(repeating: 0, count: 4096)
+        )
+
+        // Strip the search bit so the walk cannot descend, which is what the error handler sees.
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: unreadableURL.path)
+
+        // A partial total would understate the simulator and is worse than admitting we don't know.
+        #expect(SimulatorCleanupService.calculateDirectorySize(at: directoryURL) == nil)
+    }
+
     @Test("Duplicate directory UDIDs are ignored after the first record")
     func duplicateDirectoryUDIDsUseFirstRecord() {
         let directoryURL = URL(fileURLWithPath: "/tmp/E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053")

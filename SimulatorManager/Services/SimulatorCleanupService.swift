@@ -424,10 +424,36 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
     }
 
     static func calculateDirectorySize(at directoryURL: URL, entryLimit: Int) -> Int64? {
+        // Whether the walk skipped bytes it should have counted. Same rule as the entry cap below:
+        // an incomplete total is worse than none, because this number drives a deletion decision.
+        var enumerationFailed = false
+
+        // No `.skipsHiddenFiles`: a simulator container is full of dotfiles and hidden caches, and
+        // omitting them understates the total by a wide margin.
         guard let enumerator = FileManager.default.enumerator(
             at: directoryURL,
             includingPropertiesForKeys: [.isRegularFileKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey],
-            options: [.skipsHiddenFiles]
+            options: [],
+            errorHandler: { url, error in
+                // A file disappearing mid-walk is routine for a booted simulator's caches and costs
+                // nothing worth reporting, so keep going and still return a total. Anything else —
+                // an unreadable directory, an I/O failure — means real bytes went uncounted.
+                let nsError = error as NSError
+                let isMissingFile = (nsError.domain == NSCocoaErrorDomain && nsError.code == NSFileReadNoSuchFileError)
+                    || (nsError.domain == NSPOSIXErrorDomain && nsError.code == Int(ENOENT))
+
+                if !isMissingFile {
+                    os_log(
+                        "Cleanup service could not enumerate %{public}@ while sizing: %{public}@",
+                        url.path,
+                        error.localizedDescription
+                    )
+                    enumerationFailed = true
+                }
+
+                // Carry on either way; the flag decides what gets reported at the end.
+                return true
+            }
         ) else {
             return nil
         }
@@ -458,6 +484,14 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             } else if let fileAllocatedSize = resourceValues.fileAllocatedSize {
                 totalSize += Int64(fileAllocatedSize)
             }
+        }
+
+        guard !enumerationFailed else {
+            os_log(
+                "Cleanup service could not size %{public}@ completely; reporting unknown size",
+                directoryURL.path
+            )
+            return nil
         }
 
         return totalSize == 0 ? nil : totalSize
