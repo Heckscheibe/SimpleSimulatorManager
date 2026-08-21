@@ -55,7 +55,10 @@ class ResetSimulatorsViewModel {
             } catch {
                 os_log("Failed to reset simulators: \(error.localizedDescription)")
             }
-            deviceManager.resetAndLoadDevices()
+            // Await the reload: it runs off the main thread, and until it publishes the menu still
+            // lists every app that was just erased. Dropping the indicator first would make that
+            // stale listing look like the reset silently failed.
+            await deviceManager.resetAndLoadDevices()
             isResettingSimulators = false
         }
     }

@@ -60,6 +60,22 @@ struct SimulatorDirectoryRecord: Sendable, Equatable {
 }
 
 final class SimulatorCleanupService: SimulatorCleanupServing {
+    /// Upper bound on filesystem entries visited while sizing a single simulator directory.
+    /// A healthy simulator holds on the order of 40k files, so anything far past this is
+    /// pathological and not worth stalling the whole scan for.
+    static let directorySizeScanEntryLimit = 250_000
+
+    /// Blocking work — process launches and recursive directory walks — must stay off the Swift
+    /// concurrency cooperative pool. `Task.detached` shares that pool, so a multi-second directory
+    /// scan there occupies a cooperative thread with no suspension point and starves unrelated
+    /// async work. Hop to a dedicated queue instead, as `DeviceManager.refreshQueue` does.
+    /// Concurrent, so the three independent inputs still load in parallel.
+    private static let workQueue = DispatchQueue(
+        label: "SimulatorCleanupService.workQueue",
+        qos: .userInitiated,
+        attributes: .concurrent
+    )
+
     func loadCleanupCandidates() async throws -> [SimulatorCleanupCandidate] {
         os_log("Cleanup service started loading candidates")
         async let simctlDevices = loadSimctlDevices()
@@ -77,11 +93,17 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             loadedDirectoryRecords.count
         )
 
-        let candidates = Self.buildCleanupCandidates(
-            simctlDevices: loadedSimctlDevices,
-            availableRuntimeIdentifiers: loadedRuntimeIdentifiers,
-            directoryRecords: loadedDirectoryRecords
-        )
+        try Task.checkCancellation()
+
+        // Building candidates walks simulator directories to size them, so it belongs on the
+        // work queue too rather than on the cooperative thread running this function.
+        let candidates = try await onWorkQueue {
+            Self.buildCleanupCandidates(
+                simctlDevices: loadedSimctlDevices,
+                availableRuntimeIdentifiers: loadedRuntimeIdentifiers,
+                directoryRecords: loadedDirectoryRecords
+            )
+        }
 
         os_log("Cleanup service built %{public}ld candidates", candidates.count)
         return candidates
@@ -94,10 +116,10 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             _ = try await runSimctlCommand(arguments: ["delete", udid])
             os_log("Cleanup service deleted simulator %{public}@ via simctl", udid)
         case let .trashDirectory(directoryURL):
-            try await Task.detached(priority: .userInitiated) {
+            try await onWorkQueue {
                 var resultingItemURL: NSURL?
                 try FileManager.default.trashItem(at: directoryURL, resultingItemURL: &resultingItemURL)
-            }.value
+            }
             os_log("Cleanup service moved directory to trash: %{public}@", directoryURL.path)
         }
     }
@@ -105,12 +127,17 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
     static func buildCleanupCandidates(
         simctlDevices: [SimctlDeviceRecord],
         availableRuntimeIdentifiers: Set<String>,
-        directoryRecords: [SimulatorDirectoryRecord]
+        directoryRecords: [SimulatorDirectoryRecord],
+        directorySizeProvider: @Sendable (URL) -> Int64? = { calculateDirectorySize(at: $0) }
     ) -> [SimulatorCleanupCandidate] {
         var directoryRecordsByUDID: [String: SimulatorDirectoryRecord] = [:]
+        // Keep the deduplicated records as a list too: the orphan pass below must iterate unique
+        // records, otherwise two directories claiming the same UDID each yield an `orphan-<udid>`
+        // candidate and collide as duplicate SwiftUI `ForEach` identities.
+        var uniqueDirectoryRecords: [SimulatorDirectoryRecord] = []
 
         for record in directoryRecords {
-            if directoryRecordsByUDID[record.udid] != nil {
+            guard directoryRecordsByUDID[record.udid] == nil else {
                 os_log(
                     "Cleanup service encountered duplicate simulator directory UDID %{public}@; ignoring subsequent entry",
                     record.udid
@@ -119,6 +146,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             }
 
             directoryRecordsByUDID[record.udid] = record
+            uniqueDirectoryRecords.append(record)
         }
 
         let simctlUDIDs = Set(simctlDevices.map(\.udid))
@@ -127,22 +155,33 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             makeUnavailableDeviceCandidate(
                 from: device,
                 availableRuntimeIdentifiers: availableRuntimeIdentifiers,
-                directoryRecord: directoryRecordsByUDID[device.udid]
+                directoryRecord: directoryRecordsByUDID[device.udid],
+                directorySizeProvider: directorySizeProvider
             )
         }
 
-        candidates.append(contentsOf: directoryRecords.compactMap { directoryRecord in
+        candidates.append(contentsOf: uniqueDirectoryRecords.compactMap { directoryRecord in
             guard !simctlUDIDs.contains(directoryRecord.udid) else {
                 return nil
             }
 
             return makeOrphanedDirectoryCandidate(
                 from: directoryRecord,
-                availableRuntimeIdentifiers: availableRuntimeIdentifiers
+                availableRuntimeIdentifiers: availableRuntimeIdentifiers,
+                directorySizeProvider: directorySizeProvider
             )
         })
 
         return candidates.sorted(by: sortCandidates)
+    }
+
+    /// Runs blocking work on the dedicated queue and bridges it back into async/await.
+    private func onWorkQueue<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
+        try await withCheckedThrowingContinuation { continuation in
+            Self.workQueue.async {
+                continuation.resume(with: Result { try work() })
+            }
+        }
     }
 
     private func loadSimctlDevices() async throws -> [SimctlDeviceRecord] {
@@ -184,7 +223,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
 
     private func loadDirectoryRecords() async throws -> [SimulatorDirectoryRecord] {
         os_log("Cleanup service loading simulator directories")
-        return try await Task.detached(priority: .userInitiated) {
+        return try await onWorkQueue {
             guard let devicesDirectoryURL = SimulatorPaths.coreSimulatorDevicesDirectoryURL() else {
                 os_log("Cleanup service could not determine CoreSimulator devices directory URL")
                 return [SimulatorDirectoryRecord]()
@@ -203,15 +242,15 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             let directoryRecords = directoryURLs.compactMap(Self.makeDirectoryRecord(for:))
             os_log("Cleanup service loaded %{public}ld simulator directories", directoryRecords.count)
             return directoryRecords
-        }.value
+        }
     }
 
     private func runSimctlCommand(arguments: [String]) async throws -> String {
         os_log("Cleanup service running simctl command: %{public}@", arguments.joined(separator: " "))
 
-        let output = try await Task.detached(priority: .userInitiated) {
+        let output = try await onWorkQueue {
             try Process.execute(command: "/usr/bin/xcrun", arguments: ["simctl"] + arguments)
-        }.value
+        }
 
         os_log(
             "Cleanup service completed simctl command: %{public}@ outputLength=%{public}ld",
@@ -225,7 +264,8 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
     private static func makeUnavailableDeviceCandidate(
         from device: SimctlDeviceRecord,
         availableRuntimeIdentifiers: Set<String>,
-        directoryRecord: SimulatorDirectoryRecord?
+        directoryRecord: SimulatorDirectoryRecord?,
+        directorySizeProvider: (URL) -> Int64?
     ) -> SimulatorCleanupCandidate? {
         guard !device.isAvailable else {
             return nil
@@ -234,21 +274,47 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         let availabilityError = device.availabilityError?.lowercased()
         var reasons: [SimulatorCleanupReason] = [.unavailable]
 
-        if !availableRuntimeIdentifiers.contains(device.runtimeIdentifier) || availabilityError?.contains("runtime profile not found") == true {
+        // CoreSimulator only reports the profile as *not found* once the runtime is really gone.
+        // A runtime that is merely still downloading, or waiting to be re-fetched after an Xcode
+        // or macOS upgrade, is reported by `simctl list runtimes` as not available and therefore
+        // missing from `availableRuntimeIdentifiers` too — so absence from that set is not by
+        // itself evidence that anything is permanently broken.
+        let runtimeProfileMissing = availabilityError?.contains("runtime profile not found") == true
+        var hasUnrecoverableFailure = runtimeProfileMissing
+
+        if !availableRuntimeIdentifiers.contains(device.runtimeIdentifier) || runtimeProfileMissing {
             reasons.append(.missingRuntime)
         }
 
         if availabilityError?.contains("device type profile not found") == true {
             reasons.append(.missingDeviceType)
+            hasUnrecoverableFailure = true
         }
 
         switch directoryRecord?.metadataStatus {
         case .missingDevicePlist?:
             reasons.append(.missingDevicePlist)
+            hasUnrecoverableFailure = true
         case .unreadableDevicePlist?:
             reasons.append(.unreadableDeviceMetadata)
+            hasUnrecoverableFailure = true
         case .decoded, nil:
             break
+        }
+
+        // `isAvailable == false` on its own is not evidence that a simulator is disposable, and
+        // neither is a runtime that simctl currently reports as unavailable — both are true while
+        // a runtime is downloading, during an Xcode update, and after a macOS upgrade that needs
+        // the runtime re-fetched, all states the simulator recovers from on its own. Deletion here
+        // goes through `simctl delete`, which is irreversible (unlike the Trash used for orphaned
+        // directories), so require a failure the simulator cannot recover from: a runtime or
+        // device type profile CoreSimulator reports as *not found*, or broken directory metadata.
+        guard hasUnrecoverableFailure else {
+            os_log(
+                "Cleanup service skipping unavailable simulator %{public}@; no corroborating failure, it may only be temporarily unavailable",
+                device.udid
+            )
+            return nil
         }
 
         let metadata = directoryRecord?.metadata
@@ -260,7 +326,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             simulatorPlatform: metadata?.simulatorPlatform ?? SimulatorPlatform(from: device.deviceTypeIdentifier),
             osVersion: metadata?.osVersion ?? SimulatorPaths.formattedOSVersion(from: device.runtimeIdentifier),
             lastBootedAt: metadata?.lastBootedAt,
-            diskUsageBytes: device.dataPathSize ?? directoryRecord.flatMap { calculateDirectorySize(at: $0.directoryURL) },
+            diskUsageBytes: device.dataPathSize ?? directoryRecord.flatMap { directorySizeProvider($0.directoryURL) },
             reasons: reasons,
             detailMessage: device.availabilityError,
             deletionMethod: .simctlDelete(device.udid)
@@ -269,7 +335,8 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
 
     private static func makeOrphanedDirectoryCandidate(
         from directoryRecord: SimulatorDirectoryRecord,
-        availableRuntimeIdentifiers: Set<String>
+        availableRuntimeIdentifiers: Set<String>,
+        directorySizeProvider: (URL) -> Int64?
     ) -> SimulatorCleanupCandidate {
         var reasons: [SimulatorCleanupReason] = [.orphanedDirectory]
         var name = directoryRecord.directoryURL.lastPathComponent
@@ -305,14 +372,14 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             simulatorPlatform: simulatorPlatform,
             osVersion: osVersion,
             lastBootedAt: lastBootedAt,
-            diskUsageBytes: calculateDirectorySize(at: directoryRecord.directoryURL),
+            diskUsageBytes: directorySizeProvider(directoryRecord.directoryURL),
             reasons: reasons,
             detailMessage: detailMessage,
             deletionMethod: .trashDirectory(directoryRecord.directoryURL)
         )
     }
 
-    private static func makeDirectoryRecord(for directoryURL: URL) -> SimulatorDirectoryRecord? {
+    static func makeDirectoryRecord(for directoryURL: URL) -> SimulatorDirectoryRecord? {
         guard UUID(uuidString: directoryURL.lastPathComponent) != nil else {
             return nil
         }
@@ -352,16 +419,61 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         }
     }
 
-    private static func calculateDirectorySize(at directoryURL: URL) -> Int64? {
-        let enumerator = FileManager.default.enumerator(
+    static func calculateDirectorySize(at directoryURL: URL) -> Int64? {
+        calculateDirectorySize(at: directoryURL, entryLimit: directorySizeScanEntryLimit)
+    }
+
+    static func calculateDirectorySize(at directoryURL: URL, entryLimit: Int) -> Int64? {
+        // Whether the walk skipped bytes it should have counted. Same rule as the entry cap below:
+        // an incomplete total is worse than none, because this number drives a deletion decision.
+        var enumerationFailed = false
+
+        // No `.skipsHiddenFiles`: a simulator container is full of dotfiles and hidden caches, and
+        // omitting them understates the total by a wide margin.
+        guard let enumerator = FileManager.default.enumerator(
             at: directoryURL,
             includingPropertiesForKeys: [.isRegularFileKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey],
-            options: [.skipsHiddenFiles]
-        )
+            options: [],
+            errorHandler: { url, error in
+                // A file disappearing mid-walk is routine for a booted simulator's caches and costs
+                // nothing worth reporting, so keep going and still return a total. Anything else —
+                // an unreadable directory, an I/O failure — means real bytes went uncounted.
+                let nsError = error as NSError
+                let isMissingFile = (nsError.domain == NSCocoaErrorDomain && nsError.code == NSFileReadNoSuchFileError)
+                    || (nsError.domain == NSPOSIXErrorDomain && nsError.code == Int(ENOENT))
+
+                if !isMissingFile {
+                    os_log(
+                        "Cleanup service could not enumerate %{public}@ while sizing: %{public}@",
+                        url.path,
+                        error.localizedDescription
+                    )
+                    enumerationFailed = true
+                }
+
+                // Carry on either way; the flag decides what gets reported at the end.
+                return true
+            }
+        ) else {
+            return nil
+        }
 
         var totalSize: Int64 = 0
+        var visitedEntries = 0
 
-        while let fileURL = enumerator?.nextObject() as? URL {
+        while let fileURL = enumerator.nextObject() as? URL {
+            visitedEntries += 1
+
+            // Report an unknown size rather than a silently truncated one: the number is shown to
+            // someone deciding what to delete, so a wrong total is worse than no total.
+            guard visitedEntries <= entryLimit else {
+                os_log(
+                    "Cleanup service stopped sizing %{public}@ after %{public}ld entries; reporting unknown size",
+                    directoryURL.path,
+                    entryLimit
+                )
+                return nil
+            }
             guard let resourceValues = try? fileURL.resourceValues(forKeys: [.isRegularFileKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey]),
                   resourceValues.isRegularFile == true else {
                 continue
@@ -372,6 +484,14 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
             } else if let fileAllocatedSize = resourceValues.fileAllocatedSize {
                 totalSize += Int64(fileAllocatedSize)
             }
+        }
+
+        guard !enumerationFailed else {
+            os_log(
+                "Cleanup service could not size %{public}@ completely; reporting unknown size",
+                directoryURL.path
+            )
+            return nil
         }
 
         return totalSize == 0 ? nil : totalSize
@@ -413,6 +533,16 @@ private struct SimctlRuntimesResponse: Decodable {
 }
 
 private struct CleanupDevicePlist: DecodableURLContainer {
+    /// `device.plist` spells the identifier `UDID`; without this mapping the lowercase default
+    /// never matches and `udid` silently decodes as nil (compare `Device.CodingKeys`).
+    enum CodingKeys: String, CodingKey {
+        case udid = "UDID"
+        case name
+        case runtime
+        case deviceType
+        case lastBootedAt
+    }
+
     let udid: String?
     let name: String
     let runtime: String

@@ -20,7 +20,10 @@ protocol DeviceManaging: AnyObject, Sendable {
     var recentInstalledApps: AnyPublisher<[AppChange], Never> { get }
 
     func updateDevices()
-    func resetAndLoadDevices()
+    /// Reloads every device from disk off the main thread and publishes the result.
+    /// Returns once the reloaded devices have been published, so callers can keep a
+    /// progress indicator up for as long as the list is still stale.
+    func resetAndLoadDevices() async
     /// Reloads the given device from disk off the main thread, publishes the result,
     /// and returns the refreshed device (or nil if reloading failed).
     @discardableResult
@@ -54,8 +57,13 @@ class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
     
     /// Maximum number of recent installed apps to keep
     private let maxRecentInstalledApps = 20
-    
-    init() {
+
+    /// Root of the CoreSimulator device directories. Injectable so loading can be exercised
+    /// against a fixture directory instead of the machine's own simulators.
+    private let devicesDirectoryURL: URL?
+
+    init(devicesDirectoryURL: URL? = SimulatorPaths.coreSimulatorDevicesDirectoryURL()) {
+        self.devicesDirectoryURL = devicesDirectoryURL
         loadDevices()
         bindDeviceTypes()
     }
@@ -64,11 +72,29 @@ class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
         loadDevices()
     }
     
-    func resetAndLoadDevices() {
-        devicesPublisher.value.removeAll()
-        deviceTypesPublisher.value.removeAll()
-        recentInstalledAppsPublisher.value.removeAll()
-        loadDevices()
+    func resetAndLoadDevices() async {
+        // Reload off the main thread. A full load decodes every device, app and app-group plist
+        // (a few thousand plists, ~1s on a typical install); running it inline on the caller froze
+        // the menu bar UI for the duration of, for example, a cleanup deletion.
+        let loadedDevices: LoadedDevices? = await withCheckedContinuation { continuation in
+            refreshQueue.async { [weak self] in
+                continuation.resume(returning: self?.loadDevicesFromDisk())
+            }
+        }
+
+        guard let loadedDevices else {
+            return
+        }
+
+        // Publisher values are only mutated on the main queue (see the @unchecked Sendable note on
+        // the type). DeviceManaging is Sendable, so a caller may invoke this off-main.
+        await MainActor.run {
+            // Replace rather than clear-then-refill: clearing up front would leave the menu
+            // empty for the whole scan and collapse any open submenu. Device types are derived
+            // from the devices publisher, so they follow automatically, and recent apps are
+            // replaced wholesale by `populateInitialRecentApps`.
+            publish(loadedDevices)
+        }
     }
     
     @discardableResult
@@ -160,7 +186,7 @@ class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
 
 private extension DeviceManager {
     var simulatorFolderURL: URL? {
-        SimulatorPaths.coreSimulatorDevicesDirectoryURL()
+        devicesDirectoryURL
     }
     
     func removeDuplicateChanges(from changes: [AppChange]) -> [AppChange] {
@@ -180,7 +206,11 @@ private extension DeviceManager {
     
     /// Populate initial recent apps from already installed apps
     func populateInitialRecentApps(_ appChanges: [AppChange]) {
+        // Assign rather than bail out: a reload that finds no apps still has to replace whatever
+        // the previous snapshot left behind, and doing it here keeps the whole recent-apps
+        // replacement to a single emission.
         guard !appChanges.isEmpty else {
+            recentInstalledAppsPublisher.value = []
             return
         }
 
@@ -206,16 +236,33 @@ private extension DeviceManager {
             .assign(to: \.deviceTypesPublisher.value, on: self)
     }
     
+    /// Devices and their initial app changes, produced entirely off the main thread so the whole
+    /// result can be published in a single hop.
+    struct LoadedDevices {
+        let devices: [Device]
+        let initialAppChanges: [AppChange]
+    }
+
     func loadDevices() {
-        guard let url = simulatorFolderURL else {
+        guard let loadedDevices = loadDevicesFromDisk() else {
             return
+        }
+
+        publish(loadedDevices)
+    }
+
+    /// Pure disk work: decodes every device plus its apps and app groups. Touches no publisher,
+    /// so it is safe to call from a background queue.
+    func loadDevicesFromDisk() -> LoadedDevices? {
+        guard let url = simulatorFolderURL else {
+            return nil
         }
 
         let urls = getContentOfDirectoryAt(url: url)
 
         let newDevices: [Device] = urls.reduce(into: []) { devices, url in
             let url = url.appendingPathComponent(SimulatorPaths.devicePlistName)
-                
+
             do {
                 let device = try CustomPropertyListDecoder().decode(Device.self, at: url)
                 devices.append(device)
@@ -223,23 +270,27 @@ private extension DeviceManager {
                 os_log("Failed to load device due to error: \(error) at path: \(url)")
             }
         }
-        devicesPublisher.value = newDevices
-        
+
         // Load apps and collect initial recent apps
         var allInitialAppChanges: [AppChange] = []
-        
+
         newDevices.forEach { device in
             let appsAndTimeStamps = appDiscoveryService.loadAppsAndTimestamps(for: device)
             device.apps = appsAndTimeStamps.apps
             device.appGroups = appDiscoveryService.loadAppGroups(for: device)
-            
+
             // Load apps with timestamps for initial recent apps
             let appChanges = appsAndTimeStamps.appChanges
             allInitialAppChanges.append(contentsOf: appChanges)
         }
-        
-        // Populate initial recent apps
-        populateInitialRecentApps(allInitialAppChanges)
+
+        return LoadedDevices(devices: newDevices, initialAppChanges: allInitialAppChanges)
+    }
+
+    /// Publishes a loaded snapshot. Must run on the main queue.
+    func publish(_ loadedDevices: LoadedDevices) {
+        devicesPublisher.value = loadedDevices.devices
+        populateInitialRecentApps(loadedDevices.initialAppChanges)
     }
 
     func loadDevice(withUdid udid: String, existingURL: URL?) -> Device? {

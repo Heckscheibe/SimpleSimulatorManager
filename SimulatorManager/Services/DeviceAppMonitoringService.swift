@@ -128,9 +128,22 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
             monitoredDevices.removeValue(forKey: udid)
         }
 
-        // Add monitors for new devices
+        // Add monitors for new devices, and re-point existing monitors at the freshly published
+        // `Device`. A full reload (`resetAndLoadDevices`) replaces every instance in place of the
+        // old clear-then-refill, so nothing else would rebuild them: a monitor left holding the
+        // pre-reload snapshot diffs the next folder change against a stale app list and
+        // re-reports apps the reload already recorded as installed.
+        //
+        // Only advance the snapshot here — never recreate the watch. Swapping a fallback watch for
+        // the narrower packages-folder one belongs to `refreshMonitor` on the post-event path,
+        // which runs after the debounce has already fired; doing it on an arbitrary publish would
+        // cancel an in-flight debounce and lose the very install that created that folder.
         for device in devices {
-            updateMonitorForDevice(device)
+            if let monitored = monitoredDevices[device.udid] {
+                monitored.monitor.update(device: device)
+            } else {
+                updateMonitorForDevice(device)
+            }
         }
     }
 
@@ -204,6 +217,16 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
            FileManager.default.directoryExistsAtURL(packagesFolder) {
             monitoredDevices.removeValue(forKey: device.udid)
             updateMonitorForDevice(device)
+
+            // `updateMonitorForDevice` deliberately does not cache a monitor that failed to start.
+            // Going blind here would be worse than staying on the broader watch: this device's own
+            // events are what drive the next publish, so nothing would trigger the retry. Put the
+            // working fallback back instead.
+            if monitoredDevices[device.udid] == nil {
+                os_log("Monitoring upgrade did not start for device %@; keeping the fallback watch", device.udid)
+                monitored.monitor.update(device: device)
+                monitoredDevices[device.udid] = monitored
+            }
         } else {
             monitored.monitor.update(device: device)
         }

@@ -80,7 +80,15 @@ private extension SimulatorManagerViewModel {
         simulatorResetService.didResetAllSimulators
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.deviceManager.resetAndLoadDevices()
+                // The reload belongs to the device manager, so capture it directly rather than
+                // hanging the task off this view model's lifetime.
+                guard let deviceManager = self?.deviceManager else {
+                    return
+                }
+
+                Task {
+                    await deviceManager.resetAndLoadDevices()
+                }
 //                self?.deviceAppMonitoringService.resetMonitoring()
             }
             .store(in: &cancellables)
