@@ -22,7 +22,7 @@ quietly eating your disk.
 brew install --cask heckscheibe/tap/simple-simulator-manager
 ```
 
-<img width="380" alt="The Simple Simulator Manager menu, showing recent apps, the simulator list grouped by device, and the cleanup and reset actions" src="Screenshots/Screenshot 2.jpeg" />
+<img width="380" alt="The Simple Simulator Manager menu, showing recent apps with an app submenu open, the simulator list grouped by device, the section visibility toggles, Settings… and the cleanup and reset actions" src="Screenshots/Screenshot 2.jpeg" />
 
 ---
 
@@ -61,8 +61,14 @@ Simple Simulator Manager puts it two clicks from the menu bar.
 - Erase a single simulator from its own menu
 - Bulk **Reset All Simulators** with progress and a confirmation step
 
+**Keyboard and settings**
+- A global shortcut opens the menu from anywhere — **⌃⌥⌘S** by default
+- Once the menu is open, the arrow keys navigate it, Return activates and typing jumps to an entry
+- **Settings…** opens a window to rebind or clear the shortcut, and to show or hide Recent Apps and
+  the individual platform sections
+
 **Other**
-- Show or hide platforms — only installed ones appear
+- Only platforms you actually have simulators for appear
 - Update indicator when a new release is available
 
 ## Requirements
@@ -95,7 +101,8 @@ and move `Simulator Manager.app` to your Applications folder.
 
 The app lives in the menu bar — there is no main window.
 
-1. Click the menu bar icon to see your simulators, grouped by platform and device.
+1. Click the menu bar icon — or press **⌃⌥⌘S** from anywhere — to see your simulators, grouped by
+   platform and device.
 2. Hover a simulator for **Simulator Folder**, **Apps**, **AppGroups** and **Erase Simulator**.
 3. Hover an app for **App Folder**, **Documents Folder**, **App Package** and **User Defaults**. Any
    of them opens directly in Finder — point a tool like [DB Browser for SQLite](https://sqlitebrowser.org/)
@@ -103,8 +110,13 @@ The app lives in the menu bar — there is no main window.
 4. **Recent Apps** at the top of the menu tracks what you've most recently installed or rebuilt.
 5. **Cleanup Simulators** scans for invalid simulators and shows why each one qualifies, plus its
    disk usage, before you delete it.
+6. **Settings…** — or ⌘, while the menu is open — opens a window where you can record a different
+   global shortcut, clear it if you would rather not have one, or reset it to the default, and
+   choose which sections the menu shows.
 
 <img width="860" alt="The cleanup view listing deletable simulators grouped by OS version, with a detail popover showing the deletion reason, platform, OS, disk usage and UDID" src="Screenshots/Screenshot 1.jpeg" />
+
+<img width="460" alt="The Settings window, showing the Global Shortcut section with the recorder set to ⌃⌥⌘S alongside Clear and Reset buttons, and the Menu Contents section with toggles for Recent Apps and each platform" src="Screenshots/Screenshot 3.jpeg" />
 
 ## Security and privacy
 
@@ -115,6 +127,10 @@ of the app, and a sandboxed app cannot do it.
 That is a powerful entitlement, and it's why this app can never ship on the Mac App Store. It is
 also why the full source is in this repository. With an entitlement like this, being auditable is
 the only reasonable basis for trust — you can read exactly what it touches.
+
+The global shortcut is registered through Carbon's `RegisterEventHotKey`, which the system resolves
+before the keystroke reaches any app. It is not a keyboard monitor: the app never sees your other
+keystrokes and needs no Accessibility permission.
 
 The app works entirely offline. The only network request it makes is a check against the GitHub
 Releases API for a newer version. Nothing is collected, and nothing is sent anywhere.
