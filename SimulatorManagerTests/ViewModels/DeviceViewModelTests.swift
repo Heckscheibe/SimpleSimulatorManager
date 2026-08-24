@@ -13,7 +13,7 @@ import Testing
 struct DeviceViewModelTests {
     @Test("Erasing a device refreshes it through the device manager")
     @MainActor
-    func eraseRefreshesDevice() async throws {
+    func eraseRefreshesDevice() async {
         let deviceManager = MockDeviceManager()
         let device = TestDataHelpers.createOfflineDevice(udid: "device-1")
         let refreshedDevice = TestDataHelpers.createOfflineDevice(udid: "device-1")
@@ -27,7 +27,7 @@ struct DeviceViewModelTests {
         deviceManager.setMockDevices([refreshedDevice])
 
         viewModel.eraseDevice()
-        try await Task.sleep(nanoseconds: 200_000_000)
+        await waitForActionToFinish(viewModel)
 
         let shutDownDeviceUdid = await service.shutDownDeviceUdid
         let erasedDeviceUdid = await service.erasedDeviceUdid
@@ -42,7 +42,7 @@ struct DeviceViewModelTests {
 
     @Test("Erasing a running device shuts it down before erasing")
     @MainActor
-    func eraseShutsDownRunningDevice() async throws {
+    func eraseShutsDownRunningDevice() async {
         let deviceManager = MockDeviceManager()
         let service = MockSimulatorDeviceActionService()
         let refreshedDevice = TestDataHelpers.createOfflineDevice(udid: "test-device-uuid")
@@ -55,7 +55,7 @@ struct DeviceViewModelTests {
         deviceManager.setMockDevices([refreshedDevice])
 
         viewModel.eraseDevice()
-        try await Task.sleep(nanoseconds: 200_000_000)
+        await waitForActionToFinish(viewModel)
 
         let shutDownDeviceUdid = await service.shutDownDeviceUdid
         let erasedDeviceUdid = await service.erasedDeviceUdid
@@ -69,7 +69,7 @@ struct DeviceViewModelTests {
 
     @Test("Service failures are surfaced on the view model")
     @MainActor
-    func actionFailure() async throws {
+    func actionFailure() async {
         struct TestFailure: LocalizedError {
             var errorDescription: String? {
                 "simctl failed"
@@ -86,9 +86,18 @@ struct DeviceViewModelTests {
         )
 
         viewModel.eraseDevice()
-        try await Task.sleep(nanoseconds: 200_000_000)
+        await waitForActionToFinish(viewModel)
 
         #expect(viewModel.actionErrorMessage == "simctl failed")
         #expect(!viewModel.isPerformingAction)
+    }
+
+    // MARK: - Waiting for asynchronous work
+
+    /// `eraseDevice()` sets `currentAction` synchronously and clears it on both the success and the
+    /// failure path of its `Task`, which makes `isPerformingAction` an exact completion signal.
+    @MainActor
+    private func waitForActionToFinish(_ viewModel: DeviceViewModel) async {
+        await waitUntil { !viewModel.isPerformingAction }
     }
 }

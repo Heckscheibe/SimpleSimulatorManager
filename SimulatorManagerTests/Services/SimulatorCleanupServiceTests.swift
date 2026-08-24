@@ -5,7 +5,7 @@ import Testing
 @Suite("SimulatorCleanupService Tests")
 struct SimulatorCleanupServiceTests {
     @Test("Unavailable devices with missing runtimes become simctl cleanup candidates")
-    func unavailableDeviceWithMissingRuntime() {
+    func unavailableDeviceWithMissingRuntime() throws {
         let directoryRecord = SimulatorDirectoryRecord(
             udid: "E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053",
             directoryURL: URL(fileURLWithPath: "/tmp/E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053"),
@@ -38,7 +38,7 @@ struct SimulatorCleanupServiceTests {
             directoryRecords: [directoryRecord]
         )
 
-        #expect(candidates.count == 1)
+        try #require(candidates.count == 1)
         #expect(candidates[0].reasons.contains(.missingRuntime))
         #expect(candidates[0].reasons.contains(.unavailable))
         #expect(candidates[0].diskUsageBytes == 8192)
@@ -51,7 +51,7 @@ struct SimulatorCleanupServiceTests {
     }
 
     @Test("Unreadable orphaned device directories become filesystem cleanup candidates")
-    func unreadableOrphanedDirectory() {
+    func unreadableOrphanedDirectory() throws {
         let directoryURL = URL(fileURLWithPath: "/tmp/5D91F5D6-6D4A-4D94-8B44-2926AE8E7C10")
         try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         let payloadURL = directoryURL.appendingPathComponent("payload.bin")
@@ -69,7 +69,7 @@ struct SimulatorCleanupServiceTests {
             ]
         )
 
-        #expect(candidates.count == 1)
+        try #require(candidates.count == 1)
         #expect(candidates[0].reasons.contains(.orphanedDirectory))
         #expect(candidates[0].reasons.contains(.unreadableDeviceMetadata))
         #expect((candidates[0].diskUsageBytes ?? 0) >= 2048)
@@ -124,7 +124,7 @@ struct SimulatorCleanupServiceTests {
     }
 
     @Test("Unavailable devices with a missing device type stay cleanup candidates")
-    func unavailableDeviceWithMissingDeviceType() {
+    func unavailableDeviceWithMissingDeviceType() throws {
         // The runtime is installed, so only the device type profile is gone. That is a hard
         // failure and still qualifies, using the exact wording CoreSimulator reports.
         let candidates = SimulatorCleanupService.buildCleanupCandidates(
@@ -145,13 +145,13 @@ struct SimulatorCleanupServiceTests {
             directoryRecords: []
         )
 
-        #expect(candidates.count == 1)
+        try #require(candidates.count == 1)
         #expect(candidates[0].reasons.contains(.missingDeviceType))
         #expect(!candidates[0].reasons.contains(.missingRuntime))
     }
 
     @Test("Unavailable devices with broken directory metadata stay cleanup candidates")
-    func unavailableDeviceWithBrokenMetadata() {
+    func unavailableDeviceWithBrokenMetadata() throws {
         let candidates = SimulatorCleanupService.buildCleanupCandidates(
             simctlDevices: [
                 SimctlDeviceRecord(
@@ -176,12 +176,12 @@ struct SimulatorCleanupServiceTests {
             ]
         )
 
-        #expect(candidates.count == 1)
+        try #require(candidates.count == 1)
         #expect(candidates[0].reasons.contains(.missingDevicePlist))
     }
 
     @Test("Duplicate orphaned directory UDIDs produce a single candidate")
-    func duplicateOrphanedDirectoryUDIDsProduceOneCandidate() {
+    func duplicateOrphanedDirectoryUDIDsProduceOneCandidate() throws {
         // Two directories claiming the same UDID (a copied simulator folder) must not both become
         // an `orphan-<udid>` candidate: identical IDs collide in the SwiftUI ForEach that renders
         // the cleanup menu.
@@ -204,7 +204,7 @@ struct SimulatorCleanupServiceTests {
             directorySizeProvider: { _ in 1024 }
         )
 
-        #expect(candidates.count == 1)
+        try #require(candidates.count == 1)
         #expect(Set(candidates.map(\.id)).count == candidates.count)
         #expect(candidates[0].id == "orphan-\(udid)")
         #expect(candidates[0].reasons.contains(.missingDevicePlist))
@@ -323,7 +323,7 @@ struct SimulatorCleanupServiceTests {
     }
 
     @Test("Duplicate directory UDIDs are ignored after the first record")
-    func duplicateDirectoryUDIDsUseFirstRecord() {
+    func duplicateDirectoryUDIDsUseFirstRecord() throws {
         let directoryURL = URL(fileURLWithPath: "/tmp/E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053")
         let firstRecord = SimulatorDirectoryRecord(
             udid: "E95A4AE1-04A0-4C9B-8CF2-EDDD2F6CE053",
@@ -354,7 +354,7 @@ struct SimulatorCleanupServiceTests {
             directoryRecords: [firstRecord, secondRecord]
         )
 
-        #expect(candidates.count == 1)
+        try #require(candidates.count == 1)
         #expect(candidates[0].reasons.contains(.missingDevicePlist))
         #expect(!candidates[0].reasons.contains(.unreadableDeviceMetadata))
     }

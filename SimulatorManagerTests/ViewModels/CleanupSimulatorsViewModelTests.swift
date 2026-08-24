@@ -6,7 +6,7 @@ import Testing
 @Suite("CleanupSimulatorsViewModel Tests")
 struct CleanupSimulatorsViewModelTests {
     @Test("refresh loads cleanup candidates")
-    func refreshLoadsCleanupCandidates() async throws {
+    func refreshLoadsCleanupCandidates() async {
         let deviceManager = MockDeviceManager()
         let cleanupService = MockSimulatorCleanupService()
         let candidate = makeCandidate(id: "simctl-test")
@@ -20,7 +20,7 @@ struct CleanupSimulatorsViewModelTests {
         )
 
         viewModel.refreshCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitForRefreshToFinish(viewModel)
 
         #expect(viewModel.cleanupCandidates == [candidate])
         #expect(viewModel.errorMessage == nil)
@@ -28,7 +28,7 @@ struct CleanupSimulatorsViewModelTests {
     }
 
     @Test("delete removes candidate and refreshes devices")
-    func deleteRemovesCandidateAndRefreshesDevices() async throws {
+    func deleteRemovesCandidateAndRefreshesDevices() async {
         let deviceManager = MockDeviceManager()
         let cleanupService = MockSimulatorCleanupService()
         let candidate = makeCandidate(id: "orphan-test")
@@ -42,9 +42,9 @@ struct CleanupSimulatorsViewModelTests {
         )
 
         viewModel.refreshCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitForRefreshToFinish(viewModel)
         viewModel.delete(candidate)
-        try await Task.sleep(for: .milliseconds(50))
+        await waitForDeletionsToFinish(viewModel)
 
         #expect(deviceManager.resetAndLoadDevicesCalled)
         #expect(viewModel.cleanupCandidates.isEmpty)
@@ -68,15 +68,21 @@ struct CleanupSimulatorsViewModelTests {
         )
 
         viewModel.refreshCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitForRefreshToFinish(viewModel)
 
-        #expect(viewModel.cleanupCandidateGroups.map(\.title) == ["iOS 18.5", "iOS 17.4"])
-        #expect(viewModel.cleanupCandidateGroups[0].candidates == [latestCandidate])
-        #expect(viewModel.cleanupCandidateGroups[1].candidates == [firstOlderCandidate, secondOlderCandidate])
+        // `#require` before indexing: `#expect` records a failure and carries on, so an unexpected
+        // group count would reach the subscripts below and trap the whole test host instead of
+        // failing this one test.
+        let groups = viewModel.cleanupCandidateGroups
+        try #require(groups.count == 2)
+
+        #expect(groups.map(\.title) == ["iOS 18.5", "iOS 17.4"])
+        #expect(groups[0].candidates == [latestCandidate])
+        #expect(groups[1].candidates == [firstOlderCandidate, secondOlderCandidate])
     }
 
     @Test("delete all cleanup candidates removes every candidate")
-    func deleteAllCleanupCandidatesRemovesEveryCandidate() async throws {
+    func deleteAllCleanupCandidatesRemovesEveryCandidate() async {
         let deviceManager = MockDeviceManager()
         let cleanupService = MockSimulatorCleanupService()
         let firstCandidate = makeCandidate(id: "bulk-1", osVersion: "iOS 18.5")
@@ -91,9 +97,9 @@ struct CleanupSimulatorsViewModelTests {
         )
 
         viewModel.refreshCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitForRefreshToFinish(viewModel)
         viewModel.deleteAllCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(100))
+        await waitForDeletionsToFinish(viewModel)
 
         #expect(deviceManager.resetAndLoadDevicesCalled)
         #expect(viewModel.cleanupCandidates.isEmpty)
@@ -117,15 +123,15 @@ struct CleanupSimulatorsViewModelTests {
         )
 
         viewModel.refreshCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitForRefreshToFinish(viewModel)
 
-        guard let targetGroup = viewModel.cleanupCandidateGroups.first(where: { $0.title == "iOS 18.5" }) else {
-            Issue.record("Expected an iOS 18.5 cleanup group")
-            return
-        }
+        let targetGroup = try #require(
+            viewModel.cleanupCandidateGroups.first(where: { $0.title == "iOS 18.5" }),
+            "Expected an iOS 18.5 cleanup group"
+        )
 
         viewModel.deleteAll(in: targetGroup)
-        try await Task.sleep(for: .milliseconds(100))
+        await waitForDeletionsToFinish(viewModel)
 
         #expect(deviceManager.resetAndLoadDevicesCalled)
         #expect(viewModel.cleanupCandidates == [remainingCandidate])
@@ -135,7 +141,7 @@ struct CleanupSimulatorsViewModelTests {
     // MARK: - Partial failure handling
 
     @Test("A failing deletion does not abort the rest of the batch")
-    func deleteContinuesAfterFailure() async throws {
+    func deleteContinuesAfterFailure() async {
         let deviceManager = MockDeviceManager()
         let cleanupService = MockSimulatorCleanupService()
         let confirmer = MockDestructiveActionConfirmer()
@@ -153,9 +159,9 @@ struct CleanupSimulatorsViewModelTests {
         )
 
         viewModel.refreshCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitForRefreshToFinish(viewModel)
         viewModel.deleteAllCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(150))
+        await waitForDeletionsToFinish(viewModel)
 
         // Every candidate is attempted, not just the ones before the failure.
         #expect(await cleanupService.attemptedCandidateIDs == [firstCandidate.id, failingCandidate.id, lastCandidate.id])
@@ -163,7 +169,7 @@ struct CleanupSimulatorsViewModelTests {
     }
 
     @Test("A failing deletion still refreshes devices and the candidate list")
-    func deleteRefreshesEvenWhenACandidateFails() async throws {
+    func deleteRefreshesEvenWhenACandidateFails() async {
         let deviceManager = MockDeviceManager()
         let cleanupService = MockSimulatorCleanupService()
         let confirmer = MockDestructiveActionConfirmer()
@@ -180,9 +186,9 @@ struct CleanupSimulatorsViewModelTests {
         )
 
         viewModel.refreshCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitForRefreshToFinish(viewModel)
         viewModel.deleteAllCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(150))
+        await waitForDeletionsToFinish(viewModel)
 
         // The successful deletion must not linger in the UI, and the device list has to be reloaded
         // even though the batch reported an error.
@@ -195,7 +201,7 @@ struct CleanupSimulatorsViewModelTests {
     // MARK: - Confirmation of irreversible deletions
 
     @Test("Declining the confirmation deletes nothing")
-    func declinedConfirmationCancelsDeletion() async throws {
+    func declinedConfirmationCancelsDeletion() async {
         let deviceManager = MockDeviceManager()
         let cleanupService = MockSimulatorCleanupService()
         let confirmer = MockDestructiveActionConfirmer()
@@ -211,9 +217,9 @@ struct CleanupSimulatorsViewModelTests {
         )
 
         viewModel.refreshCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitForRefreshToFinish(viewModel)
         viewModel.delete(candidate)
-        try await Task.sleep(for: .milliseconds(100))
+        await waitForDeletionsToFinish(viewModel)
 
         #expect(confirmer.confirmedSimulatorCounts == [1])
         #expect(await cleanupService.attemptedCandidateIDs.isEmpty)
@@ -223,7 +229,7 @@ struct CleanupSimulatorsViewModelTests {
     }
 
     @Test("Only irreversible simctl deletions are counted in the confirmation")
-    func confirmationCountsOnlyIrreversibleCandidates() async throws {
+    func confirmationCountsOnlyIrreversibleCandidates() async {
         let deviceManager = MockDeviceManager()
         let cleanupService = MockSimulatorCleanupService()
         let confirmer = MockDestructiveActionConfirmer()
@@ -239,9 +245,9 @@ struct CleanupSimulatorsViewModelTests {
         )
 
         viewModel.refreshCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitForRefreshToFinish(viewModel)
         viewModel.deleteAllCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(150))
+        await waitForDeletionsToFinish(viewModel)
 
         // Only the simctl candidate is unrecoverable; the orphaned directory goes to the Trash.
         #expect(confirmer.confirmedSimulatorCounts == [1])
@@ -249,7 +255,7 @@ struct CleanupSimulatorsViewModelTests {
     }
 
     @Test("Deleting only trashable directories asks for no confirmation")
-    func trashOnlyDeletionSkipsConfirmation() async throws {
+    func trashOnlyDeletionSkipsConfirmation() async {
         let deviceManager = MockDeviceManager()
         let cleanupService = MockSimulatorCleanupService()
         let confirmer = MockDestructiveActionConfirmer()
@@ -264,12 +270,27 @@ struct CleanupSimulatorsViewModelTests {
         )
 
         viewModel.refreshCleanupCandidates()
-        try await Task.sleep(for: .milliseconds(50))
+        await waitForRefreshToFinish(viewModel)
         viewModel.delete(orphanCandidate)
-        try await Task.sleep(for: .milliseconds(100))
+        await waitForDeletionsToFinish(viewModel)
 
         #expect(!confirmer.wasAsked)
         #expect(await cleanupService.deletedCandidateIDs == [orphanCandidate.id])
+    }
+
+    // MARK: - Waiting for asynchronous work
+
+    /// `refreshCleanupCandidates()` raises this flag synchronously and lowers it in the refresh
+    /// task's `defer`, which makes it an exact completion signal for a scan.
+    private func waitForRefreshToFinish(_ viewModel: CleanupSimulatorsViewModel) async {
+        await waitUntil { !viewModel.isLoadingCleanupCandidates }
+    }
+
+    /// The delete entry points reserve their candidate IDs synchronously and release them in the
+    /// deletion task's `defer` — after the device reload and the candidate re-fetch — so an empty
+    /// set means the whole batch is done, not just the `simctl` calls.
+    private func waitForDeletionsToFinish(_ viewModel: CleanupSimulatorsViewModel) async {
+        await waitUntil { viewModel.deletingCandidateIDs.isEmpty }
     }
 
     // MARK: - Helpers
