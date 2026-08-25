@@ -16,32 +16,16 @@ extension FolderOpening {
     }
     
     // MARK: - App Folder Operations
-    func didSelectAppPackageFolder(for app: any SimulatorApp) {
-        guard let url = app.appPackageURL?.deletingLastPathComponent() else {
+    func didSelectFolder(_ shortcut: AppContainerShortcut, for app: any SimulatorApp) {
+        guard let url = shortcut.url(for: app) else {
             return
         }
 
         openFolderAt(url)
     }
 
-    func didSelectAppDocumentFolder(for app: any SimulatorApp) {
-        guard let url = app.appDocumentsFolderURL else {
-            return
-        }
-
-        openFolderAt(url)
-    }
-    
-    func didSelectUserDefaultsFolder(for app: any SimulatorApp) {
-        guard let url = app.appDocumentsFolderURL?.appendingPathComponent(SimulatorPaths.userDefaultsPath) else {
-            return
-        }
-
-        openFolderAt(url)
-    }
-    
-    func didSelectUserDefaultsFolder(for appGroup: AppGroup) {
-        guard let url = appGroup.url?.appendingPathComponent(SimulatorPaths.userDefaultsPath) else {
+    func didSelectFolder(_ shortcut: AppGroupShortcut, for appGroup: AppGroup) {
+        guard let url = shortcut.url(for: appGroup) else {
             return
         }
 
@@ -66,14 +50,6 @@ extension FolderOpening {
     
     func didSelectAppPackagesFolder(for device: Device) {
         guard let url = device.appPackagesFolder else {
-            return
-        }
-
-        openFolderAt(url)
-    }
-    
-    func didSelect(appGroup: AppGroup) {
-        guard let url = appGroup.url else {
             return
         }
 

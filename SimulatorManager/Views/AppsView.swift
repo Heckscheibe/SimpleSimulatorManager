@@ -17,23 +17,7 @@ struct AppsView: View {
         }
         ForEach(viewModel.apps, id: \.id) { app in
             Menu(app.displayName) {
-                Button {
-                    viewModel.didSelectAppDocumentFolder(for: app)
-                } label: {
-                    Text("Documents Folder")
-                }
-                Button {
-                    viewModel.didSelectAppPackageFolder(for: app)
-                } label: {
-                    Text("App Package")
-                }
-                if app.hasUserDefaults {
-                    Button {
-                        viewModel.didSelectUserDefaultsFolder(for: app)
-                    } label: {
-                        Text("User Defaults")
-                    }
-                }
+                AppShortcutMenuItems(app: app, actions: viewModel)
             }
         }
     }

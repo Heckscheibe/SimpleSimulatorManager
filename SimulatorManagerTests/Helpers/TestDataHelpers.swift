@@ -172,11 +172,17 @@ enum TestDataHelpers {
     
     static func createMockApp(
         bundleIdentifier: String = "com.test.app",
-        displayName: String = "Test App"
+        displayName: String = "Test App",
+        appDocumentsFolderURL: URL? = nil,
+        appPackageURL: URL? = nil,
+        hasUserDefaults: Bool = false
     ) -> MockSimulatorApp {
         return MockSimulatorApp(
             bundleIdentifier: bundleIdentifier,
-            displayName: displayName
+            displayName: displayName,
+            appDocumentsFolderURL: appDocumentsFolderURL,
+            appPackageURL: appPackageURL,
+            hasUserDefaults: hasUserDefaults
         )
     }
     
@@ -222,9 +228,9 @@ struct MockSimulatorApp: SimulatorApp {
     let displayName: String
     let url: URL? = nil
     let iconData: Data? = nil
-    let appDocumentsFolderURL: URL? = nil
-    let appPackageURL: URL? = nil
+    var appDocumentsFolderURL: URL?
+    var appPackageURL: URL?
     let iconName: String = "app.icon"
-    let hasUserDefaults: Bool = false
+    var hasUserDefaults: Bool = false
     var contentModifiedAt: Date?
 }
