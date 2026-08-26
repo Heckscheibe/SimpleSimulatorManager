@@ -29,7 +29,7 @@ extension ContainerShortcutHandling {
         }
 
         containerContent.copyUserDefaultsJSON(fromPreferencesDirectoryAt: url,
-                                              preferredPlistName: app.bundleIdentifier,
+                                              ownDomain: app.bundleIdentifier,
                                               subject: app.displayName)
     }
 
@@ -44,7 +44,7 @@ extension ContainerShortcutHandling {
         }
 
         containerContent.copyUserDefaultsJSON(fromPreferencesDirectoryAt: url,
-                                              preferredPlistName: appGroup.identifier,
+                                              ownDomain: appGroup.identifier,
                                               subject: "Group \(appGroup.name)")
     }
 

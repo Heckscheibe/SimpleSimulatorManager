@@ -16,8 +16,10 @@ protocol ContainerContentCopying: AnyObject {
     func copyPath(of url: URL)
 
     /// Copies the preferences at `url` as JSON, or reports why it could not.
-    /// - Parameter subject: What the preferences belong to, used in the failure message.
-    func copyUserDefaultsJSON(fromPreferencesDirectoryAt url: URL, preferredPlistName: String, subject: String)
+    /// - Parameters:
+    ///   - ownDomain: The subject's standard defaults domain; see ``UserDefaultsExportService``.
+    ///   - subject: What the preferences belong to, used in the failure message.
+    func copyUserDefaultsJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String, subject: String)
 }
 
 @MainActor
@@ -40,9 +42,9 @@ final class ContainerContentService: ContainerContentCopying {
         pasteboard.write(url.path.shellEscaped)
     }
 
-    func copyUserDefaultsJSON(fromPreferencesDirectoryAt url: URL, preferredPlistName: String, subject: String) {
+    func copyUserDefaultsJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String, subject: String) {
         do {
-            let json = try exporter.exportJSON(fromPreferencesDirectoryAt: url, preferredPlistName: preferredPlistName)
+            let json = try exporter.exportJSON(fromPreferencesDirectoryAt: url, ownDomain: ownDomain)
 
             pasteboard.write(json)
         } catch {

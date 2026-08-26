@@ -53,12 +53,12 @@ struct ContainerContentServiceTests {
 
         makeService(pasteboard: pasteboard, exporter: exporter)
             .copyUserDefaultsJSON(fromPreferencesDirectoryAt: preferencesURL,
-                                  preferredPlistName: "com.test.app",
+                                  ownDomain: "com.test.app",
                                   subject: "Test App")
 
         #expect(pasteboard.lastWrittenString == "{ \"key\" : 1 }")
         #expect(exporter.lastRequest == MockUserDefaultsExporter.Request(url: preferencesURL,
-                                                                         preferredPlistName: "com.test.app"))
+                                                                         ownDomain: "com.test.app"))
     }
 
     @Test("A failed export reports the failure and leaves the clipboard untouched")
@@ -71,7 +71,7 @@ struct ContainerContentServiceTests {
 
         makeService(pasteboard: pasteboard, exporter: exporter, errorReporter: errorReporter)
             .copyUserDefaultsJSON(fromPreferencesDirectoryAt: URL(fileURLWithPath: "/tmp/container/Library/Preferences"),
-                                  preferredPlistName: "com.test.app",
+                                  ownDomain: "com.test.app",
                                   subject: "Test App")
 
         #expect(!pasteboard.didWrite)

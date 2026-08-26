@@ -12,12 +12,25 @@ import os
 protocol UserDefaultsExporting: Sendable {
     /// - Parameters:
     ///   - url: The container's `Library/Preferences` directory.
-    ///   - preferredPlistName: File name without extension of the plist that holds the subject's own
-    ///     preferences — the bundle identifier for an app, the group identifier for an app group.
-    /// - Returns: Pretty-printed JSON for the preferences found at `url`.
-    func exportJSON(fromPreferencesDirectoryAt url: URL, preferredPlistName: String) throws -> String
+    ///   - ownDomain: The subject's standard defaults domain — the bundle identifier for an app,
+    ///     the group identifier for an app group. It is always part of the export, even when the
+    ///     name would otherwise look system-managed.
+    /// - Returns: Pretty-printed JSON keyed by defaults domain.
+    func exportJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String) throws -> String
 }
 
+/// One app writes more than one defaults domain: `UserDefaults.standard` lands in
+/// `<bundle identifier>.plist`, and every `UserDefaults(suiteName:)` lands in `<suite name>.plist`
+/// beside it — a real container routinely holds the app's own domain plus SDK suites such as
+/// `APMAnalyticsSuiteName` or `com.firebase.FIRInstallations`.
+///
+/// There is no registry of an app's suites, and no way to tell a suite apart from a system domain
+/// other than by name, so the export takes the container's whole `Library/Preferences` and keys it
+/// by domain. The file name without its extension *is* the domain — exactly the string that was
+/// passed to `UserDefaults(suiteName:)`.
+///
+/// A suite named after an app group is the exception: it lives in the group container instead, and
+/// is reached through the app group's own menu.
 struct UserDefaultsExportService: UserDefaultsExporting {
     enum ExportError: LocalizedError, Equatable {
         case noPreferencesFound
@@ -33,27 +46,35 @@ struct UserDefaultsExportService: UserDefaultsExporting {
         }
     }
 
-    func exportJSON(fromPreferencesDirectoryAt url: URL, preferredPlistName: String) throws -> String {
+    func exportJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String) throws -> String {
         let plistURLs = plistURLs(in: url)
 
         guard !plistURLs.isEmpty else {
             throw ExportError.noPreferencesFound
         }
 
-        // An app writes its own preferences to `<identifier>.plist`; the other files in the folder
-        // are system-managed ones the user did not ask for.
-        if let preferredURL = plistURLs.first(where: { $0.deletingPathExtension().lastPathComponent == preferredPlistName }) {
-            return try PropertyListJSONConverter.jsonString(from: propertyList(at: preferredURL))
-        }
-        if plistURLs.count == 1, let onlyURL = plistURLs.first {
-            return try PropertyListJSONConverter.jsonString(from: propertyList(at: onlyURL))
-        }
+        // Simulator containers also collect domains the OS wrote on the app's behalf. They are
+        // device state rather than app state, so they are left out — unless that would empty the
+        // export, which is what happens for an Apple app whose own domain is `com.apple.…`.
+        let appDomainURLs = plistURLs.filter { !isSystemDomain(domain(of: $0)) || domain(of: $0) == ownDomain }
+        let exportedURLs = appDomainURLs.isEmpty ? plistURLs : appDomainURLs
 
-        return try PropertyListJSONConverter.jsonString(from: combinedPropertyList(of: plistURLs))
+        return try PropertyListJSONConverter.jsonString(from: propertyListsByDomain(of: exportedURLs))
     }
 }
 
 private extension UserDefaultsExportService {
+    static let globalPreferencesDomain = ".GlobalPreferences"
+    static let systemDomainPrefix = "com.apple."
+
+    func domain(of url: URL) -> String {
+        url.deletingPathExtension().lastPathComponent
+    }
+
+    func isSystemDomain(_ domain: String) -> Bool {
+        domain == Self.globalPreferencesDomain || domain.hasPrefix(Self.systemDomainPrefix)
+    }
+
     func plistURLs(in directoryURL: URL) -> [URL] {
         guard FileManager.default.directoryExistsAtURL(directoryURL) else {
             return []
@@ -83,25 +104,25 @@ private extension UserDefaultsExportService {
         }
     }
 
-    /// Several plists and none of them the subject's own: key them by file name so nothing is
-    /// silently dropped. Files that fail to decode are logged and skipped, but an export where
-    /// nothing could be read is a failure rather than an empty document.
-    func combinedPropertyList(of urls: [URL]) throws -> [String: Any] {
-        var combined: [String: Any] = [:]
+    /// Keys every domain by its suite name. A single unreadable file is logged and skipped so the
+    /// rest of the domains still make it out, but an export where nothing could be read is a
+    /// failure rather than an empty document.
+    func propertyListsByDomain(of urls: [URL]) throws -> [String: Any] {
+        var propertyListsByDomain: [String: Any] = [:]
         var firstFailure: Error?
 
         for url in urls {
             do {
-                combined[url.lastPathComponent] = try propertyList(at: url)
+                propertyListsByDomain[domain(of: url)] = try propertyList(at: url)
             } catch {
                 firstFailure = firstFailure ?? error
             }
         }
 
-        guard !combined.isEmpty else {
+        guard !propertyListsByDomain.isEmpty else {
             throw firstFailure ?? ExportError.noPreferencesFound
         }
 
-        return combined
+        return propertyListsByDomain
     }
 }

@@ -46,7 +46,7 @@ struct ContainerShortcutHandlingTests {
 
         let expected = MockContainerContentCopier.UserDefaultsRequest(
             url: Self.containerURL.appendingPathComponent(SimulatorPaths.userDefaultsPath),
-            preferredPlistName: "com.test.app",
+            ownDomain: "com.test.app",
             subject: "Test App"
         )
 
@@ -64,7 +64,7 @@ struct ContainerShortcutHandlingTests {
 
         let expected = MockContainerContentCopier.UserDefaultsRequest(
             url: groupURL.appendingPathComponent(SimulatorPaths.userDefaultsPath),
-            preferredPlistName: "group.com.test",
+            ownDomain: "group.com.test",
             subject: "Group com.test"
         )
 

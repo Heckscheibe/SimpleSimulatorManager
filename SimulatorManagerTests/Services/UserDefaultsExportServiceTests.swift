@@ -11,7 +11,15 @@ import Testing
 
 @Suite("UserDefaultsExportService Tests")
 struct UserDefaultsExportServiceTests {
-    @Test("A binary preferences plist is exported as JSON")
+    private func export(from fixture: PreferencesFixtureDirectory, ownDomain: String = "com.test.app") throws -> [String: Any] {
+        let json = try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
+                                                              ownDomain: ownDomain)
+        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8))
+
+        return try #require(parsed as? [String: Any])
+    }
+
+    @Test("A binary preferences plist is exported as JSON under its domain")
     func binaryPlistIsExportedAsJSON() throws {
         let fixture = try PreferencesFixtureDirectory()
         defer { fixture.remove() }
@@ -26,71 +34,90 @@ struct UserDefaultsExportServiceTests {
             "nested": ["level": 2]
         ])
 
-        let json = try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
-                                                              preferredPlistName: "com.test.app")
-        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8))
-        let root = try #require(parsed as? [String: Any])
-        let nested = try #require(root["nested"] as? [String: Any])
-        let token = try #require(root["token"] as? [String: Any])
+        let root = try export(from: fixture)
+        let standardDomain = try #require(root["com.test.app"] as? [String: Any])
+        let nested = try #require(standardDomain["nested"] as? [String: Any])
+        let token = try #require(standardDomain["token"] as? [String: Any])
 
-        #expect(root["userName"] as? String == "Tester")
-        #expect(root["launchCount"] as? Int == 3)
-        #expect(root["lastLaunch"] as? String == "1970-01-01T00:00:00.000Z")
-        #expect(root["flags"] as? [String] == ["a", "b"])
+        #expect(standardDomain["userName"] as? String == "Tester")
+        #expect(standardDomain["launchCount"] as? Int == 3)
+        #expect(standardDomain["lastLaunch"] as? String == "1970-01-01T00:00:00.000Z")
+        #expect(standardDomain["flags"] as? [String] == ["a", "b"])
         #expect(nested["level"] as? Int == 2)
         #expect(token["base64"] as? String == Data([0x01, 0x02]).base64EncodedString())
-        #expect(json.contains("\"onboarded\" : true"))
     }
 
-    @Test("The subject's own plist wins over the system-managed ones next to it")
-    func preferredPlistIsUsed() throws {
+    @Test("Every suite the app wrote is exported next to its standard domain")
+    func suitesAreExportedAlongsideTheStandardDomain() throws {
         let fixture = try PreferencesFixtureDirectory()
         defer { fixture.remove() }
 
-        try fixture.writePreferences(named: "com.test.app", contents: ["source": "app"])
+        // What a real container looks like: the app's own domain plus the suites its SDKs created
+        // with `UserDefaults(suiteName:)`.
+        try fixture.writePreferences(named: "com.test.app", contents: ["source": "standard"])
+        try fixture.writePreferences(named: "APMAnalyticsSuiteName", contents: ["source": "analytics"])
+        try fixture.writePreferences(named: "com.firebase.FIRInstallations", contents: ["source": "firebase"])
+
+        let root = try export(from: fixture)
+        let standardDomain = try #require(root["com.test.app"] as? [String: Any])
+        let analyticsSuite = try #require(root["APMAnalyticsSuiteName"] as? [String: Any])
+        let firebaseSuite = try #require(root["com.firebase.FIRInstallations"] as? [String: Any])
+
+        #expect(standardDomain["source"] as? String == "standard")
+        #expect(analyticsSuite["source"] as? String == "analytics")
+        #expect(firebaseSuite["source"] as? String == "firebase")
+    }
+
+    @Test("Domains the OS wrote on the app's behalf are left out")
+    func systemDomainsAreExcluded() throws {
+        let fixture = try PreferencesFixtureDirectory()
+        defer { fixture.remove() }
+
+        try fixture.writePreferences(named: "com.test.app", contents: ["source": "standard"])
+        try fixture.writePreferences(named: ".GlobalPreferences", contents: ["source": "global"])
+        try fixture.writePreferences(named: "com.apple.UIAutomation", contents: ["source": "system"])
+
+        let root = try export(from: fixture)
+
+        #expect(root.keys.sorted() == ["com.test.app"])
+    }
+
+    @Test("An app whose own domain looks system-managed still exports it")
+    func ownDomainSurvivesTheSystemDomainFilter() throws {
+        let fixture = try PreferencesFixtureDirectory()
+        defer { fixture.remove() }
+
+        try fixture.writePreferences(named: "com.apple.mobilesafari", contents: ["source": "app"])
+
+        let root = try export(from: fixture, ownDomain: "com.apple.mobilesafari")
+        let standardDomain = try #require(root["com.apple.mobilesafari"] as? [String: Any])
+
+        #expect(standardDomain["source"] as? String == "app")
+    }
+
+    @Test("A container holding only system domains still exports something")
+    func systemOnlyContainerFallsBackToEverything() throws {
+        let fixture = try PreferencesFixtureDirectory()
+        defer { fixture.remove() }
+
         try fixture.writePreferences(named: ".GlobalPreferences", contents: ["source": "global"])
 
-        let json = try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
-                                                              preferredPlistName: "com.test.app")
-        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8))
-        let root = try #require(parsed as? [String: Any])
+        let root = try export(from: fixture)
 
-        #expect(root["source"] as? String == "app")
-        #expect(root.keys.count == 1)
+        #expect(root.keys.sorted() == [".GlobalPreferences"])
     }
 
-    @Test("A single differently named plist is exported at the top level")
-    func singlePlistIsExportedTopLevel() throws {
+    @Test("Suites are exported even when the app never wrote its standard domain")
+    func suitesWithoutStandardDomainAreExported() throws {
         let fixture = try PreferencesFixtureDirectory()
         defer { fixture.remove() }
 
-        try fixture.writePreferences(named: "com.other.identifier", contents: ["source": "only"])
+        try fixture.writePreferences(named: "com.other.suite", contents: ["source": "suite"])
 
-        let json = try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
-                                                              preferredPlistName: "com.test.app")
-        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8))
-        let root = try #require(parsed as? [String: Any])
+        let root = try export(from: fixture)
+        let suite = try #require(root["com.other.suite"] as? [String: Any])
 
-        #expect(root["source"] as? String == "only")
-    }
-
-    @Test("Several plists and no preferred one are keyed by file name so nothing is dropped")
-    func multiplePlistsAreKeyedByFileName() throws {
-        let fixture = try PreferencesFixtureDirectory()
-        defer { fixture.remove() }
-
-        try fixture.writePreferences(named: "com.other.one", contents: ["source": "one"])
-        try fixture.writePreferences(named: "com.other.two", contents: ["source": "two"])
-
-        let json = try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
-                                                              preferredPlistName: "com.test.app")
-        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8))
-        let root = try #require(parsed as? [String: Any])
-        let first = try #require(root["com.other.one.plist"] as? [String: Any])
-        let second = try #require(root["com.other.two.plist"] as? [String: Any])
-
-        #expect(first["source"] as? String == "one")
-        #expect(second["source"] as? String == "two")
+        #expect(suite["source"] as? String == "suite")
     }
 
     @Test("Files that are not plists are ignored")
@@ -101,12 +128,9 @@ struct UserDefaultsExportServiceTests {
         try fixture.writePreferences(named: "com.test.app", contents: ["source": "app"])
         try fixture.writeNonPlistFile(named: ".DS_Store")
 
-        let json = try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
-                                                              preferredPlistName: "com.test.app")
-        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8))
-        let root = try #require(parsed as? [String: Any])
+        let root = try export(from: fixture)
 
-        #expect(root["source"] as? String == "app")
+        #expect(root.keys.sorted() == ["com.test.app"])
     }
 
     @Test("An empty preferences folder reports that there is nothing to export")
@@ -116,7 +140,7 @@ struct UserDefaultsExportServiceTests {
 
         #expect(throws: UserDefaultsExportService.ExportError.noPreferencesFound) {
             try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
-                                                       preferredPlistName: "com.test.app")
+                                                       ownDomain: "com.test.app")
         }
     }
 
@@ -128,7 +152,7 @@ struct UserDefaultsExportServiceTests {
 
         #expect(throws: UserDefaultsExportService.ExportError.noPreferencesFound) {
             try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: missingURL,
-                                                       preferredPlistName: "com.test.app")
+                                                       ownDomain: "com.test.app")
         }
     }
 
@@ -141,24 +165,20 @@ struct UserDefaultsExportServiceTests {
 
         #expect(throws: UserDefaultsExportService.ExportError.unreadablePreferences(fileName: "com.test.app.plist")) {
             try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
-                                                       preferredPlistName: "com.test.app")
+                                                       ownDomain: "com.test.app")
         }
     }
 
-    @Test("One unreadable file among several does not lose the readable ones")
-    func unreadableFileAmongSeveralIsSkipped() throws {
+    @Test("One unreadable domain does not cost the readable ones")
+    func unreadableDomainAmongSeveralIsSkipped() throws {
         let fixture = try PreferencesFixtureDirectory()
         defer { fixture.remove() }
 
-        try fixture.writePreferences(named: "com.other.one", contents: ["source": "one"])
-        try fixture.writeCorruptedPreferences(named: "com.other.two")
+        try fixture.writePreferences(named: "com.test.app", contents: ["source": "app"])
+        try fixture.writeCorruptedPreferences(named: "APMAnalyticsSuiteName")
 
-        let json = try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
-                                                              preferredPlistName: "com.test.app")
-        let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8))
-        let root = try #require(parsed as? [String: Any])
+        let root = try export(from: fixture)
 
-        #expect(root.keys.contains("com.other.one.plist"))
-        #expect(!root.keys.contains("com.other.two.plist"))
+        #expect(root.keys.sorted() == ["com.test.app"])
     }
 }
