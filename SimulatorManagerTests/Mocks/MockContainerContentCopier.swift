@@ -6,6 +6,7 @@ final class MockContainerContentCopier: ContainerContentCopying {
     struct UserDefaultsRequest: Equatable {
         let url: URL
         let ownDomain: String
+        let domain: String?
         let subject: String
     }
 
@@ -24,9 +25,10 @@ final class MockContainerContentCopier: ContainerContentCopying {
         copiedPaths.append(url)
     }
 
-    func copyUserDefaultsJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String, subject: String) {
+    func copyUserDefaultsJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String, domain: String?, subject: String) {
         userDefaultsRequests.append(UserDefaultsRequest(url: url,
                                                         ownDomain: ownDomain,
+                                                        domain: domain,
                                                         subject: subject))
     }
 }

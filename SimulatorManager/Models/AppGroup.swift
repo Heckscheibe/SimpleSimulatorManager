@@ -18,19 +18,29 @@ class AppGroup {
 
     let identifier: String
     let uuid: String
-    let hasUserDefaults: Bool
+
+    /// Every defaults domain found in the shared container, suites included.
+    let userDefaultsDomains: [String]
+
+    var hasUserDefaults: Bool {
+        !userDefaultsDomains.isEmpty
+    }
+
+    var exportableUserDefaultsDomains: [String] {
+        UserDefaultsDomain.appDomains(in: userDefaultsDomains, ownDomain: identifier)
+    }
 
     var url: URL?
     
     init(
         identifier: String,
         uuid: String,
-        hasUserDefaults: Bool,
+        userDefaultsDomains: [String],
         url: URL? = nil
     ) {
         self.identifier = identifier
         self.uuid = uuid
-        self.hasUserDefaults = hasUserDefaults
+        self.userDefaultsDomains = userDefaultsDomains
         self.url = url
     }
 }

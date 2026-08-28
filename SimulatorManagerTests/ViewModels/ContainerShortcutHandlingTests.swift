@@ -40,17 +40,33 @@ struct ContainerShortcutHandlingTests {
         let app = TestDataHelpers.createMockApp(bundleIdentifier: "com.test.app",
                                                 displayName: "Test App",
                                                 appDocumentsFolderURL: Self.containerURL,
-                                                hasUserDefaults: true)
+                                                userDefaultsDomains: ["com.test.app"])
 
         makeViewModel(containerContent: containerContent).didSelectCopyUserDefaultsJSON(for: app)
 
         let expected = MockContainerContentCopier.UserDefaultsRequest(
             url: Self.containerURL.appendingPathComponent(SimulatorPaths.userDefaultsPath),
             ownDomain: "com.test.app",
+            domain: nil,
             subject: "Test App"
         )
 
         #expect(containerContent.lastUserDefaultsRequest == expected)
+    }
+
+    @Test("Copying a single domain passes just that domain through")
+    @MainActor
+    func copyingASingleDomain() {
+        let containerContent = MockContainerContentCopier()
+        let app = TestDataHelpers.createMockApp(bundleIdentifier: "com.test.app",
+                                                displayName: "Test App",
+                                                appDocumentsFolderURL: Self.containerURL,
+                                                userDefaultsDomains: ["APMAnalyticsSuiteName", "com.test.app"])
+
+        makeViewModel(containerContent: containerContent)
+            .didSelectCopyUserDefaultsJSON(for: app, domain: "APMAnalyticsSuiteName")
+
+        #expect(containerContent.lastUserDefaultsRequest?.domain == "APMAnalyticsSuiteName")
     }
 
     @Test("Copying an app group's UserDefaults asks for the group's plist")
@@ -58,13 +74,14 @@ struct ContainerShortcutHandlingTests {
     func copyingAppGroupUserDefaults() {
         let containerContent = MockContainerContentCopier()
         let groupURL = URL(fileURLWithPath: "/tmp/group")
-        let appGroup = AppGroup(identifier: "group.com.test", uuid: "uuid", hasUserDefaults: true, url: groupURL)
+        let appGroup = AppGroup(identifier: "group.com.test", uuid: "uuid", userDefaultsDomains: ["group.com.test"], url: groupURL)
 
-        makeViewModel(containerContent: containerContent).didSelectCopyUserDefaultsJSON(for: appGroup)
+        makeViewModel(containerContent: containerContent).didSelectCopyUserDefaultsJSON(for: appGroup, domain: "group.com.test")
 
         let expected = MockContainerContentCopier.UserDefaultsRequest(
             url: groupURL.appendingPathComponent(SimulatorPaths.userDefaultsPath),
             ownDomain: "group.com.test",
+            domain: "group.com.test",
             subject: "Group com.test"
         )
 
@@ -75,7 +92,7 @@ struct ContainerShortcutHandlingTests {
     @MainActor
     func unresolvableShortcutCopiesNothing() {
         let containerContent = MockContainerContentCopier()
-        let app = TestDataHelpers.createMockApp(hasUserDefaults: true)
+        let app = TestDataHelpers.createMockApp(userDefaultsDomains: ["com.test.app"])
         let viewModel = makeViewModel(containerContent: containerContent)
 
         viewModel.didSelectCopyPath(of: .documents, for: app)

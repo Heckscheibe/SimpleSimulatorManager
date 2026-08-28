@@ -35,10 +35,9 @@ class AppDiscoveryService {
             do {
                 let appGroupPlist = try CustomPropertyListDecoder().decode(AppGroupPlist.self, at: appGroupFilePath)
                 
-                let hasUserDefaults = !getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
                 return AppGroup(identifier: appGroupPlist.identifier,
                                 uuid: appGroupPlist.uuid,
-                                hasUserDefaults: hasUserDefaults,
+                                userDefaultsDomains: userDefaultsDomains(inContainerAt: url),
                                 url: appGroupPlist.url)
                 
             } catch {
@@ -86,14 +85,14 @@ class AppDiscoveryService {
             let bundleDate = infoPlist.url.flatMap { getFileModificationDate(url: $0) }
             let timestamp = [container.modificationDate, bundleDate].compactMap { $0 }.max() ?? Date.distantPast
 
-            let hasUserDefaults = !getContentOfDirectoryAt(url: container.folderURL.appendingPathComponent(SimulatorPaths.userDefaultsPath)).isEmpty
+            let domains = userDefaultsDomains(inContainerAt: container.folderURL)
             let simulatorApp: any SimulatorApp
             if infoPlist.isWatchApp {
                 simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
                                                    bundleIdentifier: infoPlist.cfBundleIdentifier,
                                                    appDocumentsFolderURL: container.metaDataPlist.url,
                                                    appPackageURL: infoPlist.url,
-                                                   hasUserDefaults: hasUserDefaults,
+                                                   userDefaultsDomains: domains,
                                                    companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier,
                                                    contentModifiedAt: timestamp)
             } else {
@@ -102,7 +101,7 @@ class AppDiscoveryService {
                                                appDocumentsFolderURL: container.metaDataPlist.url,
                                                appPackageURL: infoPlist.url,
                                                hasWatchApp: infoPlist.hasCompanionWatchApp,
-                                               hasUserDefaults: hasUserDefaults,
+                                               userDefaultsDomains: domains,
                                                contentModifiedAt: timestamp)
             }
 
@@ -176,6 +175,16 @@ class AppDiscoveryService {
                 return nil
             }
         }
+    }
+    
+    /// The defaults domains a container holds. Listing them here costs nothing extra: this folder
+    /// was already being enumerated to decide whether the app has UserDefaults at all, and knowing
+    /// the names lets the menu offer each domain without touching the filesystem again.
+    func userDefaultsDomains(inContainerAt url: URL) -> [String] {
+        getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath))
+            .filter { $0.pathExtension == "plist" }
+            .map { UserDefaultsDomain.domain(ofPreferencesFileAt: $0) }
+            .sorted()
     }
     
     func getContentOfDirectoryAt(url: URL) -> [URL] {

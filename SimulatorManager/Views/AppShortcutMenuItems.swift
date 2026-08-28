@@ -35,12 +35,8 @@ struct AppShortcutMenuItems<Actions: ContainerShortcutHandling>: View {
             }
         }
 
-        if app.hasUserDefaults {
-            Button {
-                actions.didSelectCopyUserDefaultsJSON(for: app)
-            } label: {
-                Text("Copy UserDefaults as JSON")
-            }
+        UserDefaultsCopyMenuItems(domains: app.exportableUserDefaultsDomains) { domain in
+            actions.didSelectCopyUserDefaultsJSON(for: app, domain: domain)
         }
     }
 }

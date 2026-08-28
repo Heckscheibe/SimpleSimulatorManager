@@ -37,12 +37,8 @@ struct AppGroupsView: View {
                     }
                 }
 
-                if appGroup.hasUserDefaults {
-                    Button {
-                        viewModel.didSelectCopyUserDefaultsJSON(for: appGroup)
-                    } label: {
-                        Text("Copy UserDefaults as JSON")
-                    }
+                UserDefaultsCopyMenuItems(domains: appGroup.exportableUserDefaultsDomains) { domain in
+                    viewModel.didSelectCopyUserDefaultsJSON(for: appGroup, domain: domain)
                 }
             }
         }

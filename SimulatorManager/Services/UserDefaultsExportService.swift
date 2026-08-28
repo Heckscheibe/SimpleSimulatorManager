@@ -15,8 +15,9 @@ protocol UserDefaultsExporting: Sendable {
     ///   - ownDomain: The subject's standard defaults domain — the bundle identifier for an app,
     ///     the group identifier for an app group. It is always part of the export, even when the
     ///     name would otherwise look system-managed.
-    /// - Returns: Pretty-printed JSON keyed by defaults domain.
-    func exportJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String) throws -> String
+    ///   - domain: A single domain to export, or `nil` for every domain the container holds.
+    /// - Returns: Pretty-printed JSON keyed by defaults domain, whether it holds one domain or six.
+    func exportJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String, domain: String?) throws -> String
 }
 
 /// One app writes more than one defaults domain: `UserDefaults.standard` lands in
@@ -26,8 +27,8 @@ protocol UserDefaultsExporting: Sendable {
 ///
 /// There is no registry of an app's suites, and no way to tell a suite apart from a system domain
 /// other than by name, so the export takes the container's whole `Library/Preferences` and keys it
-/// by domain. The file name without its extension *is* the domain — exactly the string that was
-/// passed to `UserDefaults(suiteName:)`.
+/// by domain — see ``UserDefaultsDomain``. A caller after a single domain gets the same keyed
+/// shape, so the document always says which domain it came from.
 ///
 /// A suite named after an app group is the exception: it lives in the group container instead, and
 /// is reached through the app group's own menu.
@@ -46,33 +47,29 @@ struct UserDefaultsExportService: UserDefaultsExporting {
         }
     }
 
-    func exportJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String) throws -> String {
+    func exportJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String, domain requestedDomain: String?) throws -> String {
         let plistURLs = plistURLs(in: url)
 
         guard !plistURLs.isEmpty else {
             throw ExportError.noPreferencesFound
         }
 
-        // Simulator containers also collect domains the OS wrote on the app's behalf. They are
-        // device state rather than app state, so they are left out — unless that would empty the
-        // export, which is what happens for an Apple app whose own domain is `com.apple.…`.
-        let appDomainURLs = plistURLs.filter { !isSystemDomain(domain(of: $0)) || domain(of: $0) == ownDomain }
-        let exportedURLs = appDomainURLs.isEmpty ? plistURLs : appDomainURLs
+        let exportedDomains = Set(requestedDomain.map { [$0] }
+            ?? UserDefaultsDomain.appDomains(in: plistURLs.map { domain(of: $0) }, ownDomain: ownDomain))
+        let exportedURLs = plistURLs.filter { exportedDomains.contains(domain(of: $0)) }
+
+        // The menu was built from an earlier listing, so a domain named there can be gone by now.
+        guard !exportedURLs.isEmpty else {
+            throw ExportError.noPreferencesFound
+        }
 
         return try PropertyListJSONConverter.jsonString(from: propertyListsByDomain(of: exportedURLs))
     }
 }
 
 private extension UserDefaultsExportService {
-    static let globalPreferencesDomain = ".GlobalPreferences"
-    static let systemDomainPrefix = "com.apple."
-
     func domain(of url: URL) -> String {
-        url.deletingPathExtension().lastPathComponent
-    }
-
-    func isSystemDomain(_ domain: String) -> Bool {
-        domain == Self.globalPreferencesDomain || domain.hasPrefix(Self.systemDomainPrefix)
+        UserDefaultsDomain.domain(ofPreferencesFileAt: url)
     }
 
     func plistURLs(in directoryURL: URL) -> [URL] {

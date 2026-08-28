@@ -175,14 +175,14 @@ enum TestDataHelpers {
         displayName: String = "Test App",
         appDocumentsFolderURL: URL? = nil,
         appPackageURL: URL? = nil,
-        hasUserDefaults: Bool = false
+        userDefaultsDomains: [String] = []
     ) -> MockSimulatorApp {
         return MockSimulatorApp(
             bundleIdentifier: bundleIdentifier,
             displayName: displayName,
             appDocumentsFolderURL: appDocumentsFolderURL,
             appPackageURL: appPackageURL,
-            hasUserDefaults: hasUserDefaults
+            userDefaultsDomains: userDefaultsDomains
         )
     }
     
@@ -231,6 +231,6 @@ struct MockSimulatorApp: SimulatorApp {
     var appDocumentsFolderURL: URL?
     var appPackageURL: URL?
     let iconName: String = "app.icon"
-    var hasUserDefaults: Bool = false
+    var userDefaultsDomains: [String] = []
     var contentModifiedAt: Date?
 }

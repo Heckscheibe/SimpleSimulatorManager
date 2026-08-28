@@ -18,7 +18,7 @@ struct ContainerShortcutTests {
     func fullyPopulatedAppOffersEveryShortcut() {
         let app = TestDataHelpers.createMockApp(appDocumentsFolderURL: Self.containerURL,
                                                 appPackageURL: Self.bundleURL,
-                                                hasUserDefaults: true)
+                                                userDefaultsDomains: ["com.test.app"])
 
         #expect(AppContainerShortcut.available(for: app) == [.documents, .appPackage, .userDefaults])
     }
@@ -27,7 +27,7 @@ struct ContainerShortcutTests {
     func shortcutsResolveToTheExpectedFolders() {
         let app = TestDataHelpers.createMockApp(appDocumentsFolderURL: Self.containerURL,
                                                 appPackageURL: Self.bundleURL,
-                                                hasUserDefaults: true)
+                                                userDefaultsDomains: ["com.test.app"])
 
         #expect(AppContainerShortcut.documents.url(for: app) == Self.containerURL)
         #expect(AppContainerShortcut.appPackage.url(for: app)?.path == "/tmp/bundle")
@@ -39,14 +39,14 @@ struct ContainerShortcutTests {
     func appWithoutUserDefaultsHidesTheShortcut() {
         let app = TestDataHelpers.createMockApp(appDocumentsFolderURL: Self.containerURL,
                                                 appPackageURL: Self.bundleURL,
-                                                hasUserDefaults: false)
+                                                userDefaultsDomains: [])
 
         #expect(AppContainerShortcut.available(for: app) == [.documents, .appPackage])
     }
 
     @Test("Shortcuts whose URL cannot be derived are left out")
     func shortcutsWithoutURLAreLeftOut() {
-        let app = TestDataHelpers.createMockApp(hasUserDefaults: true)
+        let app = TestDataHelpers.createMockApp(userDefaultsDomains: ["com.test.app"])
 
         #expect(AppContainerShortcut.available(for: app).isEmpty)
     }
@@ -54,9 +54,9 @@ struct ContainerShortcutTests {
     @Test("An app group offers its folder and, when present, its UserDefaults")
     func appGroupShortcuts() {
         let groupURL = URL(fileURLWithPath: "/tmp/group")
-        let withUserDefaults = AppGroup(identifier: "group.com.test", uuid: "uuid", hasUserDefaults: true, url: groupURL)
-        let withoutUserDefaults = AppGroup(identifier: "group.com.test", uuid: "uuid", hasUserDefaults: false, url: groupURL)
-        let withoutURL = AppGroup(identifier: "group.com.test", uuid: "uuid", hasUserDefaults: true)
+        let withUserDefaults = AppGroup(identifier: "group.com.test", uuid: "uuid", userDefaultsDomains: ["group.com.test"], url: groupURL)
+        let withoutUserDefaults = AppGroup(identifier: "group.com.test", uuid: "uuid", userDefaultsDomains: [], url: groupURL)
+        let withoutURL = AppGroup(identifier: "group.com.test", uuid: "uuid", userDefaultsDomains: ["group.com.test"])
 
         #expect(AppGroupShortcut.available(for: withUserDefaults) == [.groupFolder, .userDefaults])
         #expect(AppGroupShortcut.available(for: withoutUserDefaults) == [.groupFolder])

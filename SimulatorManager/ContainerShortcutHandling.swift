@@ -23,13 +23,15 @@ extension ContainerShortcutHandling {
         didSelectCopyPath(of: shortcut.url(for: app))
     }
 
-    func didSelectCopyUserDefaultsJSON(for app: any SimulatorApp) {
+    /// - Parameter domain: A single defaults domain, or `nil` for every domain the app wrote.
+    func didSelectCopyUserDefaultsJSON(for app: any SimulatorApp, domain: String? = nil) {
         guard let url = AppContainerShortcut.userDefaults.url(for: app) else {
             return
         }
 
         containerContent.copyUserDefaultsJSON(fromPreferencesDirectoryAt: url,
                                               ownDomain: app.bundleIdentifier,
+                                              domain: domain,
                                               subject: app.displayName)
     }
 
@@ -38,13 +40,14 @@ extension ContainerShortcutHandling {
         didSelectCopyPath(of: shortcut.url(for: appGroup))
     }
 
-    func didSelectCopyUserDefaultsJSON(for appGroup: AppGroup) {
+    func didSelectCopyUserDefaultsJSON(for appGroup: AppGroup, domain: String? = nil) {
         guard let url = AppGroupShortcut.userDefaults.url(for: appGroup) else {
             return
         }
 
         containerContent.copyUserDefaultsJSON(fromPreferencesDirectoryAt: url,
                                               ownDomain: appGroup.identifier,
+                                              domain: domain,
                                               subject: "Group \(appGroup.name)")
     }
 

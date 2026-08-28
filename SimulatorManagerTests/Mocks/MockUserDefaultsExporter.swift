@@ -7,6 +7,7 @@ final class MockUserDefaultsExporter: UserDefaultsExporting, @unchecked Sendable
     struct Request: Equatable {
         let url: URL
         let ownDomain: String
+        let domain: String?
     }
 
     enum MockError: Error, LocalizedError {
@@ -25,8 +26,8 @@ final class MockUserDefaultsExporter: UserDefaultsExporting, @unchecked Sendable
         requests.last
     }
 
-    func exportJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String) throws -> String {
-        requests.append(Request(url: url, ownDomain: ownDomain))
+    func exportJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String, domain: String?) throws -> String {
+        requests.append(Request(url: url, ownDomain: ownDomain, domain: domain))
 
         return try result.get()
     }

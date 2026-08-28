@@ -11,9 +11,14 @@ import Testing
 
 @Suite("UserDefaultsExportService Tests")
 struct UserDefaultsExportServiceTests {
-    private func export(from fixture: PreferencesFixtureDirectory, ownDomain: String = "com.test.app") throws -> [String: Any] {
+    private func export(
+        from fixture: PreferencesFixtureDirectory,
+        ownDomain: String = "com.test.app",
+        domain: String? = nil
+    ) throws -> [String: Any] {
         let json = try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
-                                                              ownDomain: ownDomain)
+                                                              ownDomain: ownDomain,
+                                                              domain: domain)
         let parsed = try JSONSerialization.jsonObject(with: Data(json.utf8))
 
         return try #require(parsed as? [String: Any])
@@ -120,6 +125,48 @@ struct UserDefaultsExportServiceTests {
         #expect(suite["source"] as? String == "suite")
     }
 
+    @Test("A single domain can be exported on its own, keeping the domain-keyed shape")
+    func singleDomainCanBeExportedOnItsOwn() throws {
+        let fixture = try PreferencesFixtureDirectory()
+        defer { fixture.remove() }
+
+        try fixture.writePreferences(named: "com.test.app", contents: ["source": "standard"])
+        try fixture.writePreferences(named: "APMAnalyticsSuiteName", contents: ["source": "analytics"])
+
+        let root = try export(from: fixture, domain: "APMAnalyticsSuiteName")
+        let analyticsSuite = try #require(root["APMAnalyticsSuiteName"] as? [String: Any])
+
+        #expect(root.keys.sorted() == ["APMAnalyticsSuiteName"])
+        #expect(analyticsSuite["source"] as? String == "analytics")
+    }
+
+    @Test("A named domain is exported even when the filter would otherwise drop it")
+    func namedSystemDomainIsExported() throws {
+        let fixture = try PreferencesFixtureDirectory()
+        defer { fixture.remove() }
+
+        try fixture.writePreferences(named: "com.test.app", contents: ["source": "standard"])
+        try fixture.writePreferences(named: ".GlobalPreferences", contents: ["source": "global"])
+
+        let root = try export(from: fixture, domain: ".GlobalPreferences")
+
+        #expect(root.keys.sorted() == [".GlobalPreferences"])
+    }
+
+    @Test("A domain that vanished since the menu was built reports the failure")
+    func vanishedDomainThrows() throws {
+        let fixture = try PreferencesFixtureDirectory()
+        defer { fixture.remove() }
+
+        try fixture.writePreferences(named: "com.test.app", contents: ["source": "standard"])
+
+        #expect(throws: UserDefaultsExportService.ExportError.noPreferencesFound) {
+            try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
+                                                       ownDomain: "com.test.app",
+                                                       domain: "APMAnalyticsSuiteName")
+        }
+    }
+
     @Test("Files that are not plists are ignored")
     func nonPlistFilesAreIgnored() throws {
         let fixture = try PreferencesFixtureDirectory()
@@ -140,7 +187,8 @@ struct UserDefaultsExportServiceTests {
 
         #expect(throws: UserDefaultsExportService.ExportError.noPreferencesFound) {
             try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
-                                                       ownDomain: "com.test.app")
+                                                       ownDomain: "com.test.app",
+                                                       domain: nil)
         }
     }
 
@@ -152,7 +200,8 @@ struct UserDefaultsExportServiceTests {
 
         #expect(throws: UserDefaultsExportService.ExportError.noPreferencesFound) {
             try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: missingURL,
-                                                       ownDomain: "com.test.app")
+                                                       ownDomain: "com.test.app",
+                                                       domain: nil)
         }
     }
 
@@ -165,7 +214,8 @@ struct UserDefaultsExportServiceTests {
 
         #expect(throws: UserDefaultsExportService.ExportError.unreadablePreferences(fileName: "com.test.app.plist")) {
             try UserDefaultsExportService().exportJSON(fromPreferencesDirectoryAt: fixture.url,
-                                                       ownDomain: "com.test.app")
+                                                       ownDomain: "com.test.app",
+                                                       domain: nil)
         }
     }
 
