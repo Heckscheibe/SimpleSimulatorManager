@@ -58,17 +58,44 @@ Protocol conformance and integration tests:
 
 ## Testing Patterns
 
-### Reactive Testing with Combine
+### Waiting for asynchronous state
+
+State that arrives through Combine (`.receive(on: DispatchQueue.main)`) or through a detached
+`Task` has not landed by the time the triggering call returns. Wait for the condition itself — a
+fixed `Task.sleep` is a guess that a loaded machine or a parallel test run can outrun, which turns
+into an intermittent failure that is hard to reproduce.
+
 ```swift
 // Set up mock data
 mockDeviceManager.setMockDevices(testDevices)
 
-// Allow Combine to process
-try? await Task.sleep(nanoseconds: 50_000_000)
+// Wait for the state the view model actually exposes, with a generous timeout
+await waitUntil { viewModel.devices.count == expectedCount }
 
-// Verify reactive updates
 #expect(viewModel.devices.count == expectedCount)
 ```
+
+`CleanupSimulatorsViewModelTests` polls the view model's own progress flags
+(`isLoadingCleanupCandidates`, `deletingCandidateIDs`); `SettingsMenuVisibilityTests` drains
+main-queue turns for Combine bindings. Pick whichever matches the layer under test.
+
+### Never index a collection whose size has not been proven
+
+`#expect` **records a failure and keeps going**, so it cannot guard a subscript. An out-of-range
+`Array` subscript is a fatal Swift trap, not a recorded failure: it kills the test host process and
+every test running alongside it. Use `#require`, which throws and ends only the failing test.
+
+```swift
+// Wrong — an unexpected count crashes the whole test host
+#expect(groups.count == 2)
+#expect(groups[0].candidates == [expectedCandidate])
+
+// Right — a wrong count fails this test and nothing else
+try #require(groups.count == 2)
+#expect(groups[0].candidates == [expectedCandidate])
+```
+
+The same applies to `!`-unwrapping and `try!` in assertions.
 
 ### Call Verification
 ```swift
@@ -106,11 +133,12 @@ Tests use Swift Testing framework and can be run via:
 ## Best Practices
 
 1. **Use factory methods** from TestDataHelpers for consistent test data
-2. **Allow processing time** for Combine publishers using Task.sleep
-3. **Reset mock state** between tests to ensure isolation
-4. **Test both happy path and edge cases**
-5. **Verify both state changes and method calls**
-6. **Use meaningful test names** that describe the scenario being tested
+2. **Wait for a condition**, not for a duration, when asserting on asynchronous state
+3. **Guard every subscript** with `try #require` — a trap takes the whole test host down
+4. **Reset mock state** between tests to ensure isolation
+5. **Test both happy path and edge cases**
+6. **Verify both state changes and method calls**
+7. **Use meaningful test names** that describe the scenario being tested
 
 ## File Organization
 
