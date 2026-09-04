@@ -18,9 +18,13 @@ struct SimulatorManagerApp: App {
     @State private var shortcutRecorderViewModel: ShortcutRecorderViewModel
     @StateObject private var settings: Settings
     @StateObject private var shortcutController: GlobalShortcutController
+    @StateObject private var githubService = GithubService()
 
     private let simulatorResetService: SimulatorResetServing
     private let simulatorCleanupService: SimulatorCleanupServing
+    /// Shared between the global shortcut, which opens the panel, and the panel itself, which
+    /// closes it after a row is picked.
+    private let menuPresenter: MenuBarMenuPresenting
 
     init() {
         let deviceManager = DeviceManager()
@@ -33,13 +37,15 @@ struct SimulatorManagerApp: App {
         let resetSimulatorsViewModel = ResetSimulatorsViewModel(deviceManager: deviceManager,
                                                                 simulatorResetService: simulatorResetService)
         let settings = Settings()
-        
+        let menuPresenter = MenuBarMenuPresenter()
+
         let shortcutController = GlobalShortcutController(settings: settings,
                                                           hotkeyService: GlobalHotkeyService(),
-                                                          menuPresenter: MenuBarMenuPresenter())
+                                                          menuPresenter: menuPresenter)
 
         self.simulatorResetService = simulatorResetService
         self.simulatorCleanupService = simulatorCleanupService
+        self.menuPresenter = menuPresenter
         self._deviceManager = StateObject(wrappedValue: deviceManager)
         self._viewModel = State(initialValue: viewModel)
         self._cleanupSimulatorsViewModel = State(initialValue: cleanupSimulatorsViewModel)
@@ -50,9 +56,49 @@ struct SimulatorManagerApp: App {
         self._settings = StateObject(wrappedValue: settings)
         self._shortcutController = StateObject(wrappedValue: shortcutController)
     }
-    
+
     var body: some Scene {
-        MenuBarExtra("SimulatorManager", systemImage: "iphone.gen3") {
+        // Exactly one of these, chosen at compile time — see ``MenuBarPresentation`` for why this
+        // cannot be a runtime `Bool`.
+        #if LEGACY_MENU_BAR
+            nativeMenuScene
+        #else
+            searchablePanelScene
+        #endif
+
+        // A `Window` rather than a SwiftUI `Settings` scene: see `PreferencesWindow` for why the
+        // latter cannot present in this app.
+        Window("Settings", id: PreferencesWindow.identifier) {
+            PreferencesView(settings: settings,
+                            shortcutController: shortcutController,
+                            recorderViewModel: shortcutRecorderViewModel)
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
+    }
+}
+
+// MARK: - Menu bar scenes
+
+private extension SimulatorManagerApp {
+    /// The searchable panel. `.window` rather than the default `.menu` style: a real `NSMenu`
+    /// cannot filter its items as the user types, and no API makes it do so.
+    var searchablePanelScene: some Scene {
+        MenuBarExtra("SimulatorManager", systemImage: Self.menuBarSymbol) {
+            MenuPanelView(simulatorManagerViewModel: viewModel,
+                          settingsViewModel: settingsViewModel,
+                          cleanupViewModel: cleanupSimulatorsViewModel,
+                          resetViewModel: resetSimulatorsViewModel,
+                          settings: settings,
+                          githubService: githubService,
+                          menuPresenter: menuPresenter)
+        }
+        .menuBarExtraStyle(.window)
+    }
+
+    /// The menu as it shipped, kept until the panel stops being provisional.
+    var nativeMenuScene: some Scene {
+        MenuBarExtra("SimulatorManager", systemImage: Self.menuBarSymbol) {
             RecentAppsView(viewModel: viewModel, settings: settings)
             Divider()
             DeviceTypeView(viewModel: viewModel, settings: settings)
@@ -68,17 +114,10 @@ struct SimulatorManagerApp: App {
             Divider()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
-            }.keyboardShortcut("q")
+            }
+            .keyboardShortcut("q")
         }
-
-        // A `Window` rather than a SwiftUI `Settings` scene: see `PreferencesWindow` for why the
-        // latter cannot present in this app.
-        Window("Settings", id: PreferencesWindow.identifier) {
-            PreferencesView(settings: settings,
-                            shortcutController: shortcutController,
-                            recorderViewModel: shortcutRecorderViewModel)
-        }
-        .windowResizability(.contentSize)
-        .defaultPosition(.center)
     }
+
+    static let menuBarSymbol = "iphone.gen3"
 }
