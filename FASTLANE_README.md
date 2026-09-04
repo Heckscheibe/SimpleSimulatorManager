@@ -7,22 +7,51 @@ This document describes the current Fastlane workflow for building and signing t
 1. **Apple Developer Account**: You need a paid Apple Developer account
 2. **Developer ID Certificate**: For signing apps distributed outside the Mac App Store, managed via [fastlane match](https://docs.fastlane.tools/actions/match/)
 3. **Access to the certificates repo**: [Heckscheibe/simplesimulatormanager-certificates](https://github.com/Heckscheibe/simplesimulatormanager-certificates) (private) — this is where match stores the encrypted certificate and provisioning profile; you need read access via git (SSH) plus the shared `MATCH_PASSWORD` to decrypt them
-4. **Ruby**: Fastlane requires Ruby (usually pre-installed on macOS)
+4. **Ruby**: the version pinned in [.ruby-version](.ruby-version) (currently 4.0.6). macOS's pre-installed Ruby is not sufficient — see [Install Ruby](#1-install-ruby) below
 5. **Xcode Command Line Tools**: Install with `xcode-select --install`
 
 ## Initial Setup
 
-### 1. Install Dependencies
+### 1. Install Ruby
+
+The Ruby version is pinned in `.ruby-version` at the repository root. Every version
+manager (rbenv, rvm, mise, asdf, chruby) reads that file, so the right interpreter is
+selected automatically once it is installed:
 
 ```bash
-# Install bundler if you don't have it
-sudo gem install bundler
+# rbenv
+rbenv install "$(cat .ruby-version)"
 
-# Install fastlane and dependencies
+# rvm
+rvm install "$(cat .ruby-version)"
+
+# mise
+mise install ruby@"$(cat .ruby-version)"
+```
+
+Homebrew's `ruby` formula also works if it happens to be on the pinned version, but it
+is not version-managed — you have to put `$(brew --prefix ruby)/bin` on your `PATH`
+yourself, and it moves whenever the formula updates.
+
+Confirm the right Ruby is active before continuing:
+
+```bash
+ruby -v   # must match .ruby-version
+```
+
+Do not use the Ruby that ships with macOS, and do not `sudo gem install` anything: the
+system Ruby is deprecated by Apple and installing gems into it needs root and breaks on
+OS updates.
+
+### 2. Install Dependencies
+
+Bundler ships with the pinned Ruby, so there is nothing to install first:
+
+```bash
 bundle install
 ```
 
-### 2. Configure Environment Variables
+### 3. Configure Environment Variables
 
 ```bash
 # Create a .env file in the repository root
@@ -48,7 +77,7 @@ APP_STORE_CONNECT_API_KEY_ISSUER_ID="00000000-0000-0000-0000-000000000000"
 APP_STORE_CONNECT_API_KEY_KEY_FILEPATH="/absolute/path/to/AuthKey_ABC123XYZ.p8"
 ```
 
-### 3. Signing Assets (via match)
+### 4. Signing Assets (via match)
 
 Certificate and provisioning profile management is handled by [fastlane match](https://docs.fastlane.tools/actions/match/) — no manual Keychain Access setup, no per-machine provisioning profile installs.
 

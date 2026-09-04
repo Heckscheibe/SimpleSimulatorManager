@@ -7,6 +7,10 @@ fixes just as much as features.
 
 - macOS 15.0 or later
 - Xcode with the macOS toolchain
+- Ruby, only if you touch the release tooling: the version pinned in
+  [.ruby-version](.ruby-version), installed through a version manager
+  (rbenv/rvm/mise/asdf). App code and tests need Xcode alone — see
+  [FASTLANE_README.md](FASTLANE_README.md) for the release setup.
 
 The app is not sandboxed, on purpose: it reads simulator data directly out of
 `~/Library/Developer/CoreSimulator`, which the sandbox would block. Please don't re-enable it.
