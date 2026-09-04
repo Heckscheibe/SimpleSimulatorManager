@@ -1,0 +1,12 @@
+git_url("git@github.com:Heckscheibe/simplesimulatormanager-certificates.git")
+storage_mode("git")
+
+type("developer_id") # Developer ID Application (macOS, distribution outside the Mac App Store)
+
+app_identifier(["com.nicolashiller.SimpleSimulatorManager"])
+team_id("C26VF67R9C")
+
+# Authentication uses the App Store Connect API key (see notarization_api_key in the Fastfile) —
+# no Apple ID/password login, no 2FA prompt. `match` is invoked with `api_key:` from the `build` lane.
+
+readonly(true) # CI/build machines only fetch; run `fastlane match developer_id --readonly false` manually to rotate or add assets

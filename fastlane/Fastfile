@@ -16,6 +16,7 @@
 # App and archive names
 APP_NAME = "Simulator Manager"
 ZIP_NAME = "SimulatorManager"
+APP_IDENTIFIER = "com.nicolashiller.SimpleSimulatorManager"
 PROJECT_ROOT = File.expand_path("..", __dir__)
 BUILD_DIR = File.join(PROJECT_ROOT, "build")
 RELEASE_DIR = File.join(PROJECT_ROOT, "release")
@@ -27,7 +28,9 @@ PROJECT_FILE = File.join(PROJECT_ROOT, "SimulatorManager.xcodeproj")
 HOMEBREW_TAP_PATH = ENV["HOMEBREW_TAP_PATH"] || File.expand_path("homebrew-tap", File.dirname(PROJECT_ROOT))
 HOMEBREW_CASK_FILE = File.join(HOMEBREW_TAP_PATH, "Casks", "simple-simulator-manager.rb")
 
-def notarization_api_key
+# Shared App Store Connect API key, used both for notarization and to authenticate `match`
+# against the Apple Developer Portal (no Apple ID/password login, no interactive 2FA prompt).
+def app_store_connect_key
   key_id = ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"].to_s.strip
   issuer_id = ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"].to_s.strip
   key_filepath = ENV["APP_STORE_CONNECT_API_KEY_KEY_FILEPATH"].to_s.strip
@@ -38,7 +41,7 @@ def notarization_api_key
   missing << "APP_STORE_CONNECT_API_KEY_KEY_FILEPATH" if key_filepath.empty?
 
   unless missing.empty?
-    UI.user_error!("Notarization requires App Store Connect API key credentials. Missing: #{missing.join(', ')}")
+    UI.user_error!("This requires App Store Connect API key credentials. Missing: #{missing.join(', ')}")
   end
 
   UI.user_error!("APP_STORE_CONNECT_API_KEY_KEY_FILEPATH points to a missing file: #{key_filepath}") unless File.exist?(key_filepath)
@@ -50,25 +53,53 @@ def notarization_api_key
   )
 end
 
+# Fetches (and decrypts) the Developer ID certificate + provisioning profile from the match
+# storage repo into the local keychain, replacing manual per-machine keychain setup.
+def sync_signing_assets
+  UI.user_error!("MATCH_PASSWORD is required to decrypt signing assets from the match storage repo.") if ENV["MATCH_PASSWORD"].to_s.strip.empty?
+
+  match(
+    type: "developer_id",
+    api_key: app_store_connect_key,
+    readonly: true
+  )
+end
+
 default_platform(:mac)
 
 platform :mac do
+  desc "One-time/maintenance: fetch or create the Developer ID profile via match and push it " \
+       "(plus the certificate) to the match storage repo. Uses the App Store Connect API key, " \
+       "so no Apple ID/password login or 2FA prompt."
+  lane :update_signing_assets do
+    match(
+      type: "developer_id",
+      api_key: app_store_connect_key,
+      readonly: false
+    )
+    UI.success("✅ Developer ID certificate + profile are up to date in the match storage repo.")
+  end
+
   desc "Build and sign the macOS app for Developer ID distribution"
   lane :build do
-    # For macOS Developer ID, we'll manage certificates manually
-    # Ensure Developer ID certificate is installed in keychain
+    # Fetch the Developer ID certificate + provisioning profile via match instead of assuming
+    # they're already installed in the local keychain.
+    sync_signing_assets
 
-    # Build the app with automatic signing (Developer ID will be used automatically)
+    certificate_name = ENV["sigh_#{APP_IDENTIFIER}_developer_id_macos_certificate-name"]
+    profile_name = ENV["sigh_#{APP_IDENTIFIER}_developer_id_macos_profile-name"]
+    UI.user_error!("match did not return a Developer ID certificate/profile for #{APP_IDENTIFIER}.") if certificate_name.to_s.empty? || profile_name.to_s.empty?
+
     build_mac_app(
       project: PROJECT_FILE,
       scheme: "SimulatorManager",
       configuration: "Release",
       export_method: "developer-id",
-      codesigning_identity: ENV["CODESIGNING_IDENTITY"],
+      codesigning_identity: certificate_name,
       export_options: {
         signingStyle: "manual",
         provisioningProfiles: {
-          "com.nicolashiller.SimpleSimulatorManager" => ENV["PROVISIONING_PROFILE_NAME"]
+          APP_IDENTIFIER => profile_name
         }
       },
       output_directory: BUILD_DIR,
@@ -111,7 +142,7 @@ platform :mac do
     UI.message("🧾 Submitting app for notarization...")
     notarize(
       package: app_path,
-      api_key: notarization_api_key,
+      api_key: app_store_connect_key,
       print_log: true
     )
     UI.success("✅ Notarization completed successfully!")

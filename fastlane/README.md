@@ -15,6 +15,14 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## Mac
 
+### mac update_signing_assets
+
+```sh
+[bundle exec] fastlane mac update_signing_assets
+```
+
+One-time/maintenance: fetch or create the Developer ID profile via match and push it (plus the certificate) to the match storage repo. Uses the App Store Connect API key, so no Apple ID/password login or 2FA prompt.
+
 ### mac build
 
 ```sh
