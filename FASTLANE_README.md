@@ -90,7 +90,7 @@ This will:
 
 - `fastlane mac build` - Build and sign the macOS app for Developer ID distribution
 - `fastlane mac release` - Set the release version, build the app, notarize it, create the ZIP, and open the release folder
-- `fastlane mac update_signing_assets` - One-time/maintenance: fetch or create the Developer ID certificate/profile via match and push them to the certs repo (needs push access to [simplesimulatormanager-certificates](https://github.com/Heckscheibe/simplesimulatormanager-certificates))
+- `fastlane mac update_signing_assets` - One-time/maintenance: push the Developer ID certificate/profile via match to the certs repo (needs push access to [simplesimulatormanager-certificates](https://github.com/Heckscheibe/simplesimulatormanager-certificates)); can't create a brand-new certificate — see below
 
 ## Troubleshooting
 

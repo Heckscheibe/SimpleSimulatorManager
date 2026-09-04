@@ -21,7 +21,7 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 [bundle exec] fastlane mac update_signing_assets
 ```
 
-One-time/maintenance: fetch or create the Developer ID profile via match and push it (plus the certificate) to the match storage repo. Uses the App Store Connect API key, so no Apple ID/password login or 2FA prompt.
+One-time/maintenance: push the Developer ID certificate + profile to the match storage repo. Uses the App Store Connect API key, so no Apple ID/password login or 2FA prompt. NOTE: Apple blocks *creating* a brand-new Developer ID Application certificate via API key entirely (Account Holder only) — this lane can renew/re-push what's already in the certs repo, or push a profile fetched/created for an existing certificate, but a genuinely new certificate has to be created interactively and imported via `fastlane match import`. See FASTLANE_README.md for the full walkthrough.
 
 ### mac build
 
