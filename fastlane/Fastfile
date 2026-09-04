@@ -16,6 +16,11 @@
 # App and archive names
 APP_NAME = "Simulator Manager"
 ZIP_NAME = "SimulatorManager"
+# Keep in sync with fastlane/Matchfile's app_identifier(...) — Matchfile is also loaded
+# standalone (e.g. `fastlane match developer_id` from the CLI), so it can't read this constant.
+APP_IDENTIFIER = "com.nicolashiller.SimpleSimulatorManager"
+# Keep in sync with fastlane/Matchfile's type(...), same reason as APP_IDENTIFIER above.
+MATCH_TYPE = "developer_id"
 PROJECT_ROOT = File.expand_path("..", __dir__)
 BUILD_DIR = File.join(PROJECT_ROOT, "build")
 RELEASE_DIR = File.join(PROJECT_ROOT, "release")
@@ -27,48 +32,88 @@ PROJECT_FILE = File.join(PROJECT_ROOT, "SimulatorManager.xcodeproj")
 HOMEBREW_TAP_PATH = ENV["HOMEBREW_TAP_PATH"] || File.expand_path("homebrew-tap", File.dirname(PROJECT_ROOT))
 HOMEBREW_CASK_FILE = File.join(HOMEBREW_TAP_PATH, "Casks", "simple-simulator-manager.rb")
 
-def notarization_api_key
-  key_id = ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"].to_s.strip
-  issuer_id = ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"].to_s.strip
-  key_filepath = ENV["APP_STORE_CONNECT_API_KEY_KEY_FILEPATH"].to_s.strip
+# Shared App Store Connect API key, used both for notarization and to authenticate `match`
+# against the Apple Developer Portal (no Apple ID/password login, no interactive 2FA prompt).
+# Memoized: a single `fastlane mac release` run calls this both indirectly (via
+# sync_signing_assets/match, inside `build`) and directly (for `notarize`) — no need to
+# re-validate env vars, re-read the .p8 file, and rebuild the auth token twice per run.
+def app_store_connect_key
+  @app_store_connect_key ||= begin
+    key_id = ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"].to_s.strip
+    issuer_id = ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"].to_s.strip
+    key_filepath = ENV["APP_STORE_CONNECT_API_KEY_KEY_FILEPATH"].to_s.strip
 
-  missing = []
-  missing << "APP_STORE_CONNECT_API_KEY_KEY_ID" if key_id.empty?
-  missing << "APP_STORE_CONNECT_API_KEY_ISSUER_ID" if issuer_id.empty?
-  missing << "APP_STORE_CONNECT_API_KEY_KEY_FILEPATH" if key_filepath.empty?
+    missing = []
+    missing << "APP_STORE_CONNECT_API_KEY_KEY_ID" if key_id.empty?
+    missing << "APP_STORE_CONNECT_API_KEY_ISSUER_ID" if issuer_id.empty?
+    missing << "APP_STORE_CONNECT_API_KEY_KEY_FILEPATH" if key_filepath.empty?
 
-  unless missing.empty?
-    UI.user_error!("Notarization requires App Store Connect API key credentials. Missing: #{missing.join(', ')}")
+    unless missing.empty?
+      UI.user_error!("This requires App Store Connect API key credentials. Missing: #{missing.join(', ')}")
+    end
+
+    UI.user_error!("APP_STORE_CONNECT_API_KEY_KEY_FILEPATH points to a missing file: #{key_filepath}") unless File.exist?(key_filepath)
+
+    app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_filepath: key_filepath
+    )
   end
+end
 
-  UI.user_error!("APP_STORE_CONNECT_API_KEY_KEY_FILEPATH points to a missing file: #{key_filepath}") unless File.exist?(key_filepath)
+# Fetches (readonly: true, the normal build-time path) or pushes (readonly: false, the
+# occasional maintenance path — see the update_signing_assets lane) the Developer ID
+# certificate + provisioning profile via match, replacing manual per-machine keychain setup.
+# Shared by both call sites so they can't drift apart on anything but `readonly`.
+def sync_signing_assets(readonly:)
+  UI.user_error!("MATCH_PASSWORD is required to decrypt signing assets from the match storage repo.") if ENV["MATCH_PASSWORD"].to_s.strip.empty?
 
-  app_store_connect_api_key(
-    key_id: key_id,
-    issuer_id: issuer_id,
-    key_filepath: key_filepath
+  match(
+    type: MATCH_TYPE,
+    api_key: app_store_connect_key,
+    readonly: readonly,
+    # Only safe for the readonly fetch path — match pushes new commits when readonly is
+    # false, which a shallow clone can complicate.
+    shallow_clone: readonly
   )
 end
 
 default_platform(:mac)
 
 platform :mac do
+  desc "One-time/maintenance: push the Developer ID certificate + profile to the match storage " \
+       "repo. Uses the App Store Connect API key, so no Apple ID/password login or 2FA prompt. " \
+       "NOTE: Apple blocks *creating* a brand-new Developer ID Application certificate via API " \
+       "key entirely (Account Holder only) — this lane can renew/re-push what's already in the " \
+       "certs repo, or push a profile fetched/created for an existing certificate, but a " \
+       "genuinely new certificate has to be created interactively and imported via " \
+       "`fastlane match import`. See FASTLANE_README.md for the full walkthrough."
+  lane :update_signing_assets do
+    sync_signing_assets(readonly: false)
+    UI.success("✅ Developer ID certificate + profile are up to date in the match storage repo.")
+  end
+
   desc "Build and sign the macOS app for Developer ID distribution"
   lane :build do
-    # For macOS Developer ID, we'll manage certificates manually
-    # Ensure Developer ID certificate is installed in keychain
+    # Fetch the Developer ID certificate + provisioning profile via match instead of assuming
+    # they're already installed in the local keychain.
+    sync_signing_assets(readonly: true)
 
-    # Build the app with automatic signing (Developer ID will be used automatically)
+    certificate_name = ENV["sigh_#{APP_IDENTIFIER}_#{MATCH_TYPE}_macos_certificate-name"]
+    profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{MATCH_TYPE}_macos_profile-name"]
+    UI.user_error!("match did not return a Developer ID certificate/profile for #{APP_IDENTIFIER}.") if certificate_name.to_s.empty? || profile_name.to_s.empty?
+
     build_mac_app(
       project: PROJECT_FILE,
       scheme: "SimulatorManager",
       configuration: "Release",
       export_method: "developer-id",
-      codesigning_identity: ENV["CODESIGNING_IDENTITY"],
+      codesigning_identity: certificate_name,
       export_options: {
         signingStyle: "manual",
         provisioningProfiles: {
-          "com.nicolashiller.SimpleSimulatorManager" => ENV["PROVISIONING_PROFILE_NAME"]
+          APP_IDENTIFIER => profile_name
         }
       },
       output_directory: BUILD_DIR,
@@ -94,8 +139,17 @@ platform :mac do
     )
     UI.success("🔢 Version set to #{release_version} and build number incremented.")
 
-    # Build the app
-    build
+    # Build the app. If this fails — including at the new sync_signing_assets/match step,
+    # which can fail on a network/git-access/MATCH_PASSWORD problem unrelated to the version
+    # bump above — revert the version/build number bump rather than leaving it applied with
+    # no build/zip produced.
+    begin
+      build
+    rescue StandardError => e
+      UI.error("❌ Build failed — reverting the version/build number bump on #{PROJECT_FILE}.")
+      sh("git -C '#{PROJECT_ROOT}' checkout -- '#{PROJECT_FILE}'")
+      raise e
+    end
 
     # The exported app is written directly to BUILD_DIR/APP_NAME.app by build_mac_app.
     # Don't glob recursively: on the case-insensitive macOS filesystem BUILD_DIR ("build")
@@ -111,7 +165,7 @@ platform :mac do
     UI.message("🧾 Submitting app for notarization...")
     notarize(
       package: app_path,
-      api_key: notarization_api_key,
+      api_key: app_store_connect_key,
       print_log: true
     )
     UI.success("✅ Notarization completed successfully!")

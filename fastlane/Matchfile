@@ -1,0 +1,22 @@
+git_url("git@github.com:Heckscheibe/simplesimulatormanager-certificates.git")
+storage_mode("git")
+
+type("developer_id") # Developer ID Application (macOS, distribution outside the Mac App Store).
+                      # Keep in sync with MATCH_TYPE in the Fastfile — this file is also loaded
+                      # standalone (e.g. a raw `fastlane match ...` CLI call), so it can't read
+                      # that Ruby constant.
+
+app_identifier(["com.nicolashiller.SimpleSimulatorManager"]) # keep in sync with APP_IDENTIFIER in the Fastfile, same reason as above
+team_id("C26VF67R9C")
+
+# Authentication uses the App Store Connect API key (see app_store_connect_key in the Fastfile) —
+# no Apple ID/password login, no 2FA prompt. `match` is invoked with `api_key:` from the
+# sync_signing_assets helper in the Fastfile, used by both the `build` and `update_signing_assets`
+# lanes. Don't run `fastlane match developer_id` directly from the CLI to rotate/add assets — it
+# bypasses that api_key wiring and falls back to an interactive Apple ID/2FA login. Use
+# `bundle exec fastlane mac update_signing_assets` instead.
+
+readonly(true) # Safety net for a raw `fastlane match ...` CLI call, which never goes through the
+               # Fastfile lanes above and so never passes an explicit readonly:. The lanes
+               # themselves always pass readonly: explicitly (true for build, false for
+               # update_signing_assets), so this default doesn't affect them either way.

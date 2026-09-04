@@ -1,5 +1,4 @@
 source "https://rubygems.org"
 
 gem "fastlane"
-gem "match"
 gem "xcode-install"
