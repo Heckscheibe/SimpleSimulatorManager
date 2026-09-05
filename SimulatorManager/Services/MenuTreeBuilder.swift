@@ -55,7 +55,11 @@ extension MenuTreeBuilder {
             return []
         }
 
+        // Filtered like the device-type sections, so hiding a platform hides it everywhere. Note
+        // the list was already capped by `DeviceManager` before this runs, so entries on hidden
+        // platforms have already consumed slots — the section can be shorter than the cap.
         let recentApps = simulatorManagerViewModel.recentInstalledApps
+            .filter { settings.visiblePlatforms.contains($0.device.simulatorPlatform) }
 
         guard !recentApps.isEmpty else {
             return [.informational(id: "recentApps.empty", title: "No Recent Apps")]
@@ -71,13 +75,14 @@ extension MenuTreeBuilder {
         // plus UDID is not unique in the recent-apps list, so reuse it rather than reintroducing
         // the collision here.
         let identifier = "recentApp.\(appChange.id)"
-        let actions = folderActions(for: appChange.app, folderOpening: simulatorManagerViewModel)
 
         return .submenu(id: identifier,
                         title: appChange.app.displayName,
                         subtitle: "\(appChange.device.name) \(appChange.device.osVersion)",
-                        actions: actions,
-                        children: actionNodes(identifierPrefix: identifier, actions: actions))
+                        actions: openActions(for: appChange.app, handler: simulatorManagerViewModel),
+                        children: shortcutNodes(for: appChange.app,
+                                                handler: simulatorManagerViewModel,
+                                                identifierPrefix: identifier))
     }
 }
 
@@ -150,7 +155,33 @@ extension MenuTreeBuilder {
                                  actions: [MenuActionItem(title: "App Package Folder") { viewModel.didSelectAppPackagesFolder(for: device) }]))
         }
 
+        nodes.append(deviceCopyPathNode(for: viewModel, prefix: prefix))
+
         return nodes
+    }
+
+    /// Mirrors the folder rows above: whatever can be opened can also have its path copied.
+    private func deviceCopyPathNode(for viewModel: DeviceViewModel, prefix: String) -> MenuNode {
+        let device = viewModel.device
+        var children: [MenuNode] = [
+            .action(id: "\(prefix).copyPath.simulatorFolder", title: "Simulator Folder") {
+                viewModel.didSelectCopyPath(of: device.url)
+            }
+        ]
+
+        if viewModel.hasAppsFolder {
+            children.append(.action(id: "\(prefix).copyPath.appFolder", title: "App Folder") {
+                viewModel.didSelectCopyPath(of: device.appDataFolder)
+            })
+        }
+
+        if viewModel.hasAppPackagesFolder {
+            children.append(.action(id: "\(prefix).copyPath.appPackageFolder", title: "App Package Folder") {
+                viewModel.didSelectCopyPath(of: device.appPackagesFolder)
+            })
+        }
+
+        return .submenu(id: "\(prefix).copyPath", title: "Copy Path", children: children)
     }
 
     /// The contents of a device's OS-version submenu: apps, then app groups, fenced by the same
@@ -178,12 +209,13 @@ extension MenuTreeBuilder {
             // Keyed by install rather than by bundle identifier: two containers can share one, and
             // duplicate row identifiers make `ForEach` misbehave and highlight both rows at once.
             let identifier = "\(prefix).app.\(app.installIdentifier)"
-            let actions = folderActions(for: app, folderOpening: viewModel)
 
             return .submenu(id: identifier,
                             title: app.displayName,
-                            actions: actions,
-                            children: actionNodes(identifierPrefix: identifier, actions: actions))
+                            actions: openActions(for: app, handler: viewModel),
+                            children: shortcutNodes(for: app,
+                                                    handler: viewModel,
+                                                    identifierPrefix: identifier))
         })
 
         return nodes
@@ -198,18 +230,13 @@ extension MenuTreeBuilder {
 
         nodes.append(contentsOf: viewModel.device.appGroups.map { appGroup in
             let identifier = "\(prefix).appGroup.\(appGroup.identifier)"
-            var actions = [MenuActionItem(title: "Group Folder") { viewModel.didSelect(appGroup: appGroup) }]
-
-            if appGroup.hasUserDefaults {
-                actions.append(MenuActionItem(title: "Group UserDefaults") {
-                    viewModel.didSelectUserDefaultsFolder(for: appGroup)
-                })
-            }
 
             return .submenu(id: identifier,
                             title: "Group \(appGroup.name)",
-                            actions: actions,
-                            children: actionNodes(identifierPrefix: identifier, actions: actions))
+                            actions: openActions(for: appGroup, handler: viewModel),
+                            children: shortcutNodes(for: appGroup,
+                                                    handler: viewModel,
+                                                    identifierPrefix: identifier))
         })
 
         return nodes
@@ -334,23 +361,6 @@ extension MenuTreeBuilder {
 // MARK: - Shared helpers
 
 extension MenuTreeBuilder {
-    /// The folder actions an app offers, primary first. Same order the app's submenu uses today,
-    /// so `⌘↩` reaching "App Package" matches what a drill-down would show.
-    func folderActions(for app: any SimulatorApp, folderOpening: any FolderOpening) -> [MenuActionItem] {
-        var actions = [
-            MenuActionItem(title: "Documents Folder") { folderOpening.didSelectAppDocumentFolder(for: app) },
-            MenuActionItem(title: "App Package") { folderOpening.didSelectAppPackageFolder(for: app) }
-        ]
-
-        if app.hasUserDefaults {
-            actions.append(MenuActionItem(title: "User Defaults") {
-                folderOpening.didSelectUserDefaultsFolder(for: app)
-            })
-        }
-
-        return actions
-    }
-
     /// Renders an action list as the rows of a drill-down level.
     func actionNodes(identifierPrefix: String, actions: [MenuActionItem]) -> [MenuNode] {
         actions.map { action in

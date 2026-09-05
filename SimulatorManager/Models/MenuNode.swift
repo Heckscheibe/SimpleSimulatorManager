@@ -140,6 +140,23 @@ extension MenuNode {
                  kind: Kind.submenu(children))
     }
 
+    /// A row with exactly one action, which is almost every action row.
+    static func action(
+        id: String,
+        title: String,
+        isEnabled: Bool = true,
+        isDestructive: Bool = false,
+        perform: @escaping @MainActor () -> Void
+    ) -> MenuNode {
+        let action = MenuActionItem(title: title, perform: perform)
+
+        return .action(id: id,
+                       title: title,
+                       isEnabled: isEnabled,
+                       isDestructive: isDestructive,
+                       actions: [action])
+    }
+
     static func sectionHeader(id: String, title: String) -> MenuNode {
         MenuNode(id: id,
                  title: title,

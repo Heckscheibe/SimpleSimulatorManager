@@ -101,6 +101,51 @@ struct MenuTreeBuilderTests {
         #expect(recentApp.subtitle == "iPhone 16 18.2")
     }
 
+    @Test("Recent apps on a hidden platform are left out, like the device-type sections")
+    func recentAppsRespectPlatformVisibility() async {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        let iPhone = TestDataHelpers.createiPhoneDevice(udid: "iphone-1", name: "iPhone 16")
+        let iPad = TestDataHelpers.createiPadDevice(udid: "ipad-1", name: "iPad Pro")
+        let iPhoneChange = TestDataHelpers.createMockAppChange(
+            app: TestDataHelpers.createMockApp(bundleIdentifier: "com.test.phone", displayName: "Phone App"),
+            device: iPhone
+        )
+        let iPadChange = TestDataHelpers.createMockAppChange(
+            app: TestDataHelpers.createMockApp(bundleIdentifier: "com.test.pad", displayName: "Pad App"),
+            device: iPad
+        )
+        await fixture.setDevices([iPhone, iPad])
+        await fixture.setRecentApps([iPhoneChange, iPadChange])
+
+        #expect(fixture.makeBuilder().makeNodes().node(withID: "recentApp.\(iPadChange.id)") != nil)
+
+        fixture.settings.showIPadOS = false
+
+        let nodes = fixture.makeBuilder().makeNodes()
+
+        #expect(nodes.node(withID: "recentApp.\(iPhoneChange.id)") != nil)
+        #expect(nodes.node(withID: "recentApp.\(iPadChange.id)") == nil)
+    }
+
+    @Test("Hiding every platform a recent app lives on shows the empty state, not a stray header")
+    func recentAppsEmptyAfterFilteringShowsTheEmptyState() async {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        let iPad = TestDataHelpers.createiPadDevice(udid: "ipad-1", name: "iPad Pro")
+        await fixture.setDevices([iPad])
+        await fixture.setRecentApps([TestDataHelpers.createMockAppChange(device: iPad)])
+
+        fixture.settings.showIPadOS = false
+
+        let nodes = fixture.makeBuilder().makeNodes()
+
+        #expect(nodes.node(withID: "recentApps.header") == nil)
+        #expect(nodes.node(withID: "recentApps.empty")?.title == "No Recent Apps")
+    }
+
     // MARK: - Device types and devices
 
     @Test("Device types the user has hidden do not appear")
@@ -196,29 +241,70 @@ struct MenuTreeBuilderTests {
 
     // MARK: - Apps and app groups
 
-    @Test("An app carries its folder actions as secondary actions and as drill-down rows")
-    func appNodesCarryTheirFolderActions() async throws {
+    @Test("An app offers its resolvable shortcuts, with only the open actions on the modifiers")
+    func appNodesCarryTheirShortcuts() async throws {
         let fixture = MenuTreeFixture()
         defer { fixture.tearDown() }
 
         let device = TestDataHelpers.createMockDevice(udid: "device-1", name: "iPhone 16")
-        device.apps = [
-            TestDataHelpers.createMockApp(bundleIdentifier: "com.test.plain", displayName: "Plain"),
-            TestDataHelpers.createMockApp(bundleIdentifier: "com.test.prefs",
-                                          displayName: "Prefs",
-                                          userDefaultsDomains: ["com.test.prefs"])
-        ]
+        device.apps = [makeApp(bundleIdentifier: "com.test.plain", displayName: "Plain")]
         await fixture.setDevices([device])
 
         let nodes = fixture.makeBuilder().makeNodes()
-        let plain = try #require(nodes.node(withID: "device.device-1.app.com.test.plain"))
-        let prefs = try #require(nodes.node(withID: "device.device-1.app.com.test.prefs"))
+        let plain = try #require(nodes.node(withID: "device.device-1.app.com.test.plain-plain-container"))
 
+        // ⌘↩ and ⌥↩ mean "open a different folder", so only the open shortcuts are on them —
+        // copying a path instead would be a surprise.
         #expect(plain.primaryAction?.title == "Documents Folder")
         #expect(plain.secondaryActions.map(\.title) == ["App Package"])
-        #expect(plain.children.titles == ["Documents Folder", "App Package"])
+        #expect(plain.children.titles == ["Documents Folder", "App Package", "", "Copy Path"])
+        #expect(plain.children
+            .node(withID: "device.device-1.app.com.test.plain-plain-container.copyPath")?
+            .children
+            .titles == ["Documents Folder", "App Package"])
+    }
+
+    @Test("An app with preferences offers User Defaults and the JSON copy")
+    func appNodesOfferUserDefaultsShortcuts() async throws {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        let device = TestDataHelpers.createMockDevice(udid: "device-1", name: "iPhone 16")
+        let app = makeApp(bundleIdentifier: "com.test.prefs",
+                          displayName: "Prefs",
+                          userDefaultsDomains: ["com.test.prefs"])
+        device.apps = [app]
+        await fixture.setDevices([device])
+
+        let prefix = "device.device-1.app.com.test.prefs-prefs-container"
+        let nodes = fixture.makeBuilder().makeNodes()
+        let prefs = try #require(nodes.node(withID: prefix))
+
         #expect(prefs.secondaryActions.map(\.title) == ["App Package", "User Defaults"])
-        #expect(prefs.children.titles == ["Documents Folder", "App Package", "User Defaults"])
+        // A single domain keeps the flat item rather than growing a level of nesting for one entry.
+        let copyUserDefaults = try #require(prefs.children.node(withID: "\(prefix).copyUserDefaults"))
+        #expect(copyUserDefaults.title == "Copy UserDefaults as JSON")
+        #expect(!copyUserDefaults.isSubmenu)
+    }
+
+    @Test("An app with several defaults domains offers each one plus All Domains")
+    func appNodesSplitSeveralUserDefaultsDomains() async throws {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        let device = TestDataHelpers.createMockDevice(udid: "device-1", name: "iPhone 16")
+        let app = makeApp(bundleIdentifier: "com.test.suites",
+                          displayName: "Suites",
+                          userDefaultsDomains: ["com.test.suites", "group.com.test.shared"])
+        device.apps = [app]
+        await fixture.setDevices([device])
+
+        let prefix = "device.device-1.app.com.test.suites-suites-container"
+        let nodes = fixture.makeBuilder().makeNodes()
+        let copyUserDefaults = try #require(nodes.node(withID: "\(prefix).copyUserDefaults"))
+
+        #expect(copyUserDefaults.isSubmenu)
+        #expect(copyUserDefaults.children.titles == ["All Domains", "", "com.test.suites", "group.com.test.shared"])
     }
 
     @Test("App groups get a header and their Group UserDefaults row only when they have one")
@@ -240,8 +326,9 @@ struct MenuTreeBuilderTests {
 
         #expect(nodes.node(withID: "device.device-1.appGroups.header")?.title == "AppGroups")
         #expect(plain.title == "Group com.test.plain")
-        #expect(plain.children.titles == ["Group Folder"])
-        #expect(prefs.children.titles == ["Group Folder", "Group UserDefaults"])
+        // No URL on the group, so no shortcut resolves and only the Copy Path shell remains.
+        #expect(plain.children.titles == ["", "Copy Path"])
+        #expect(prefs.children.titles == ["", "Copy Path", "Copy UserDefaults as JSON"])
     }
 
     @Test("Two recent-apps entries for the same app on the same device stay two distinct rows")
@@ -278,13 +365,13 @@ struct MenuTreeBuilderTests {
         // containers can share a bundle identifier (a stale install plus a fresh one)".
         let device = TestDataHelpers.createMockDevice(udid: "device-1", name: "iPhone 16")
         device.apps = [
-            makeInstalledApp(bundleIdentifier: "com.test.app", displayName: "App", container: "AAAA"),
-            makeInstalledApp(bundleIdentifier: "com.test.app", displayName: "App", container: "BBBB")
+            makeApp(bundleIdentifier: "com.test.app", displayName: "App", container: "aaaa-container"),
+            makeApp(bundleIdentifier: "com.test.app", displayName: "App", container: "bbbb-container")
         ]
         await fixture.setDevices([device])
 
         let identifiers = allNodes(fixture.makeBuilder().makeNodes())
-            .filter { $0.isSubmenu && $0.id.contains(".app.com.test.app") }
+            .filter { $0.isSubmenu && $0.id.hasSuffix("-container") }
             .map(\.id)
 
         try #require(identifiers.count == 2)
@@ -478,14 +565,25 @@ private extension MenuTreeBuilderTests {
         nodes.flatMap { [$0] + allNodes($0.children) }
     }
 
-    /// A mock app that lives in a real container directory, so it has an install identity distinct
-    /// from another install of the same bundle identifier.
-    func makeInstalledApp(bundleIdentifier: String, displayName: String, container: String) -> MockSimulatorApp {
-        let packageURL = URL(fileURLWithPath: "/tmp/\(container)/\(displayName).app")
+    /// A mock app with real container URLs.
+    ///
+    /// Both matter: `AppContainerShortcut.available(for:)` only offers a shortcut whose URL
+    /// resolves, and the container directory is what gives two installs of one bundle identifier
+    /// distinct identities.
+    func makeApp(
+        bundleIdentifier: String,
+        displayName: String,
+        container: String? = nil,
+        userDefaultsDomains: [String] = []
+    ) -> MockSimulatorApp {
+        let container = container ?? "\(displayName.lowercased())-container"
+        let root = URL(fileURLWithPath: "/tmp/\(container)")
 
         return TestDataHelpers.createMockApp(bundleIdentifier: bundleIdentifier,
                                              displayName: displayName,
-                                             appPackageURL: packageURL)
+                                             appDocumentsFolderURL: root.appendingPathComponent("Data"),
+                                             appPackageURL: root.appendingPathComponent("\(displayName).app"),
+                                             userDefaultsDomains: userDefaultsDomains)
     }
 
     func allIdentifiers(of nodes: [MenuNode]) -> [String] {
