@@ -47,6 +47,7 @@ Lightweight MVVM with service-based filesystem logic.
 - **`AppDiscoveryService`**: scans simulator folders, reads plist metadata (via `CustomPropertyListDecoder`), constructs app and app-group models
 - **`DeviceAppMonitoringService`**: main-actor service managing per-device `AppFolderMonitor` instances (built on `FolderMonitor`, which uses FSEvents); updates recent apps when simulator app containers change, debounced 3s; an app only counts as updated when its `contentModifiedAt` moved forward
 - **`Device`**: reference type with mutable `@Published` state for apps/app groups — do not convert to a value type without a clear architectural reason
+- **`AppSnapshotService`**: captures, restores and diffs an app's containers behind `AppSnapshotting`. The layout of `~/Library/Application Support/SimulatorManager/Snapshots` belongs to `AppSnapshotStore`, the filesystem walk and copy to `SnapshotContainerFiles`, and comparison to `SnapshotComparison` / `SnapshotDefaultsDiffer` — keep those seams. A restore terminates the app through `SimulatorAppActionServing` and always takes a safety snapshot first; version and OS mismatches are *returned* as warnings for the caller to confirm, never decided in the service
 - **`SimulatorPaths`**: centralizes CoreSimulator directory path derivation — reuse instead of re-hardcoding paths
 - **`Settings`**: centralizes user preferences via a `UserDefaults` suite; add new prefs here rather than scattering `UserDefaults` access
 - App sandbox is intentionally disabled (`com.apple.security.app-sandbox = false` in `SimulatorManager.entitlements`) — required for direct filesystem access to CoreSimulator directories under `~/Library`. Do not re-enable sandboxing.
@@ -59,6 +60,8 @@ Lightweight MVVM with service-based filesystem logic.
 - Wherever Combine is used, store subscriptions in `Set<AnyCancellable>` (`@ObservationIgnored` inside an `@Observable` view model) and `.receive(on: DispatchQueue.main)` before assigning observed state
 - Keep views thin/presentation-only; discovery, monitoring, reset, and filesystem logic belongs in services/managers
 - New services used by view models should be defined behind a protocol when they need mocking (see `DeviceManaging`, `DeviceAppMonitoring`), with constructor injection
+- Blocking filesystem or `simctl` work goes on a dedicated `DispatchQueue`, never `Task.detached` — that shares the Swift concurrency cooperative pool, and a multi-second directory walk there starves unrelated async work (see `SimulatorCleanupService.workQueue`, `AppSnapshotService.workQueue`)
+- Never derive a container path a second time: reuse what `AppDiscoveryService` found, and the app/app-group association rule in `AppGroup.isAssociated(with:)`
 - Handle missing files/folders/decode failures defensively; log recoverable failures with `os_log` instead of crashing; filter out `.DS_Store` and similar noise
 - Recent-apps behavior in `DeviceManager` must stay: dedupe by bundle identifier + device UDID, sort by most recent timestamp, cap list size; when comparing app changes, diff bundle identifiers and treat an app as updated only if its `contentModifiedAt` moved forward
 - AppKit usage is fine for Finder/system integration; don't leak iOS-only assumptions into shared code

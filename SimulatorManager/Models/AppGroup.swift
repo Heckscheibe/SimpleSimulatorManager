@@ -50,3 +50,20 @@ extension AppGroup: Identifiable {
         identifier
     }
 }
+
+extension AppGroup {
+    /// Whether `app` shares this group's container.
+    ///
+    /// There is no record on either side that says so: the only available signal is that a group
+    /// identifier is conventionally the app's bundle identifier with a `group.` prefix, so the
+    /// group's ``name`` appears inside the bundle identifier. Discovery has always used this rule
+    /// to decide which groups belong to a device's apps; snapshots need the same answer per app,
+    /// and the two must not drift apart, so it lives here rather than in either caller.
+    func isAssociated(with app: any SimulatorApp) -> Bool {
+        !name.isEmpty && app.bundleIdentifier.contains(name)
+    }
+
+    static func groups(in appGroups: [AppGroup], associatedWith app: any SimulatorApp) -> [AppGroup] {
+        appGroups.filter { $0.isAssociated(with: app) }
+    }
+}

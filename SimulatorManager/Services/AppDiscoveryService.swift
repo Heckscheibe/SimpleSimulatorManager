@@ -46,11 +46,7 @@ class AppDiscoveryService {
             }
         }
         .filter { (appGroup: AppGroup) in
-            device.apps
-                .map { $0.bundleIdentifier }
-                .contains(where: {
-                    $0.contains(appGroup.name)
-                })
+            device.apps.contains { appGroup.isAssociated(with: $0) }
         }
     }
     
@@ -94,7 +90,9 @@ class AppDiscoveryService {
                                                    appPackageURL: infoPlist.url,
                                                    userDefaultsDomains: domains,
                                                    companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier,
-                                                   contentModifiedAt: timestamp)
+                                                   contentModifiedAt: timestamp,
+                                                   shortVersion: infoPlist.cfBundleShortVersionString,
+                                                   buildVersion: infoPlist.cfBundleVersion)
             } else {
                 simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
                                                bundleIdentifier: infoPlist.cfBundleIdentifier,
@@ -102,7 +100,9 @@ class AppDiscoveryService {
                                                appPackageURL: infoPlist.url,
                                                hasWatchApp: infoPlist.hasCompanionWatchApp,
                                                userDefaultsDomains: domains,
-                                               contentModifiedAt: timestamp)
+                                               contentModifiedAt: timestamp,
+                                               shortVersion: infoPlist.cfBundleShortVersionString,
+                                               buildVersion: infoPlist.cfBundleVersion)
             }
 
             // Add to both collections
