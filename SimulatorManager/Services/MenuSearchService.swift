@@ -114,7 +114,7 @@ private extension MenuSearchService {
         let sortedChanges = recentApps.sorted { $0.timestamp > $1.timestamp }
 
         return sortedChanges.enumerated().reduce(into: [:]) { ranks, element in
-            let key = MenuSearchResult.identifier(forAppWithBundleIdentifier: element.element.app.bundleIdentifier,
+            let key = MenuSearchResult.identifier(forAppWithInstallIdentifier: element.element.app.installIdentifier,
                                                   onDeviceWithUdid: element.element.device.udid)
 
             // The list can hold the same app twice for one device; the earlier entry is the more
@@ -154,7 +154,7 @@ private extension MenuSearchService {
         recentRanks: [String: Int]
     ) -> MenuSearchIndexEntry {
         let combined = Self.combinedDeviceName(for: device)
-        let identifier = MenuSearchResult.identifier(forAppWithBundleIdentifier: app.bundleIdentifier,
+        let identifier = MenuSearchResult.identifier(forAppWithInstallIdentifier: app.installIdentifier,
                                                      onDeviceWithUdid: device.udid)
         let result = MenuSearchResult(id: identifier,
                                       kind: .app(app: app, device: device),
