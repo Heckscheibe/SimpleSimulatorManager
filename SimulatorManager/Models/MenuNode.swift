@@ -52,6 +52,9 @@ struct MenuNode: Identifiable {
     /// What the row can do, primary action first. Empty for headers, informational rows, dividers,
     /// and for submenus that only group other rows.
     let actions: [MenuActionItem]
+    /// Work to start when this submenu is opened. The cleanup scan is expensive and is deliberately
+    /// deferred until the user asks for it, exactly as the `.task` on the old cleanup submenu did.
+    let onEnter: (@MainActor () -> Void)?
     let kind: Kind
 }
 
@@ -118,6 +121,7 @@ extension MenuNode {
                  isEnabled: isEnabled,
                  isDestructive: isDestructive,
                  actions: actions,
+                 onEnter: nil,
                  kind: Kind.action)
     }
 
@@ -128,6 +132,7 @@ extension MenuNode {
         iconName: String? = nil,
         isEnabled: Bool = true,
         actions: [MenuActionItem] = [],
+        onEnter: (@MainActor () -> Void)? = nil,
         children: [MenuNode]
     ) -> MenuNode {
         MenuNode(id: id,
@@ -137,6 +142,7 @@ extension MenuNode {
                  isEnabled: isEnabled,
                  isDestructive: false,
                  actions: actions,
+                 onEnter: onEnter,
                  kind: Kind.submenu(children))
     }
 
@@ -165,6 +171,7 @@ extension MenuNode {
                  isEnabled: true,
                  isDestructive: false,
                  actions: [],
+                 onEnter: nil,
                  kind: Kind.sectionHeader)
     }
 
@@ -176,6 +183,7 @@ extension MenuNode {
                  isEnabled: true,
                  isDestructive: false,
                  actions: [],
+                 onEnter: nil,
                  kind: Kind.informational)
     }
 
@@ -187,6 +195,7 @@ extension MenuNode {
                  isEnabled: false,
                  isDestructive: false,
                  actions: [],
+                 onEnter: nil,
                  kind: Kind.divider)
     }
 

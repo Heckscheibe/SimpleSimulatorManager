@@ -15,6 +15,7 @@ extension MenuTreeBuilder {
         .submenu(id: "cleanup",
                  title: cleanupViewModel.cleanupButtonText,
                  iconName: cleanupViewModel.cleanupButtonIcon,
+                 onEnter: { cleanupViewModel.loadCleanupCandidatesIfNeeded() },
                  children: cleanupChildNodes())
     }
 
