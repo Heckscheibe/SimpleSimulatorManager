@@ -90,10 +90,11 @@ struct MenuTreeBuilderTests {
 
         let device = TestDataHelpers.createMockDevice(udid: "device-1", name: "iPhone 16", osVersion: "18.2")
         let app = TestDataHelpers.createMockApp(bundleIdentifier: "com.test.weather", displayName: "Weather")
-        await fixture.setRecentApps([TestDataHelpers.createMockAppChange(app: app, device: device)])
+        let change = TestDataHelpers.createMockAppChange(app: app, device: device)
+        await fixture.setRecentApps([change])
 
         let nodes = fixture.makeBuilder().makeNodes()
-        let recentApp = try #require(nodes.node(withID: "recentApp.com.test.weather.device-1"))
+        let recentApp = try #require(nodes.node(withID: "recentApp.\(change.id)"))
 
         #expect(nodes.node(withID: "recentApps.header")?.title == "Recent Apps")
         #expect(recentApp.title == "Weather")
@@ -241,6 +242,53 @@ struct MenuTreeBuilderTests {
         #expect(plain.title == "Group com.test.plain")
         #expect(plain.children.titles == ["Group Folder"])
         #expect(prefs.children.titles == ["Group Folder", "Group UserDefaults"])
+    }
+
+    @Test("Two recent-apps entries for the same app on the same device stay two distinct rows")
+    func duplicateRecentAppsKeepDistinctIdentifiers() async throws {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        // `DeviceManager.updateRecentApps` appends `.installed` changes without deduping, so the
+        // published list really can hold the same app twice for one device. Two rows sharing an
+        // identifier make `ForEach` misbehave and highlight both at once.
+        let device = TestDataHelpers.createMockDevice(udid: "device-1", name: "iPhone 16")
+        let app = TestDataHelpers.createMockApp(bundleIdentifier: "com.test.app", displayName: "App")
+        let now = Date()
+        await fixture.setRecentApps([
+            TestDataHelpers.createMockAppChange(app: app, device: device, timestamp: now),
+            TestDataHelpers.createMockAppChange(app: app, device: device, timestamp: now.addingTimeInterval(-60))
+        ])
+
+        let identifiers = fixture.makeBuilder()
+            .makeNodes()
+            .filter { $0.id.hasPrefix("recentApp.") }
+            .map(\.id)
+
+        try #require(identifiers.count == 2)
+        #expect(Set(identifiers).count == 2)
+    }
+
+    @Test("Two containers sharing a bundle identifier stay two distinct rows")
+    func appsSharingABundleIdentifierKeepDistinctIdentifiers() async throws {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        // `DeviceAppMonitoringService.computeAppChanges` documents this as a real state: "Two
+        // containers can share a bundle identifier (a stale install plus a fresh one)".
+        let device = TestDataHelpers.createMockDevice(udid: "device-1", name: "iPhone 16")
+        device.apps = [
+            makeInstalledApp(bundleIdentifier: "com.test.app", displayName: "App", container: "AAAA"),
+            makeInstalledApp(bundleIdentifier: "com.test.app", displayName: "App", container: "BBBB")
+        ]
+        await fixture.setDevices([device])
+
+        let identifiers = allNodes(fixture.makeBuilder().makeNodes())
+            .filter { $0.isSubmenu && $0.id.contains(".app.com.test.app") }
+            .map(\.id)
+
+        try #require(identifiers.count == 2)
+        #expect(Set(identifiers).count == 2)
     }
 
     // MARK: - Settings toggles
@@ -426,6 +474,20 @@ struct MenuTreeBuilderTests {
 // MARK: - Helpers
 
 private extension MenuTreeBuilderTests {
+    func allNodes(_ nodes: [MenuNode]) -> [MenuNode] {
+        nodes.flatMap { [$0] + allNodes($0.children) }
+    }
+
+    /// A mock app that lives in a real container directory, so it has an install identity distinct
+    /// from another install of the same bundle identifier.
+    func makeInstalledApp(bundleIdentifier: String, displayName: String, container: String) -> MockSimulatorApp {
+        let packageURL = URL(fileURLWithPath: "/tmp/\(container)/\(displayName).app")
+
+        return TestDataHelpers.createMockApp(bundleIdentifier: bundleIdentifier,
+                                             displayName: displayName,
+                                             appPackageURL: packageURL)
+    }
+
     func allIdentifiers(of nodes: [MenuNode]) -> [String] {
         nodes.flatMap { [$0.id] + allIdentifiers(of: $0.children) }
     }
