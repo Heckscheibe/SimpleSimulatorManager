@@ -15,6 +15,31 @@ extension FileManager {
     }
 }
 
+// MARK: - Shell-Safe Paths
+
+extension String {
+    /// The string in a form that pastes into a terminal and resolves as-is.
+    ///
+    /// Ordinary CoreSimulator paths contain nothing the shell interprets and come back unchanged,
+    /// so what lands on the clipboard still reads like a plain path. Anything else — a space in an
+    /// app group name, a quote in a device name — is backslash-escaped so the path stays a single
+    /// argument.
+    var shellEscaped: String {
+        let additionalSafeCharacters = CharacterSet(charactersIn: "_-./+:,=@%")
+        let isSafe: (Unicode.Scalar) -> Bool = { scalar in
+            CharacterSet.alphanumerics.contains(scalar) || additionalSafeCharacters.contains(scalar)
+        }
+
+        guard unicodeScalars.contains(where: { !isSafe($0) }) else {
+            return self
+        }
+
+        return unicodeScalars
+            .map { isSafe($0) ? String($0) : "\\" + String($0) }
+            .joined()
+    }
+}
+
 // MARK: - Shell Command Execution
 
 extension Process {

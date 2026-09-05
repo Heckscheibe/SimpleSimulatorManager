@@ -54,6 +54,30 @@ struct DeviceView: View {
             }
         }
         
+        Menu("Copy Path") {
+            Button {
+                viewModel.didSelectCopyPath(of: viewModel.device.url)
+            } label: {
+                Text("Simulator Folder")
+            }
+
+            if viewModel.hasAppsFolder {
+                Button {
+                    viewModel.didSelectCopyPath(of: viewModel.device.appDataFolder)
+                } label: {
+                    Text("App Folder")
+                }
+            }
+
+            if viewModel.hasAppPackagesFolder {
+                Button {
+                    viewModel.didSelectCopyPath(of: viewModel.device.appPackagesFolder)
+                } label: {
+                    Text("App Package Folder")
+                }
+            }
+        }
+        
         if viewModel.isPerformingAction {
             Text(viewModel.currentActionTitle)
         } else {

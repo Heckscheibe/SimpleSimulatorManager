@@ -17,17 +17,28 @@ struct AppGroupsView: View {
         }
         ForEach(viewModel.device.appGroups) { appGroup in
             Menu("Group \(appGroup.name)") {
-                Button {
-                    viewModel.didSelect(appGroup: appGroup)
-                } label: {
-                    Text("Group Folder")
-                }
-                if appGroup.hasUserDefaults {
+                ForEach(AppGroupShortcut.available(for: appGroup)) { shortcut in
                     Button {
-                        viewModel.didSelectUserDefaultsFolder(for: appGroup)
+                        viewModel.didSelectFolder(shortcut, for: appGroup)
                     } label: {
-                        Text("Group UserDefaults")
+                        Text(shortcut.title)
                     }
+                }
+
+                Divider()
+
+                Menu("Copy Path") {
+                    ForEach(AppGroupShortcut.available(for: appGroup)) { shortcut in
+                        Button {
+                            viewModel.didSelectCopyPath(of: shortcut, for: appGroup)
+                        } label: {
+                            Text(shortcut.title)
+                        }
+                    }
+                }
+
+                UserDefaultsCopyMenuItems(domains: appGroup.exportableUserDefaultsDomains) { domain in
+                    viewModel.didSelectCopyUserDefaultsJSON(for: appGroup, domain: domain)
                 }
             }
         }

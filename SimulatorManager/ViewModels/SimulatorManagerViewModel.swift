@@ -13,12 +13,14 @@ import os
 
 @MainActor
 @Observable
-class SimulatorManagerViewModel: FolderOpening {
+class SimulatorManagerViewModel: ContainerShortcutHandling {
     var deviceTypes: [DeviceType] = []
     var devices: [Device] = []
     var recentAppChanges: [AppChange] = []
     var recentInstalledApps: [AppChange] = []
     
+    @ObservationIgnored let containerContent: ContainerContentCopying
+
     @ObservationIgnored private let deviceManager: DeviceManaging
     @ObservationIgnored private let simulatorResetService: SimulatorResetServing
     @ObservationIgnored private let deviceAppMonitoringService: DeviceAppMonitoring
@@ -28,10 +30,12 @@ class SimulatorManagerViewModel: FolderOpening {
     init(
         deviceManager: DeviceManaging,
         simulatorResetService: SimulatorResetServing = SimulatorResetService(),
-        deviceAppMonitoringService: DeviceAppMonitoring? = nil
+        deviceAppMonitoringService: DeviceAppMonitoring? = nil,
+        containerContent: ContainerContentCopying = ContainerContentService()
     ) {
         self.deviceManager = deviceManager
         self.simulatorResetService = simulatorResetService
+        self.containerContent = containerContent
         self.deviceAppMonitoringService = deviceAppMonitoringService ?? DeviceAppMonitoringService(deviceManager: deviceManager)
         bind()
     }
@@ -45,7 +49,8 @@ class SimulatorManagerViewModel: FolderOpening {
         let deviceViewModel = DeviceViewModel(
             device: device,
             deviceManager: deviceManager,
-            simulatorResetService: simulatorResetService
+            simulatorResetService: simulatorResetService,
+            containerContent: containerContent
         )
         deviceViewModels[device.udid] = deviceViewModel
         return deviceViewModel

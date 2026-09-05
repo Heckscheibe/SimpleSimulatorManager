@@ -13,7 +13,8 @@ protocol SimulatorApp: Identifiable, Sendable {
     var appDocumentsFolderURL: URL? { get }
     var appPackageURL: URL? { get }
     var iconName: String { get }
-    var hasUserDefaults: Bool { get }
+    /// Every defaults domain found in the app's container, suites included. See ``UserDefaultsDomain``.
+    var userDefaultsDomains: [String] { get }
     /// Most recent modification date of the app's bundle or data container.
     /// Used to detect whether an app actually changed between two discovery runs.
     var contentModifiedAt: Date? { get }
@@ -22,6 +23,15 @@ protocol SimulatorApp: Identifiable, Sendable {
 extension SimulatorApp {
     var id: String {
         bundleIdentifier
+    }
+
+    var hasUserDefaults: Bool {
+        !userDefaultsDomains.isEmpty
+    }
+
+    /// The domains the menu offers and the export writes, in the order they are listed.
+    var exportableUserDefaultsDomains: [String] {
+        UserDefaultsDomain.appDomains(in: userDefaultsDomains, ownDomain: bundleIdentifier)
     }
 
     var contentModifiedAt: Date? {
@@ -34,7 +44,7 @@ final class SimulatoriOSApp: SimulatorApp {
     let bundleIdentifier: String
     let appDocumentsFolderURL: URL?
     let appPackageURL: URL?
-    let hasUserDefaults: Bool
+    let userDefaultsDomains: [String]
     let contentModifiedAt: Date?
     let iconName = "iphone.gen3"
 
@@ -46,7 +56,7 @@ final class SimulatoriOSApp: SimulatorApp {
         appDocumentsFolderURL: URL?,
         appPackageURL: URL?,
         hasWatchApp: Bool,
-        hasUserDefaults: Bool,
+        userDefaultsDomains: [String],
         contentModifiedAt: Date? = nil
     ) {
         self.displayName = displayName
@@ -54,7 +64,7 @@ final class SimulatoriOSApp: SimulatorApp {
         self.appDocumentsFolderURL = appDocumentsFolderURL
         self.appPackageURL = appPackageURL
         self.hasWatchApp = hasWatchApp
-        self.hasUserDefaults = hasUserDefaults
+        self.userDefaultsDomains = userDefaultsDomains
         self.contentModifiedAt = contentModifiedAt
     }
 }
@@ -63,7 +73,7 @@ final class SimulatorWatchOSApp: SimulatorApp {
     let displayName: String
     let bundleIdentifier: String
     let appDocumentsFolderURL: URL?
-    let hasUserDefaults: Bool
+    let userDefaultsDomains: [String]
     let appPackageURL: URL?
     let contentModifiedAt: Date?
     let iconName = "applewatch"
@@ -75,7 +85,7 @@ final class SimulatorWatchOSApp: SimulatorApp {
         bundleIdentifier: String,
         appDocumentsFolderURL: URL?,
         appPackageURL: URL?,
-        hasUserDefaults: Bool,
+        userDefaultsDomains: [String],
         companioniOSAppBundleIdentifier: String?,
         contentModifiedAt: Date? = nil
     ) {
@@ -83,7 +93,7 @@ final class SimulatorWatchOSApp: SimulatorApp {
         self.bundleIdentifier = bundleIdentifier
         self.appDocumentsFolderURL = appDocumentsFolderURL
         self.appPackageURL = appPackageURL
-        self.hasUserDefaults = hasUserDefaults
+        self.userDefaultsDomains = userDefaultsDomains
         self.companioniOSAppBundleIdentifier = companioniOSAppBundleIdentifier
         self.contentModifiedAt = contentModifiedAt
     }

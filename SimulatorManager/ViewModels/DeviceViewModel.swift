@@ -11,10 +11,12 @@ import os
 
 @MainActor
 @Observable
-class DeviceViewModel: FolderOpening {
+class DeviceViewModel: ContainerShortcutHandling {
     var device: Device
     private(set) var currentAction: SimulatorDeviceAction?
     private(set) var actionErrorMessage: String?
+
+    @ObservationIgnored let containerContent: ContainerContentCopying
 
     @ObservationIgnored private let deviceManager: DeviceManaging
     @ObservationIgnored private let simulatorResetService: SimulatorResetServing
@@ -22,11 +24,13 @@ class DeviceViewModel: FolderOpening {
     init(
         device: Device,
         deviceManager: DeviceManaging,
-        simulatorResetService: SimulatorResetServing
+        simulatorResetService: SimulatorResetServing,
+        containerContent: ContainerContentCopying = ContainerContentService()
     ) {
         self.device = device
         self.deviceManager = deviceManager
         self.simulatorResetService = simulatorResetService
+        self.containerContent = containerContent
     }
     
     // MARK: - Device Properties
