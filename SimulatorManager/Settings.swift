@@ -25,6 +25,12 @@ class Settings: ObservableObject {
         static let globalShortcut = "globalShortcut"
     }
 
+    /// Also outside ``Keys``, for the same reason and the opposite default: caches are left out of
+    /// a snapshot unless the user asks for them.
+    private enum SnapshotKeys {
+        static let includeCaches = "includeCachesInSnapshots"
+    }
+
     @Published var visiblePlatforms = Set<SimulatorPlatform>()
 
     /// The shortcut that opens the menu bar menu, or `nil` when the user cleared it.
@@ -67,6 +73,19 @@ class Settings: ObservableObject {
         userDefaults?.setValue(data, forKey: ShortcutKeys.globalShortcut)
     }
     
+    /// Whether a new app container snapshot captures `Library/Caches` and `tmp`.
+    ///
+    /// Off by default: both are regenerable and are frequently the bulk of a container's size, so
+    /// including them would make every snapshot cost far more disk than the state worth keeping.
+    var includeCachesInSnapshots: Bool {
+        get {
+            userDefaults?.bool(forKey: SnapshotKeys.includeCaches) ?? false
+        }
+        set {
+            userDefaults?.setValue(newValue, forKey: SnapshotKeys.includeCaches)
+        }
+    }
+
     var showTVOS: Bool {
         get {
             userDefaults?.bool(forKey: Keys.showTVOS.rawValue) ?? true
