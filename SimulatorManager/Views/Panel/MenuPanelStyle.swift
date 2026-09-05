@@ -19,6 +19,10 @@ enum MenuPanelStyle {
     /// Headroom for everything above the list — the search field and its separator. Generous enough
     /// to survive a larger system font.
     static let maximumChromeHeight: CGFloat = 60
+    /// A floor for the list while a query is live, so the panel does not jump every time a keystroke
+    /// changes how many hits there are. Only applied while searching: a short browsable level should
+    /// still be exactly as tall as its rows.
+    static let searchResultsMinimumHeight: CGFloat = 132
 
     /// The tallest the whole panel gets. Capping the list alone would not keep the panel on screen,
     /// because the search field sits above it.
