@@ -15,8 +15,25 @@ if [ ! -f ".env" ]; then
     exit 1
 fi
 
-# Install dependencies if needed
-if [ ! -f "Gemfile.lock" ]; then
+# Fail fast on the wrong Ruby: a mismatch otherwise surfaces as an obscure gem
+# error partway through signing or notarization.
+REQUIRED_RUBY="$(cat .ruby-version)"
+if ! command -v ruby >/dev/null 2>&1; then
+    echo "❌ Error: no ruby on PATH. This project requires Ruby $REQUIRED_RUBY."
+    echo "   See FASTLANE_README.md for setup instructions."
+    exit 1
+fi
+ACTIVE_RUBY="$(ruby -e 'print RUBY_VERSION')"
+if [ "$ACTIVE_RUBY" != "$REQUIRED_RUBY" ]; then
+    echo "❌ Error: this project requires Ruby $REQUIRED_RUBY, but Ruby $ACTIVE_RUBY is active."
+    echo "   Install it with your version manager (rbenv/rvm/mise/asdf) or Homebrew,"
+    echo "   then re-run from a shell where .ruby-version has been picked up."
+    echo "   See FASTLANE_README.md for setup instructions."
+    exit 1
+fi
+
+# Install dependencies if the bundle is missing or out of date
+if ! bundle check >/dev/null 2>&1; then
     echo "📦 Installing Ruby dependencies..."
     bundle install
 fi
