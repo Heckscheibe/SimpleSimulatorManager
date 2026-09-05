@@ -26,6 +26,8 @@ struct MenuPanelRowView: View {
             Divider()
                 .padding(.horizontal, MenuPanelStyle.horizontalInset)
                 .padding(.vertical, MenuPanelStyle.dividerVerticalPadding)
+                // A separator is a drawing, not something to land on.
+                .accessibilityHidden(true)
         case .sectionHeader, .informational:
             labelContent
                 .foregroundStyle(.secondary)
@@ -33,8 +35,21 @@ struct MenuPanelRowView: View {
                 .padding(.vertical, MenuPanelStyle.rowVerticalPadding)
                 .padding(.horizontal, MenuPanelStyle.horizontalInset)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(node.kind.isSectionHeader ? .isHeader : .isStaticText)
         case .action, .submenu:
             interactiveRow
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(node.accessibilityLabel)
+                .accessibilityAddTraits(accessibilityTraits)
+                .accessibilityHint(node.accessibilityHint(isAwaitingConfirmation: isAwaitingConfirmation))
+                .accessibilityAction {
+                    guard node.isEnabled else {
+                        return
+                    }
+
+                    activate()
+                }
         }
     }
 }
@@ -101,6 +116,16 @@ private extension MenuPanelRowView {
             .lineLimit(1)
             .truncationMode(.middle)
         }
+    }
+
+    var accessibilityTraits: AccessibilityTraits {
+        var traits: AccessibilityTraits = node.isSubmenu ? [] : [.isButton]
+
+        if isSelected {
+            traits.insert(.isSelected)
+        }
+
+        return traits
     }
 
     var foregroundStyle: AnyShapeStyle {
