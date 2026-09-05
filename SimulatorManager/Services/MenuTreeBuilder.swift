@@ -67,7 +67,10 @@ extension MenuTreeBuilder {
     }
 
     private func recentAppNode(for appChange: AppChange) -> MenuNode {
-        let identifier = "recentApp.\(appChange.app.bundleIdentifier).\(appChange.device.udid)"
+        // `AppChange` carries a timestamp in its own identity precisely because bundle identifier
+        // plus UDID is not unique in the recent-apps list, so reuse it rather than reintroducing
+        // the collision here.
+        let identifier = "recentApp.\(appChange.id)"
         let actions = folderActions(for: appChange.app, folderOpening: simulatorManagerViewModel)
 
         return .submenu(id: identifier,
@@ -172,7 +175,9 @@ extension MenuTreeBuilder {
         }
 
         nodes.append(contentsOf: viewModel.apps.map { app in
-            let identifier = "\(prefix).app.\(app.bundleIdentifier)"
+            // Keyed by install rather than by bundle identifier: two containers can share one, and
+            // duplicate row identifiers make `ForEach` misbehave and highlight both rows at once.
+            let identifier = "\(prefix).app.\(app.installIdentifier)"
             let actions = folderActions(for: app, folderOpening: viewModel)
 
             return .submenu(id: identifier,

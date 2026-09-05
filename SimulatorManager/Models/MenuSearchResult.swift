@@ -55,7 +55,10 @@ extension MenuSearchResult {
         "device-\(udid)"
     }
 
-    static func identifier(forAppWithBundleIdentifier bundleIdentifier: String, onDeviceWithUdid udid: String) -> String {
-        "app-\(bundleIdentifier)-\(udid)"
+    /// Takes an install identifier rather than a bundle identifier: one simulator can hold two
+    /// containers sharing a bundle identifier, and two results with the same id break both the row
+    /// list and selection.
+    static func identifier(forAppWithInstallIdentifier installIdentifier: String, onDeviceWithUdid udid: String) -> String {
+        "app-\(installIdentifier)-\(udid)"
     }
 }

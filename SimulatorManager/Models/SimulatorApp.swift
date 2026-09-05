@@ -34,6 +34,21 @@ extension SimulatorApp {
         UserDefaultsDomain.appDomains(in: userDefaultsDomains, ownDomain: bundleIdentifier)
     }
 
+    /// Identifies one *install*, where ``bundleIdentifier`` identifies only an app.
+    ///
+    /// A simulator can hold two containers sharing a bundle identifier — a stale install alongside
+    /// a fresh one — which `DeviceAppMonitoringService.computeAppChanges` documents and guards
+    /// against. The container directory is the only thing that separates them, and it is stable
+    /// across reloads, so identity built on it survives a device refresh.
+    var installIdentifier: String {
+        guard let containerIdentifier = appPackageURL?.deletingLastPathComponent().lastPathComponent,
+              !containerIdentifier.isEmpty else {
+            return bundleIdentifier
+        }
+
+        return "\(bundleIdentifier)-\(containerIdentifier)"
+    }
+
     var contentModifiedAt: Date? {
         nil
     }
