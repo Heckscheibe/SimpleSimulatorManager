@@ -194,6 +194,30 @@ extension MenuPanelViewModel {
     func cancelPendingConfirmation() {
         pendingDestructiveIdentifier = nil
     }
+
+    /// Puts the highlight on the first selectable row.
+    ///
+    /// Used when the list changed underneath the user: results appear, or the query changed and the
+    /// previous selection has moved or gone. The top hit being selected is what lets <kbd>↩</kbd>
+    /// open it with no arrow presses at all.
+    func selectFirst(in level: MenuPanelLevel) {
+        cancelPendingConfirmation()
+        selectedIdentifier = level.nodes.first(where: \.isSelectable)?.id
+    }
+
+    /// Reacts to the query changing.
+    ///
+    /// An emptied query goes back to the browsable menu at its top level; any other change puts the
+    /// highlight on the top hit, so selection never lingers on a row that has moved or gone.
+    func applyQueryChange(isSearching: Bool, resultLevel: MenuPanelLevel) {
+        guard isSearching else {
+            reset()
+
+            return
+        }
+
+        selectFirst(in: resultLevel)
+    }
 }
 
 // MARK: - Activation
