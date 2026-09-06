@@ -160,7 +160,11 @@ private extension MenuSearchService {
                                       kind: .app(app: app, device: device),
                                       title: app.displayName,
                                       subtitle: combined,
-                                      iconName: app.iconName)
+                                      // The device's icon, not the app's: `SimulatoriOSApp` hard-codes
+                                      // an iPhone, so an app installed on an iPad showed the wrong
+                                      // form factor. A row stands for an app *on a simulator*, and
+                                      // the simulator is what decides how it looks.
+                                      iconName: device.simulatorPlatform.iconName)
 
         return MenuSearchIndexEntry(result: result,
                                     primaryFields: [MenuSearchField(app.displayName)],

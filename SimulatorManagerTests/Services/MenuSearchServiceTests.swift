@@ -180,6 +180,24 @@ struct MenuSearchServiceTests {
         #expect(Set(results.compactMap(\.subtitle)) == ["iPhone 16 18.2", "iPad Pro 18.1"])
     }
 
+    @Test("An app's icon follows the simulator it is installed on, not the app's own platform")
+    func appIconFollowsItsDevice() throws {
+        let app = makeApp(bundleIdentifier: "com.test.shared", displayName: "Shared App")
+        let service = makeService(devices: [
+            makeDevice(udid: "iphone-1", name: "iPhone 16", platform: .iPhone, apps: [app]),
+            makeDevice(udid: "ipad-1", name: "iPad Pro", platform: .iPad, apps: [app])
+        ])
+
+        let results = service.results(for: "shared app")
+        try #require(results.count == 2)
+
+        let iconsByDevice = Dictionary(uniqueKeysWithValues: results.map { ($0.device.udid, $0.iconName) })
+
+        #expect(iconsByDevice["iphone-1"] == SimulatorPlatform.iPhone.iconName)
+        // The same app on an iPad must not show an iPhone.
+        #expect(iconsByDevice["ipad-1"] == SimulatorPlatform.iPad.iconName)
+    }
+
     @Test("A device on a hidden platform, and every app on it, is left out of the index")
     func hiddenPlatformsAreExcluded() {
         let appleTV = makeDevice(udid: "appletv-1",
