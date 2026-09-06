@@ -11,7 +11,7 @@ import SwiftUI
 ///
 /// A real menu cannot filter its items as you type, and no API makes it do so, which is why the
 /// menu becomes a `.menuBarExtraStyle(.window)` panel. Everything `NSMenu` used to supply — rows,
-/// drill-down, dismissal — is rebuilt here.
+/// drill-down, arrow navigation, dismissal — is rebuilt here.
 ///
 /// The tree is rebuilt on every render rather than captured when the panel opens, so state that
 /// arrives while it is open (an app installed in a running simulator, a finished cleanup) lands in
@@ -55,17 +55,23 @@ struct MenuPanelView: View {
             isFocused = true
         }
         .onDisappear {
-            // Reopening starts at the top level, the way reopening a menu does.
+            // Reopening starts at the top level with nothing selected, the way reopening a menu
+            // does.
             viewModel.reset()
         }
-        .onExitCommand {
-            dismiss()
+        // One handler rather than a stack of `onKeyPress(.upArrow)`-style modifiers: every key the
+        // panel cares about is dispatched in one place, and anything it does not handle is passed
+        // on untouched after cancelling a pending destructive confirmation.
+        .onKeyPress(phases: .down) { keyPress in
+            handle(keyPress, in: level)
         }
         .task {
             githubService.startPeriodicUpdateCheck()
         }
     }
 }
+
+// MARK: - Rows
 
 private extension MenuPanelView {
     func makeNodes() -> [MenuNode] {
@@ -81,15 +87,28 @@ private extension MenuPanelView {
     }
 
     func rowList(for level: MenuPanelLevel) -> some View {
+        ScrollViewReader { proxy in
+            scrollableRows(for: level)
+                // Keyboard selection has to stay visible, including when it wraps from the last row
+                // straight back to the first.
+                .onChange(of: viewModel.selectedIdentifier) { _, identifier in
+                    guard let identifier else {
+                        return
+                    }
+
+                    proxy.scrollTo(identifier)
+                }
+        }
+    }
+
+    func scrollableRows(for level: MenuPanelLevel) -> some View {
         ScrollView {
             // A plain stack rather than a lazy one: a single menu level is small, and rendering it
-            // eagerly keeps scroll-into-view and offscreen rendering working, both of which a
-            // `LazyVStack` breaks by not materialising rows that are not on screen.
+            // eagerly keeps scroll-into-view working, which a `LazyVStack` breaks by not
+            // materialising rows that are not on screen.
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(level.nodes) { node in
-                    MenuPanelRowView(node: node) {
-                        activate(node)
-                    }
+                    row(for: node)
                 }
             }
             .padding(.vertical, MenuPanelStyle.listVerticalPadding)
@@ -107,23 +126,103 @@ private extension MenuPanelView {
         .scrollBounceBehavior(.basedOnSize)
     }
 
-    func activate(_ node: MenuNode) {
-        guard node.isEnabled else {
-            return
+    func row(for node: MenuNode) -> some View {
+        MenuPanelRowView(node: node,
+                         isSelected: viewModel.isSelected(node),
+                         isAwaitingConfirmation: viewModel.isAwaitingConfirmation(node),
+                         hoverChanged: { isHovering in
+                             if isHovering {
+                                 viewModel.select(node)
+                             } else {
+                                 viewModel.clearSelection(ifSelected: node)
+                             }
+                         },
+                         activate: {
+                             handleOutcome(viewModel.activateFromMouse(node))
+                         })
+                         .id(node.id)
+    }
+}
+
+// MARK: - Keyboard
+
+private extension MenuPanelView {
+    func handle(_ keyPress: KeyPress, in level: MenuPanelLevel) -> KeyPress.Result {
+        // Command- and option-key equivalents belong to the responder chain — ⌘Q and ⌘, among them
+        // — so nothing but Return is claimed while a modifier is held.
+        guard keyPress.modifiers.isEmpty || keyPress.key == .return else {
+            viewModel.cancelPendingConfirmation()
+
+            return .ignored
         }
 
-        if node.isSubmenu {
+        switch keyPress.key {
+        case .upArrow:
+            viewModel.moveSelection(.up, in: level)
+        case .downArrow:
+            viewModel.moveSelection(.down, in: level)
+        case .rightArrow:
+            guard let node = viewModel.selectedNode(in: level), node.isSubmenu else {
+                return .handled
+            }
+
             viewModel.enter(node)
+        case .leftArrow:
+            // At the top level this does nothing rather than dismissing: closing the panel is what
+            // escape is for.
+            guard level.depth > 0 else {
+                return .handled
+            }
 
+            viewModel.leave(from: level)
+        case .return:
+            return handleReturn(keyPress, in: level)
+        case .escape:
+            dismiss()
+        default:
+            // Any other key cancels a pending destructive confirmation, then goes on its way.
+            viewModel.cancelPendingConfirmation()
+
+            return .ignored
+        }
+
+        return .handled
+    }
+
+    func handleReturn(_ keyPress: KeyPress, in level: MenuPanelLevel) -> KeyPress.Result {
+        guard let node = viewModel.selectedNode(in: level) else {
+            return .handled
+        }
+
+        handleOutcome(viewModel.activateFromKeyboard(node, kind: Self.actionKind(for: keyPress)))
+
+        return .handled
+    }
+
+    /// ⌘↩ and ⌥↩ reach a row's secondary actions — an app's App Package and User Defaults — without
+    /// having to drill into it first.
+    static func actionKind(for keyPress: KeyPress) -> MenuPanelActionKind {
+        if keyPress.modifiers.contains(.command) {
+            return .secondary(index: 0)
+        }
+        if keyPress.modifiers.contains(.option) {
+            return .secondary(index: 1)
+        }
+
+        return .primary
+    }
+}
+
+// MARK: - Actions
+
+private extension MenuPanelView {
+    /// Picking a menu item closed the menu; picking a row closes the panel. Everything else leaves
+    /// it open.
+    func handleOutcome(_ outcome: MenuPanelActivationOutcome) {
+        guard outcome == .performed else {
             return
         }
 
-        guard let action = node.primaryAction else {
-            return
-        }
-
-        // Picking a menu item closes the menu; picking a row closes the panel.
-        action.perform()
         dismiss()
     }
 
