@@ -53,12 +53,19 @@ struct MenuPanelView: View {
                 Divider()
             }
 
-            rowList(for: level)
+            if showsEmptyState(for: level) {
+                MenuPanelEmptyStateView(query: searchViewModel.query)
+            } else {
+                rowList(for: level)
+            }
         }
         .frame(width: MenuPanelStyle.width)
         .background(shortcuts)
         .onChange(of: searchViewModel.query) { _, _ in
             queryChanged()
+        }
+        .onChange(of: searchViewModel.results.count) { _, count in
+            announceResultCount(count)
         }
         .onDisappear {
             // Reopening starts at the top level, with nothing selected and an empty query — the way
@@ -80,6 +87,28 @@ private extension MenuPanelView {
     /// model and one activation path serve both modes.
     func currentLevel() -> MenuPanelLevel {
         viewModel.level(in: searchViewModel.hasQuery ? searchResultNodes() : makeNodes())
+    }
+
+    /// A query that matched nothing gets an explanation rather than a blank panel.
+    func showsEmptyState(for level: MenuPanelLevel) -> Bool {
+        searchViewModel.hasQuery && level.nodes.isEmpty
+    }
+
+    /// VoiceOver gets no hint from a list changing under it, and the search field keeps focus, so
+    /// the count is announced explicitly.
+    func announceResultCount(_ count: Int) {
+        guard searchViewModel.hasQuery else {
+            return
+        }
+
+        let announcement = count == 1 ? "1 result" : "\(count) results"
+
+        NSAccessibility.post(element: NSApp as Any,
+                             notification: .announcementRequested,
+                             userInfo: [
+                                 .announcement: announcement,
+                                 .priority: NSAccessibilityPriorityLevel.medium.rawValue
+                             ])
     }
 
     func searchResultNodes() -> [MenuNode] {
@@ -137,8 +166,21 @@ private extension MenuPanelView {
         // imposes none — left to itself the panel collapses to a ten-point sliver. So the rows are
         // measured and the panel is sized to them, capped so that a machine with dozens of
         // simulators gets a scrolling panel instead of one taller than the screen.
-        .frame(height: min(max(listHeight, MenuPanelStyle.rowMinimumHeight), MenuPanelStyle.maximumListHeight))
+        .frame(height: listFrameHeight)
         .scrollBounceBehavior(.basedOnSize)
+    }
+
+    /// A `ScrollView` has no intrinsic height, and the window a `MenuBarExtra` puts it in imposes
+    /// none — left to itself the panel collapses to a ten-point sliver. So the rows are measured and
+    /// the panel sized to them, capped so that a machine with dozens of simulators gets a scrolling
+    /// panel instead of one taller than the screen. While a query is live the list also gets a
+    /// floor, so the panel does not jump on every keystroke that changes the number of hits.
+    var listFrameHeight: CGFloat {
+        let floor = searchViewModel.hasQuery
+            ? MenuPanelStyle.searchResultsMinimumHeight
+            : MenuPanelStyle.rowMinimumHeight
+
+        return min(max(listHeight, floor), MenuPanelStyle.maximumListHeight)
     }
 
     func row(for node: MenuNode) -> some View {

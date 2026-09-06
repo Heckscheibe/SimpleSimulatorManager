@@ -40,6 +40,7 @@ struct MenuPanelSearchField: NSViewRepresentable {
         field.sendsSearchStringImmediately = true
         field.focusRingType = .none
         field.bezelStyle = .roundedBezel
+        field.setAccessibilityLabel(placeholder)
         field.onCommandReturn = { performCommand(.activate(.secondary(index: 0))) }
 
         return field
