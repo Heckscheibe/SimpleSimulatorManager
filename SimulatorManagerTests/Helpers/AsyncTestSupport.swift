@@ -22,3 +22,16 @@ func waitUntil(timeout: Duration = .seconds(5), _ condition: () -> Bool) async {
         try? await Task.sleep(for: .milliseconds(1))
     }
 }
+
+/// Yields a few main-queue turns, for state that lands through Combine or an already-scheduled
+/// block rather than through a condition worth polling for.
+@MainActor
+func drainMainQueue(turns: Int = 3) async {
+    for _ in 0 ..< turns {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                continuation.resume()
+            }
+        }
+    }
+}
