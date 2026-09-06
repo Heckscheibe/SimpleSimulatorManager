@@ -96,6 +96,16 @@ extension MenuFlyoutController {
             return
         }
 
+        // The first submenu waits, so dragging the pointer down a list does not open every one it
+        // passes. Once a flyout is up the user is already browsing submenus, and a menu swapped
+        // those as fast as the pointer moved — waiting here leaves the old flyout standing under a
+        // row the pointer has already left.
+        guard !isFlyoutOpen(atDepth: depth) else {
+            openFlyout?(node, depth)
+
+            return
+        }
+
         pendingTask = schedule(after: timing.open) { [weak self] in
             self?.openFlyout?(node, depth)
         }
@@ -197,6 +207,11 @@ extension MenuFlyoutController {
 // MARK: - Safe triangle
 
 private extension MenuFlyoutController {
+    /// Whether the row at this depth already has a flyout beside it.
+    func isFlyoutOpen(atDepth depth: Int) -> Bool {
+        presenter.flyoutFrames.count > depth
+    }
+
     /// Whether a hover at `depth` is the pointer passing through on its way into an open flyout.
     ///
     /// Only rows at or above the protected level are held off. A row inside the flyout itself is the

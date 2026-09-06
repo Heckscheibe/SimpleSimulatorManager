@@ -58,6 +58,20 @@ struct MenuFlyoutControllerTests {
         #expect(recorder.opened.isEmpty)
     }
 
+    @Test("With a flyout already open, moving to another submenu swaps it without waiting")
+    func swappingAnOpenFlyoutIsImmediate() {
+        let presenter = MockMenuFlyoutPresenter()
+        let controller = Self.makeController(presenter: presenter)
+        let recorder = ChainRecorder(controller: controller)
+
+        // A flyout is already up beside this level, so the user is browsing submenus rather than
+        // arriving at one.
+        presenter.flyoutFrames = [Self.openFlyout]
+        controller.hoverBegan(on: Self.submenu(id: "other-device-type"), depth: 0)
+
+        #expect(recorder.opened == [ChainRecorder.Opened(identifier: "other-device-type", depth: 0)])
+    }
+
     @Test("A click opens a submenu without waiting")
     func clickingOpensImmediately() {
         let controller = Self.makeController(presenter: MockMenuFlyoutPresenter())
@@ -76,6 +90,9 @@ struct MenuFlyoutControllerTests {
         let controller = Self.makeController(presenter: presenter)
         let recorder = ChainRecorder(controller: controller)
 
+        // A protection long enough that this asserts what happens *during* it rather than racing the
+        // moment it runs out. What happens then is the next test's job.
+        controller.timing.safeTriangleGrace = .seconds(5)
         presenter.flyoutFrames = [Self.openFlyout]
         controller.pointerLocation = { CGPoint(x: 1000, y: 500) }
         // The pointer leaves the row that opened the flyout, heading for it.

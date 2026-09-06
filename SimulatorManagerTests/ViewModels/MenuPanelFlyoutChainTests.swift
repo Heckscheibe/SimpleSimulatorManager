@@ -131,6 +131,23 @@ struct MenuPanelFlyoutChainTests {
         #expect(viewModel.isHighlighted(deviceType))
     }
 
+    @Test("The row the pointer moves to takes the highlight from the row whose flyout is open")
+    func theHighlightFollowsThePointer() {
+        let viewModel = MenuPanelViewModel()
+        let nodes = Self.tree()
+        let deviceType = Self.node("device-type", in: nodes)
+        let other = Self.node("other-device-type", in: nodes)
+
+        viewModel.openFlyout(for: deviceType, atDepth: 0)
+        // The pointer moves to the next row. Its flyout has not replaced the open one yet — a flyout
+        // outlives the pointer leaving the row that opened it.
+        viewModel.select(other)
+
+        #expect(viewModel.isHighlighted(other))
+        // Two rows lit at once is what a menu never showed, and what makes the swap look broken.
+        #expect(!viewModel.isHighlighted(deviceType))
+    }
+
     // MARK: - Search
 
     @Test("Typing closes the whole chain")

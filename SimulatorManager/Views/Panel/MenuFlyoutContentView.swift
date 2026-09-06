@@ -19,7 +19,10 @@ struct MenuFlyoutContentView: View {
     /// measurement has to travel back out rather than being read off the view.
     let sizeChanged: (CGSize) -> Void
 
-    @State private var contentHeight: CGFloat = 0
+    /// `nil` until the rows have been laid out. Optional rather than zero so that "measured" is a
+    /// state in its own right: a level short enough to clamp to the floor would otherwise measure to
+    /// the height it started at, report nothing, and leave its window invisible forever.
+    @State private var contentHeight: CGFloat?
 
     var body: some View {
         ScrollView {
@@ -36,9 +39,13 @@ struct MenuFlyoutContentView: View {
         .background(.regularMaterial)
         .clipShape(shape)
         .overlay(shape.stroke(Color.primary.opacity(0.08), lineWidth: 1))
-        // Deliberately without `initial:`, so nothing is reported until the rows have actually been
-        // measured — a window ordered in at a placeholder height would visibly snap to its real one.
-        .onChange(of: height) { _, height in
+        .onChange(of: contentHeight) { _, measured in
+            // Nothing is reported before the rows exist: a window ordered in at a placeholder height
+            // would visibly snap to its real one.
+            guard measured != nil else {
+                return
+            }
+
             sizeChanged(CGSize(width: MenuPanelStyle.width, height: height))
         }
     }
@@ -48,7 +55,7 @@ private extension MenuFlyoutContentView {
     /// Capped like the panel's list, for the same reason: a device with two dozen apps would
     /// otherwise open a submenu taller than the screen.
     var height: CGFloat {
-        min(max(contentHeight, MenuPanelStyle.rowMinimumHeight), MenuPanelStyle.maximumListHeight)
+        min(max(contentHeight ?? 0, MenuPanelStyle.rowMinimumHeight), MenuPanelStyle.maximumListHeight)
     }
 
     var shape: RoundedRectangle {

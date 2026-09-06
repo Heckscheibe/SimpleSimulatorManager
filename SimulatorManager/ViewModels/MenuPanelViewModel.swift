@@ -181,9 +181,18 @@ extension MenuPanelViewModel {
         node.id == selectedIdentifier
     }
 
-    /// What the row draws as highlighted: the keyboard's selection, or a row whose flyout is open.
+    /// What the row draws as highlighted.
+    ///
+    /// A row whose flyout is open counts, but only while nothing else is selected. A flyout outlives
+    /// the pointer moving off the row that opened it — briefly when swapping, longer when the user
+    /// moves away entirely — and during that time the row it belongs to must not stay lit alongside
+    /// the row the pointer is actually on. Two highlights at once is something `NSMenu` never showed.
     func isHighlighted(_ node: MenuNode) -> Bool {
-        isSelected(node) || isOnOpenPath(node)
+        guard selectedIdentifier == nil else {
+            return isSelected(node)
+        }
+
+        return isOnOpenPath(node)
     }
 
     func isAwaitingConfirmation(_ node: MenuNode) -> Bool {
