@@ -40,6 +40,10 @@ enum MenuPanelStyle {
     static let listVerticalPadding: CGFloat = 5
     static let dividerVerticalPadding: CGFloat = 5
 
+    /// A flyout is a borderless window of our own, so it draws the corner the panel gets from the
+    /// system.
+    static let flyoutCornerRadius: CGFloat = 6
+
     static let iconWidth: CGFloat = 16
     static let titleFont: Font = .system(size: 13)
     static let subtitleFont: Font = .system(size: 11)

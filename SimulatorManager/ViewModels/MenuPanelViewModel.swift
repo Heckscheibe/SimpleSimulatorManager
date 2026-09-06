@@ -59,26 +59,31 @@ final class MenuPanelViewModel {
     /// A destructive row waiting for its confirming second <kbd>↩</kbd>.
     private(set) var pendingDestructiveIdentifier: String?
 
-    /// Resolves the level currently on screen.
+    /// Every open level, root first: the panel's own rows, then one entry per open flyout.
     ///
     /// If a level disappeared while the panel was open — its simulator was erased, its app deleted
     /// — resolution stops at the deepest level that still exists rather than showing nothing.
-    func level(in rootNodes: [MenuNode]) -> MenuPanelLevel {
-        var nodes = rootNodes
-        var title: String?
-        var depth = 0
+    func levels(in rootNodes: [MenuNode]) -> [MenuPanelLevel] {
+        var levels = [MenuPanelLevel(title: nil, nodes: rootNodes, depth: 0)]
 
         for identifier in pathIdentifiers {
-            guard let match = nodes.first(where: { $0.id == identifier }), match.isSubmenu else {
+            guard let match = levels[levels.count - 1].nodes.first(where: { $0.id == identifier }),
+                  match.isSubmenu else {
                 break
             }
 
-            nodes = match.children
-            title = match.title
-            depth += 1
+            levels.append(MenuPanelLevel(title: match.title, nodes: match.children, depth: levels.count))
         }
 
-        return MenuPanelLevel(title: title, nodes: nodes, depth: depth)
+        return levels
+    }
+
+    /// The level the keyboard works in: the deepest one open.
+    func level(in rootNodes: [MenuNode]) -> MenuPanelLevel {
+        let levels = levels(in: rootNodes)
+
+        // `levels(in:)` always returns the root, so there is nothing to fall back to.
+        return levels[levels.count - 1]
     }
 
     /// Reopening the panel starts at the top level with nothing selected, the way reopening a menu
@@ -106,6 +111,53 @@ extension MenuPanelViewModel {
         node.onEnter?()
     }
 
+    /// Opens `node`'s children beside the row, closing whatever was open on a different branch.
+    ///
+    /// Unlike ``enter(_:)`` this takes the row's depth, because the pointer can land anywhere in the
+    /// chain: hovering a row in the panel while three flyouts are open has to replace all three,
+    /// not add a fourth.
+    func openFlyout(for node: MenuNode, atDepth depth: Int) {
+        guard node.isSubmenu, node.isEnabled else {
+            closeFlyouts(deeperThan: depth)
+
+            return
+        }
+
+        // Already open. Re-opening would re-run `onEnter` — and the cleanup scan behind it — every
+        // time the pointer wandered back onto the row.
+        guard !isOpen(node, atDepth: depth) else {
+            return
+        }
+
+        pathIdentifiers = Array(pathIdentifiers.prefix(depth)) + [node.id]
+        // The row that opened the flyout stays highlighted through ``isOnOpenPath(_:)``, so nothing
+        // is lost by clearing the selection — and a new level starts with no row, least of all a
+        // destructive one, sitting under the next Return.
+        selectedIdentifier = nil
+        cancelPendingConfirmation()
+        node.onEnter?()
+    }
+
+    func closeFlyouts(deeperThan depth: Int) {
+        guard pathIdentifiers.count > depth else {
+            return
+        }
+
+        pathIdentifiers = Array(pathIdentifiers.prefix(depth))
+        cancelPendingConfirmation()
+    }
+
+    /// Whether this row is the one that opened the flyout at its own depth.
+    func isOpen(_ node: MenuNode, atDepth depth: Int) -> Bool {
+        pathIdentifiers.indices.contains(depth) && pathIdentifiers[depth] == node.id
+    }
+
+    /// Whether this row has a flyout hanging off it. Those rows stay highlighted while their
+    /// submenu is up, the way an `NSMenu` item did.
+    func isOnOpenPath(_ node: MenuNode) -> Bool {
+        pathIdentifiers.contains(node.id)
+    }
+
     /// Goes back one level. Takes the resolved level so a path that outlived its nodes is trimmed
     /// to what is actually on screen instead of unwinding steps the user never sees.
     func leave(from level: MenuPanelLevel) {
@@ -127,6 +179,11 @@ extension MenuPanelViewModel {
 extension MenuPanelViewModel {
     func isSelected(_ node: MenuNode) -> Bool {
         node.id == selectedIdentifier
+    }
+
+    /// What the row draws as highlighted: the keyboard's selection, or a row whose flyout is open.
+    func isHighlighted(_ node: MenuNode) -> Bool {
+        isSelected(node) || isOnOpenPath(node)
     }
 
     func isAwaitingConfirmation(_ node: MenuNode) -> Bool {
@@ -216,6 +273,9 @@ extension MenuPanelViewModel {
             return
         }
 
+        // Results are a flat list, so any open flyout belongs to a menu the user has just navigated
+        // away from and its windows have nothing left to point at.
+        pathIdentifiers.removeAll()
         selectFirst(in: resultLevel)
     }
 }
