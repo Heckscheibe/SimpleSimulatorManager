@@ -18,32 +18,40 @@ import Testing
 struct MenuFlyoutControllerTests {
     // MARK: - Hover timing
 
-    @Test("A submenu opens only once the pointer has stayed on it")
-    func submenuOpensAfterTheDelay() async {
+    @Test("A submenu opens the moment the pointer lands on it")
+    func submenuOpensImmediately() {
         let controller = Self.makeController(presenter: MockMenuFlyoutPresenter())
         let recorder = ChainRecorder(controller: controller)
-        let node = Self.submenu(id: "device-type")
 
-        controller.hoverBegan(on: node, depth: 0)
-        // Dragging the pointer down a list would otherwise open every submenu it passed.
-        #expect(recorder.opened.isEmpty)
+        controller.hoverBegan(on: Self.submenu(id: "device-type"), depth: 0)
 
-        await waitUntil { !recorder.opened.isEmpty }
-
+        // Synchronously, with nothing awaited: any wait at all leaves the previous flyout standing
+        // beside a row the pointer has already left.
         #expect(recorder.opened == [ChainRecorder.Opened(identifier: "device-type", depth: 0)])
     }
 
-    @Test("A pointer that moves on before the delay opens nothing")
-    func leavingBeforeTheDelayOpensNothing() async {
-        let controller = Self.makeController(presenter: MockMenuFlyoutPresenter())
+    @Test("Moving between submenus swaps the flyout each time")
+    func movingBetweenSubmenusSwapsTheFlyout() {
+        let presenter = MockMenuFlyoutPresenter()
+        let controller = Self.makeController(presenter: presenter)
         let recorder = ChainRecorder(controller: controller)
-        let node = Self.submenu(id: "device-type")
 
-        controller.hoverBegan(on: node, depth: 0)
-        controller.hoverEnded(on: node, depth: 0)
-        try? await Task.sleep(for: .milliseconds(120))
+        presenter.flyoutFrames = [Self.openFlyout]
+        controller.pointerLocation = { CGPoint(x: 1000, y: 500) }
+        controller.hoverBegan(on: Self.submenu(id: "device-type"), depth: 0)
+        controller.hoverEnded(on: Self.submenu(id: "device-type"), depth: 0)
 
-        #expect(recorder.opened.isEmpty)
+        // Straight down the panel to the next row, rather than sideways towards the open flyout —
+        // so the safe triangle has nothing to protect and this hover is the user picking a row.
+        controller.pointerLocation = { CGPoint(x: 1000, y: 450) }
+        controller.hoverBegan(on: Self.submenu(id: "other-device-type"), depth: 0)
+
+        let expected = [
+            ChainRecorder.Opened(identifier: "device-type", depth: 0),
+            ChainRecorder.Opened(identifier: "other-device-type", depth: 0)
+        ]
+
+        #expect(recorder.opened == expected)
     }
 
     @Test("Landing on an ordinary row closes the flyouts beside its level")
@@ -56,20 +64,6 @@ struct MenuFlyoutControllerTests {
 
         #expect(recorder.closed == [0])
         #expect(recorder.opened.isEmpty)
-    }
-
-    @Test("With a flyout already open, moving to another submenu swaps it without waiting")
-    func swappingAnOpenFlyoutIsImmediate() {
-        let presenter = MockMenuFlyoutPresenter()
-        let controller = Self.makeController(presenter: presenter)
-        let recorder = ChainRecorder(controller: controller)
-
-        // A flyout is already up beside this level, so the user is browsing submenus rather than
-        // arriving at one.
-        presenter.flyoutFrames = [Self.openFlyout]
-        controller.hoverBegan(on: Self.submenu(id: "other-device-type"), depth: 0)
-
-        #expect(recorder.opened == [ChainRecorder.Opened(identifier: "other-device-type", depth: 0)])
     }
 
     @Test("A click opens a submenu without waiting")
@@ -153,11 +147,13 @@ struct MenuFlyoutControllerTests {
         let controller = Self.makeController(presenter: MockMenuFlyoutPresenter())
         let recorder = ChainRecorder(controller: controller)
 
-        controller.hoverBegan(on: Self.submenu(id: "device-type"), depth: 0)
+        // Landing on an ordinary row is the only hover that still has anything pending, and the
+        // keyboard taking over must not close a flyout it has just been asked to move into.
+        controller.hoverBegan(on: Self.action(id: "settings"), depth: 0)
         controller.cancelPending()
         try? await Task.sleep(for: .milliseconds(120))
 
-        #expect(recorder.opened.isEmpty)
+        #expect(recorder.closed.isEmpty)
     }
 
     // MARK: - Windows
@@ -258,8 +254,7 @@ private extension MenuFlyoutControllerTests {
         let controller = MenuFlyoutController(presenter: presenter)
 
         // Short enough to keep the suite quick, long enough that "not yet" is still observable.
-        controller.timing = MenuFlyoutController.Timing(open: .milliseconds(40),
-                                                        close: .milliseconds(40),
+        controller.timing = MenuFlyoutController.Timing(close: .milliseconds(40),
                                                         safeTriangleGrace: .milliseconds(80))
         controller.pointerLocation = { .zero }
 

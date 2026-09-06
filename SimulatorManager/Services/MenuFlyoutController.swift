@@ -14,17 +14,17 @@ import SwiftUI
 /// path the drill-down used — so a flyout is only a different way of drawing a level the navigation
 /// model already knew about, and the keyboard needs no separate notion of where it is.
 ///
-/// What this adds is the timing a real menu has and a hover has not: submenus open after a pause
-/// rather than on the way past, and a pointer travelling diagonally into an open flyout is not
-/// allowed to be intercepted by the rows it crosses.
+/// A submenu opens the moment the pointer lands on it. What this adds is the two things a plain
+/// hover still gets wrong: a flyout does not vanish the instant the pointer clips a neighbour on its
+/// way elsewhere, and a pointer travelling diagonally into an open flyout is not intercepted by the
+/// rows it crosses on the way.
 @MainActor
 final class MenuFlyoutController {
     struct Timing {
-        /// Long enough that dragging the pointer down a list does not open every submenu it passes,
-        /// short enough not to feel like waiting.
-        var open: Duration = .milliseconds(180)
         /// Applied when the pointer lands on a row that has no submenu, so a flyout does not vanish
-        /// the instant the pointer clips a neighbour on its way somewhere else.
+        /// the instant the pointer clips a neighbour on its way somewhere else. There is deliberately
+        /// no counterpart for opening: a submenu the pointer is on is one the user is asking for, and
+        /// any wait at all leaves the previous flyout standing under a row they have already left.
         var close: Duration = .milliseconds(250)
         /// How long a flyout stays protected from the rows between it and the pointer.
         var safeTriangleGrace: Duration = .milliseconds(500)
@@ -96,19 +96,10 @@ extension MenuFlyoutController {
             return
         }
 
-        // The first submenu waits, so dragging the pointer down a list does not open every one it
-        // passes. Once a flyout is up the user is already browsing submenus, and a menu swapped
-        // those as fast as the pointer moved — waiting here leaves the old flyout standing under a
-        // row the pointer has already left.
-        guard !isFlyoutOpen(atDepth: depth) else {
-            openFlyout?(node, depth)
-
-            return
-        }
-
-        pendingTask = schedule(after: timing.open) { [weak self] in
-            self?.openFlyout?(node, depth)
-        }
+        // Swapping the flyout at this depth reuses its window rather than tearing one down and
+        // building another, so sweeping the pointer down a list of submenus costs a re-render each,
+        // not a window each.
+        openFlyout?(node, depth)
     }
 
     /// Leaving a row does not close anything on its own — a menu you move away from stays open, and
@@ -207,11 +198,6 @@ extension MenuFlyoutController {
 // MARK: - Safe triangle
 
 private extension MenuFlyoutController {
-    /// Whether the row at this depth already has a flyout beside it.
-    func isFlyoutOpen(atDepth depth: Int) -> Bool {
-        presenter.flyoutFrames.count > depth
-    }
-
     /// Whether a hover at `depth` is the pointer passing through on its way into an open flyout.
     ///
     /// Only rows at or above the protected level are held off. A row inside the flyout itself is the
