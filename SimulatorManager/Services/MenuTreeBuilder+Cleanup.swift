@@ -33,11 +33,13 @@ extension MenuTreeBuilder {
             nodes.append(.informational(id: "cleanup.empty", title: "No invalid simulators found"))
         }
 
-        nodes.append(.divider(id: "cleanup.divider.beforeExplanation"))
-        nodes.append(cleanupExplanationNode())
         nodes.append(contentsOf: cleanupCandidateNodes())
         nodes.append(.divider(id: "cleanup.divider.beforeRefresh"))
         nodes.append(cleanupRefreshNode())
+        // Last, because it is reference material rather than something to act on, and it is long
+        // enough to bury the refresh action if it came first.
+        nodes.append(.divider(id: "cleanup.divider.beforeExplanation"))
+        nodes.append(contentsOf: cleanupExplanationNodes())
 
         return nodes
     }
@@ -155,7 +157,14 @@ private extension MenuTreeBuilder {
                        actions: [refresh])
     }
 
-    func cleanupExplanationNode() -> MenuNode {
+    /// Why a simulator qualifies for deletion, shown in the cleanup menu itself.
+    ///
+    /// This used to be a submenu, for one reason: `NSMenu` had no way to put a paragraph in front of
+    /// the user, so an explanation had to be disguised as something to click. The panel draws rows
+    /// that are only information, so the explanation can simply be there — which is what it always
+    /// wanted to be, given that deleting a simulator cannot be undone.
+    func cleanupExplanationNodes() -> [MenuNode] {
+        let intro = "Cleanup candidates are detected from CoreSimulator metadata and simulator directories."
         let reasons = [
             ("missingRuntime", "Missing Runtime: the simulator references a runtime that is no longer installed."),
             ("missingDeviceType", "Missing Device Type: the simulator references a device type profile that is no longer available."),
@@ -164,16 +173,9 @@ private extension MenuTreeBuilder {
             ("missingMetadata", "Missing Metadata: the simulator directory is missing its device.plist file."),
             ("unreadableMetadata", "Unreadable Metadata: the simulator metadata exists but cannot be decoded.")
         ]
-        let intro = "Cleanup candidates are detected from CoreSimulator metadata and simulator directories."
-        let children: [MenuNode] = [
-            .informational(id: "cleanup.explanation.intro", title: intro),
-            .divider(id: "cleanup.explanation.divider")
-        ] + reasons.map { key, text in
+
+        return [.informational(id: "cleanup.explanation.intro", title: intro)] + reasons.map { key, text in
             .informational(id: "cleanup.explanation.\(key)", title: text)
         }
-
-        return .submenu(id: "cleanup.explanation",
-                        title: "Why a simulator can be deleted",
-                        children: children)
     }
 }
