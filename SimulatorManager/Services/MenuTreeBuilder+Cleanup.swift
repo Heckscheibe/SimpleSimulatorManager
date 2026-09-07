@@ -174,7 +174,13 @@ private extension MenuTreeBuilder {
             ("unreadableMetadata", "Unreadable Metadata: the simulator metadata exists but cannot be decoded.")
         ]
 
-        return [.informational(id: "cleanup.explanation.intro", title: intro)] + reasons.map { key, text in
+        // Headed and marked, because a block of prose sitting under a list of deletions could
+        // otherwise read as a report of what is about to happen rather than as background to it.
+        let header = MenuNode.sectionHeader(id: "cleanup.explanation.header",
+                                            title: "Information",
+                                            iconName: "info.circle")
+
+        return [header, .informational(id: "cleanup.explanation.intro", title: intro)] + reasons.map { key, text in
             .informational(id: "cleanup.explanation.\(key)", title: text)
         }
     }

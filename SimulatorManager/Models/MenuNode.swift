@@ -248,11 +248,11 @@ extension MenuNode {
                        actions: [action])
     }
 
-    static func sectionHeader(id: String, title: String) -> MenuNode {
+    static func sectionHeader(id: String, title: String, iconName: String? = nil) -> MenuNode {
         MenuNode(id: id,
                  title: title,
                  subtitle: nil,
-                 iconName: nil,
+                 iconName: iconName,
                  isEnabled: true,
                  isDestructive: false,
                  actions: [],

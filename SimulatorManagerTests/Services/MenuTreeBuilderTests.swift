@@ -471,9 +471,16 @@ struct MenuTreeBuilderTests {
         // information-only rows. The panel has them, so an explanation of an irreversible deletion
         // does not have to be clicked on to be read.
         #expect(cleanup.children.contains { $0.isSubmenu && $0.id.hasPrefix("cleanup.explanation") } == false)
-        #expect(explanation.count == 7)
+        let header = try #require(explanation.first)
+
+        #expect(explanation.count == 8)
         #expect(explanation.allSatisfy { !$0.isSelectable })
-        #expect(explanation.first?.id == "cleanup.explanation.intro")
+        // Marked as information, so prose under a list of deletions does not read as a report of
+        // what is about to happen.
+        #expect(header.kind.isSectionHeader)
+        #expect(header.title == "Information")
+        #expect(header.iconName == "info.circle")
+        #expect(explanation[1].id == "cleanup.explanation.intro")
     }
 
     @Test("An available update replaces the version row with an actionable one")
