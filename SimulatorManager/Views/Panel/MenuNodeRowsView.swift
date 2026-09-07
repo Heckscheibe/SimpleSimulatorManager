@@ -15,7 +15,9 @@ import SwiftUI
 struct MenuRowHandlers {
     /// The depth of the level being drawn. `0` is the panel; every flyout is one deeper.
     let depth: Int
-    let isHighlighted: (MenuNode) -> Bool
+    /// Takes the whole level, because whether a row on the open path still counts as highlighted
+    /// depends on whether the pointer has landed on one of its siblings.
+    let isHighlighted: (MenuNode, [MenuNode]) -> Bool
     let isAwaitingConfirmation: (MenuNode) -> Bool
     let hoverChanged: (MenuNode, Bool) -> Void
     /// The row's frame in its own window, so a flyout can be hung off it.
@@ -35,7 +37,7 @@ struct MenuNodeRowsView: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(nodes) { node in
                 MenuPanelRowView(node: node,
-                                 isSelected: handlers.isHighlighted(node),
+                                 isSelected: handlers.isHighlighted(node, nodes),
                                  isAwaitingConfirmation: handlers.isAwaitingConfirmation(node),
                                  hoverChanged: { isHovering in
                                      handlers.hoverChanged(node, isHovering)

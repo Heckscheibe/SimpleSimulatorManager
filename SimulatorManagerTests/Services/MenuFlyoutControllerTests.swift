@@ -170,7 +170,7 @@ struct MenuFlyoutControllerTests {
         controller.rowFrameChanged(CGRect(x: 0, y: 10, width: 300, height: 22), for: device)
         controller.synchronize(levels: Self.levels(count: 3),
                                path: ["device-type", "device"],
-                               rootWindow: window) { _, _, _ in AnyView(EmptyView()) }
+                               rootWindow: window) { _, _, _, _ in AnyView(EmptyView()) }
 
         #expect(presenter.shown.map(\.index) == [0, 1])
         #expect(presenter.shown[0].anchorRowFrame.minY == 40)
@@ -187,7 +187,7 @@ struct MenuFlyoutControllerTests {
         controller.rowFrameChanged(CGRect(x: 0, y: 40, width: 300, height: 22), for: Self.submenu(id: "device-type"))
         controller.synchronize(levels: Self.levels(count: 3),
                                path: ["device-type", "device"],
-                               rootWindow: window) { _, _, _ in AnyView(EmptyView()) }
+                               rootWindow: window) { _, _, _, _ in AnyView(EmptyView()) }
 
         #expect(presenter.shown.map(\.index) == [0])
         #expect(presenter.hiddenFromIndices == [1])
@@ -207,7 +207,7 @@ struct MenuFlyoutControllerTests {
         // nothing. Forgetting the frames here left the second opening with nowhere to hang a flyout.
         controller.synchronize(levels: Self.levels(count: 2),
                                path: ["device-type"],
-                               rootWindow: window) { _, _, _ in AnyView(EmptyView()) }
+                               rootWindow: window) { _, _, _, _ in AnyView(EmptyView()) }
 
         #expect(presenter.shown.map(\.index) == [0])
     }
@@ -219,7 +219,7 @@ struct MenuFlyoutControllerTests {
 
         controller.synchronize(levels: Self.levels(count: 2),
                                path: ["device-type"],
-                               rootWindow: nil) { _, _, _ in AnyView(EmptyView()) }
+                               rootWindow: nil) { _, _, _, _ in AnyView(EmptyView()) }
 
         #expect(presenter.shown.isEmpty)
         #expect(presenter.hiddenFromIndices == [0])
@@ -235,7 +235,7 @@ struct MenuFlyoutControllerTests {
         controller.rowFrameChanged(CGRect(x: 0, y: 40, width: 300, height: 22), for: Self.action(id: "settings"))
         controller.synchronize(levels: Self.levels(count: 2),
                                path: ["settings"],
-                               rootWindow: window) { _, _, _ in AnyView(EmptyView()) }
+                               rootWindow: window) { _, _, _, _ in AnyView(EmptyView()) }
 
         #expect(presenter.shown.isEmpty)
     }

@@ -39,8 +39,10 @@ struct MenuPanelView: View {
     @State private var listHeight: CGFloat = MenuPanelStyle.rowMinimumHeight
 
     var body: some View {
-        let levels = currentLevels()
-        let rootLevel = levels[0]
+        // Deliberately the root level and not the whole chain. Resolving the chain reads the open
+        // path, and reading it here made every hover that opened a submenu rebuild the entire menu
+        // tree and re-create all of its rows.
+        let rootLevel = MenuPanelLevel(title: nil, nodes: makeRootNodes(), depth: 0)
 
         VStack(alignment: .leading, spacing: 0) {
             MenuPanelSearchField(query: $searchViewModel.query,
@@ -60,8 +62,8 @@ struct MenuPanelView: View {
         }
         .frame(width: MenuPanelStyle.width)
         .background(shortcuts)
-        .background(MenuFlyoutSynchronizer {
-            synchronizeFlyouts(levels: levels)
+        .background(MenuFlyoutChainView(rootNodes: rootLevel.nodes, viewModel: viewModel) { levels, path in
+            synchronizeFlyouts(levels: levels, path: path)
         })
         .onAppear {
             connectFlyouts()
@@ -89,16 +91,15 @@ struct MenuPanelView: View {
 // MARK: - Rows
 
 private extension MenuPanelView {
-    /// The levels on screen: the ranked hits while there is a query, and the browsable menu when
-    /// there is not. Both go through the same resolution, so one renderer, one selection model and
-    /// one activation path serve both modes.
-    func currentLevels() -> [MenuPanelLevel] {
-        viewModel.levels(in: searchViewModel.hasQuery ? searchResultNodes() : makeNodes())
+    /// What the panel itself shows: the ranked hits while there is a query, and the browsable menu
+    /// when there is not. Both go through the same renderer, selection model and activation path.
+    func makeRootNodes() -> [MenuNode] {
+        searchViewModel.hasQuery ? searchResultNodes() : makeNodes()
     }
 
     /// The level the keyboard works in: the deepest flyout, or the panel when none is open.
     func currentLevel() -> MenuPanelLevel {
-        viewModel.level(in: searchViewModel.hasQuery ? searchResultNodes() : makeNodes())
+        viewModel.level(in: makeRootNodes())
     }
 
     /// A query that matched nothing gets an explanation rather than a blank panel.
@@ -145,15 +146,7 @@ private extension MenuPanelView {
     func rowList(for level: MenuPanelLevel) -> some View {
         ScrollViewReader { proxy in
             scrollableRows(for: level)
-                // Keyboard selection has to stay visible, including when it wraps from the last row
-                // straight back to the first.
-                .onChange(of: viewModel.selectedIdentifier) { _, identifier in
-                    guard let identifier else {
-                        return
-                    }
-
-                    proxy.scrollTo(identifier)
-                }
+                .background(MenuPanelSelectionScroller(viewModel: viewModel, proxy: proxy))
         }
     }
 
@@ -213,13 +206,30 @@ private extension MenuPanelView {
     /// happens once rather than on every render.
     func connectFlyouts() {
         flyouts.openFlyout = { node, depth in
-            viewModel.openFlyout(for: node, atDepth: depth)
-            showChain()
+            changeChain {
+                viewModel.openFlyout(for: node, atDepth: depth)
+            }
         }
         flyouts.closeFlyouts = { depth in
-            viewModel.closeFlyouts(deeperThan: depth)
-            showChain()
+            changeChain {
+                viewModel.closeFlyouts(deeperThan: depth)
+            }
         }
+    }
+
+    /// Runs a change to the open path and puts the result on screen, doing nothing when the path
+    /// came out the same — the pointer wandering back onto a row whose submenu is already open must
+    /// not cost a re-render of it.
+    func changeChain(_ change: () -> Void) {
+        let before = viewModel.pathIdentifiers
+
+        change()
+
+        guard viewModel.pathIdentifiers != before else {
+            return
+        }
+
+        showChain()
     }
 
     /// Puts the chain on screen now rather than at the panel's next render.
@@ -229,16 +239,23 @@ private extension MenuPanelView {
     /// opening late looks like. Measured on a real install, the work itself is around seven
     /// milliseconds; the lag was never the computation, it was the wait for the next pass.
     func showChain() {
-        synchronizeFlyouts(levels: currentLevels())
+        let rootNodes = makeRootNodes()
+
+        synchronizeFlyouts(levels: viewModel.levels(in: rootNodes), path: viewModel.pathIdentifiers)
     }
 
-    func synchronizeFlyouts(levels: [MenuPanelLevel]) {
+    func synchronizeFlyouts(levels: [MenuPanelLevel], path: [String]) {
         flyouts.synchronize(levels: levels,
-                            path: viewModel.pathIdentifiers,
-                            rootWindow: menuPresenter.panelWindow()) { depth, level, reportSize in
+                            path: path,
+                            rootWindow: menuPresenter.panelWindow()) { identifier, depth, level, reportSize in
             AnyView(MenuFlyoutContentView(nodes: level.nodes,
                                           handlers: handlers(atDepth: depth),
-                                          sizeChanged: reportSize))
+                                          sizeChanged: reportSize)
+                    // Identity tied to the row that opened it, so swapping one submenu for another
+                    // starts the new one's measurement afresh. Carrying the previous submenu's height
+                    // over put the window on screen at the wrong size and made it correct itself a
+                    // frame later, which is what switching rows looked like.
+                    .id(identifier))
         }
     }
 
@@ -266,6 +283,48 @@ private extension MenuPanelView {
         }
 
         handleOutcome(viewModel.activateFromMouse(node))
+    }
+}
+
+/// Keeps the flyout windows in step with the open path.
+///
+/// A view of its own for a reason that shows up as lag: the path changes on every hover that opens
+/// or closes a submenu, and reading it in the panel's body made each of those rebuild the whole menu
+/// tree and re-create every row. Read here, it invalidates only this.
+private struct MenuFlyoutChainView: View {
+    let rootNodes: [MenuNode]
+    let viewModel: MenuPanelViewModel
+    let synchronize: ([MenuPanelLevel], [String]) -> Void
+
+    var body: some View {
+        let path = viewModel.pathIdentifiers
+        let levels = viewModel.levels(in: rootNodes)
+
+        MenuFlyoutSynchronizer {
+            synchronize(levels, path)
+        }
+    }
+}
+
+/// Keeps the keyboard's selection scrolled into view, including when it wraps from the last row
+/// straight back to the first.
+///
+/// Also a view of its own, and for the same reason: watching `selectedIdentifier` from the panel's
+/// body made every hover rebuild the menu tree and re-create all of its rows — a highlight lagging
+/// behind the pointer is what that looks like.
+private struct MenuPanelSelectionScroller: View {
+    let viewModel: MenuPanelViewModel
+    let proxy: ScrollViewProxy
+
+    var body: some View {
+        Color.clear
+            .onChange(of: viewModel.selectedIdentifier) { _, identifier in
+                guard let identifier else {
+                    return
+                }
+
+                proxy.scrollTo(identifier)
+            }
     }
 }
 
@@ -305,8 +364,9 @@ private extension MenuPanelView {
                 return true
             }
 
-            viewModel.enter(node)
-            showChain()
+            changeChain {
+                viewModel.enter(node)
+            }
         case .moveLeft:
             // At the top level this does nothing rather than dismissing: closing the panel is what
             // escape is for.
@@ -314,8 +374,9 @@ private extension MenuPanelView {
                 return true
             }
 
-            viewModel.leave(from: level)
-            showChain()
+            changeChain {
+                viewModel.leave(from: level)
+            }
         case let .activate(kind):
             guard let node = viewModel.selectedNode(in: level) else {
                 return true
@@ -338,10 +399,9 @@ private extension MenuPanelView {
     }
 
     func queryChanged() {
-        viewModel.applyQueryChange(isSearching: searchViewModel.hasQuery, resultLevel: currentLevel())
-        // Results are a flat list, so the chain has just been emptied and its windows are hanging
-        // off rows that are no longer there.
-        showChain()
+        changeChain {
+            viewModel.applyQueryChange(isSearching: searchViewModel.hasQuery, resultLevel: currentLevel())
+        }
     }
 }
 

@@ -128,24 +128,45 @@ struct MenuPanelFlyoutChainTests {
         // would go dark the moment its submenu appeared.
         #expect(viewModel.selectedIdentifier == nil)
         #expect(viewModel.isOnOpenPath(deviceType))
-        #expect(viewModel.isHighlighted(deviceType))
+        #expect(viewModel.isHighlighted(deviceType, among: nodes))
     }
 
-    @Test("The row the pointer moves to takes the highlight from the row whose flyout is open")
-    func theHighlightFollowsThePointer() {
+    @Test("The whole trail back to the panel stays highlighted while the user is deeper in it")
+    func theOpenPathStaysHighlighted() {
+        let viewModel = MenuPanelViewModel()
+        let nodes = Self.tree()
+        let deviceType = Self.node("device-type", in: nodes)
+        let device = Self.node("device", in: nodes)
+        let app = Self.node("app", in: nodes)
+
+        viewModel.openFlyout(for: deviceType, atDepth: 0)
+        viewModel.openFlyout(for: device, atDepth: 1)
+        // The pointer is on a row with no submenu of its own, three levels in.
+        viewModel.select(app)
+
+        #expect(viewModel.isHighlighted(app, among: [app]))
+        // Both ancestors stay lit, so the path back to the panel reads as one trail rather than the
+        // trail going dark the moment the pointer lands on something that opens nothing.
+        #expect(viewModel.isHighlighted(deviceType, among: nodes))
+        #expect(viewModel.isHighlighted(device, among: deviceType.children))
+    }
+
+    @Test("A sibling the pointer moves to takes the highlight from the row whose flyout is open")
+    func aSiblingTakesTheHighlight() {
         let viewModel = MenuPanelViewModel()
         let nodes = Self.tree()
         let deviceType = Self.node("device-type", in: nodes)
         let other = Self.node("other-device-type", in: nodes)
 
         viewModel.openFlyout(for: deviceType, atDepth: 0)
-        // The pointer moves to the next row. Its flyout has not replaced the open one yet — a flyout
-        // outlives the pointer leaving the row that opened it.
+        // The pointer moves to the next row down. Its own flyout has not replaced the open one yet —
+        // a flyout outlives the pointer leaving the row that opened it.
         viewModel.select(other)
 
-        #expect(viewModel.isHighlighted(other))
-        // Two rows lit at once is what a menu never showed, and what makes the swap look broken.
-        #expect(!viewModel.isHighlighted(deviceType))
+        #expect(viewModel.isHighlighted(other, among: nodes))
+        // Not an ancestor but a branch the user has left, so it goes dark: two rows lit in one list
+        // is what makes a swap look broken.
+        #expect(!viewModel.isHighlighted(deviceType, among: nodes))
     }
 
     // MARK: - Search

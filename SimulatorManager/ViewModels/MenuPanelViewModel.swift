@@ -183,16 +183,23 @@ extension MenuPanelViewModel {
 
     /// What the row draws as highlighted.
     ///
-    /// A row whose flyout is open counts, but only while nothing else is selected. A flyout outlives
-    /// the pointer moving off the row that opened it — briefly when swapping, longer when the user
-    /// moves away entirely — and during that time the row it belongs to must not stay lit alongside
-    /// the row the pointer is actually on. Two highlights at once is something `NSMenu` never showed.
-    func isHighlighted(_ node: MenuNode) -> Bool {
-        guard selectedIdentifier == nil else {
-            return isSelected(node)
+    /// A row whose flyout is open stays lit while the user is somewhere deeper in the chain, so the
+    /// whole trail back to the panel reads as one path — which is what an `NSMenu` item did while
+    /// its submenu was up.
+    ///
+    /// It stops the moment the pointer lands on one of that row's **own siblings**. A flyout
+    /// outlives the pointer leaving the row that opened it, and during that time the row is a branch
+    /// the user has left rather than an ancestor of where they are; leaving it lit put two
+    /// highlights in one list, which is something `NSMenu` never showed.
+    func isHighlighted(_ node: MenuNode, among siblings: [MenuNode]) -> Bool {
+        if isSelected(node) {
+            return true
+        }
+        guard isOnOpenPath(node) else {
+            return false
         }
 
-        return isOnOpenPath(node)
+        return !siblings.contains { isSelected($0) }
     }
 
     func isAwaitingConfirmation(_ node: MenuNode) -> Bool {

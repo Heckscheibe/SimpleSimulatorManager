@@ -178,7 +178,7 @@ private extension MenuBarPanelIntegrationTests.MenuFlyoutPresenterTests {
 
     static func handlers() -> MenuRowHandlers {
         MenuRowHandlers(depth: 1,
-                        isHighlighted: { _ in false },
+                        isHighlighted: { _, _ in false },
                         isAwaitingConfirmation: { _ in false },
                         hoverChanged: { _, _ in },
                         frameChanged: { _, _ in },

@@ -47,6 +47,8 @@ final class MenuFlyoutController {
     private var safeTriangleDepth = 0
     private var safeTriangleDeadline: ContinuousClock.Instant?
     private var suppressedHover: (node: MenuNode, depth: Int)?
+    /// What each open flyout is currently showing, so an unchanged one is left alone.
+    private var shownSignatures: [Int] = []
 
     init(presenter: any MenuFlyoutPresenting = MenuFlyoutPresenter()) {
         self.presenter = presenter
@@ -150,7 +152,7 @@ extension MenuFlyoutController {
     /// the frames away here left the second opening with nowhere to hang a flyout.
     func reset() {
         cancelPending()
-        presenter.hideAll()
+        close(fromIndex: 0)
     }
 }
 
@@ -170,37 +172,75 @@ extension MenuFlyoutController {
         levels: [MenuPanelLevel],
         path: [String],
         rootWindow: NSWindow?,
-        content: (Int, MenuPanelLevel, @escaping (CGSize) -> Void) -> AnyView
+        content: (String, Int, MenuPanelLevel, @escaping (CGSize) -> Void) -> AnyView
     ) {
         guard let rootWindow else {
-            presenter.hideAll()
+            close(fromIndex: 0)
 
             return
         }
+
+        var signatures: [Int] = []
 
         for (index, identifier) in path.enumerated() {
             // A level whose anchor has not been laid out yet, or that resolved away because its
             // simulator was erased, ends the chain rather than being drawn against nothing.
             guard levels.indices.contains(index + 1), let anchorRowFrame = rowFrames[identifier] else {
-                presenter.hideFlyouts(fromIndex: index)
+                close(fromIndex: index)
 
                 return
             }
 
             let level = levels[index + 1]
+            let signature = Self.signature(of: level, anchoredTo: anchorRowFrame)
+
+            signatures.append(signature)
+
+            // Pushing content a flyout is already showing is not free — it re-renders and re-lays
+            // out that window. This runs on every render of the panel, which includes every hover,
+            // so an unchanged level has to cost nothing.
+            guard shownSignatures.indices.contains(index) == false || shownSignatures[index] != signature else {
+                continue
+            }
 
             presenter.show(atIndex: index, anchorRowFrame: anchorRowFrame, rootWindow: rootWindow) { report in
-                content(index + 1, level, report)
+                content(identifier, index + 1, level, report)
             }
         }
 
-        presenter.hideFlyouts(fromIndex: path.count)
+        close(fromIndex: path.count)
+        shownSignatures = signatures
     }
 }
 
 // MARK: - Safe triangle
 
 private extension MenuFlyoutController {
+    func close(fromIndex index: Int) {
+        presenter.hideFlyouts(fromIndex: index)
+        shownSignatures = Array(shownSignatures.prefix(index))
+    }
+
+    /// Everything about a level that changes what its window looks like or where it sits. Actions
+    /// are left out on purpose: they close over view models by reference, so a row keeps doing the
+    /// right thing without the window being rebuilt to hear about it.
+    static func signature(of level: MenuPanelLevel, anchoredTo anchor: CGRect) -> Int {
+        var hasher = Hasher()
+
+        hasher.combine(anchor.minX)
+        hasher.combine(anchor.minY)
+
+        for node in level.nodes {
+            hasher.combine(node.id)
+            hasher.combine(node.title)
+            hasher.combine(node.subtitle)
+            hasher.combine(node.isEnabled)
+            hasher.combine(node.isDestructive)
+        }
+
+        return hasher.finalize()
+    }
+
     /// Whether a hover at `depth` is the pointer passing through on its way into an open flyout.
     ///
     /// Only rows at or above the protected level are held off. A row inside the flyout itself is the
