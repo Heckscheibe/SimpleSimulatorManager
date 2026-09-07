@@ -95,15 +95,17 @@ final class MenuFlyoutPresenter: MenuFlyoutPresenting {
         // instead of rebuilding them: this runs on every render of the panel, which is what carries
         // a change that lands while a flyout is open — an app installed in a running simulator —
         // into the flyout as well.
-        hostingView(of: flyout.panel).rootView = content { [weak self] size in
+        let hostingView = hostingView(of: flyout.panel)
+
+        hostingView.rootView = content { [weak self] size in
             self?.place(index: index, size: size)
         }
 
-        // The row a flyout hangs off can move without the flyout's own contents changing, when the
-        // list behind it scrolls or grows.
-        if flyout.isSized {
-            place(index: index, size: flyout.panel.frame.size)
-        }
+        // Sized and shown in this same turn. Waiting for the contents to report their own size costs
+        // a layout round trip, and that round trip is the lag between the pointer landing on a row
+        // and its submenu appearing — the whole reason there is no hover delay either.
+        hostingView.layoutSubtreeIfNeeded()
+        place(index: index, size: hostingView.fittingSize)
     }
 
     func hideFlyouts(fromIndex index: Int) {
@@ -174,6 +176,10 @@ private extension MenuFlyoutPresenter {
         }
 
         let flyout = flyouts[index]
+        // The floor keeps a level that has not been laid out yet off the screen rather than showing
+        // it as a sliver; the cap is what makes a submenu with two dozen apps scroll.
+        let height = min(max(size.height, MenuPanelStyle.rowMinimumHeight), MenuPanelStyle.maximumListHeight)
+        let size = CGSize(width: MenuPanelStyle.width, height: height)
         let parentFrame = flyout.parent.frame
         let visibleFrame = flyout.parent.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? parentFrame
         let anchorFrame = MenuFlyoutGeometry.screenFrame(forRow: flyout.rowFrame, inWindow: parentFrame)
