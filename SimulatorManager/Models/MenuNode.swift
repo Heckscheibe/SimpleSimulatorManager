@@ -68,6 +68,46 @@ extension MenuNode.Kind {
 
         return false
     }
+
+    var isDivider: Bool {
+        if case .divider = self {
+            return true
+        }
+
+        return false
+    }
+}
+
+extension [MenuNode] {
+    /// Drops separators that separate nothing, and headings with nothing under them.
+    ///
+    /// The tree is assembled from sections that each append their own divider, so a section that
+    /// turns out to be empty — a simulator with no app groups — leaves a rule against the end of the
+    /// menu, or two rules with an empty band between them. `NSMenu` collapsed those itself. A panel
+    /// draws exactly what the tree says, so the tree has to say the right thing.
+    func tidied() -> [MenuNode] {
+        var tidied: [MenuNode] = []
+
+        for node in self {
+            if node.kind.isDivider {
+                // A rule at the top separates nothing, and a second in a row is an empty band.
+                guard let previous = tidied.last, !previous.kind.isDivider else {
+                    continue
+                }
+            } else if node.kind.isSectionHeader, tidied.last?.kind.isSectionHeader == true {
+                // Two headings running together means the first one's section was empty.
+                tidied.removeLast()
+            }
+
+            tidied.append(node)
+        }
+
+        while let last = tidied.last, last.kind.isDivider || last.kind.isSectionHeader {
+            tidied.removeLast()
+        }
+
+        return tidied
+    }
 }
 
 extension MenuNode {

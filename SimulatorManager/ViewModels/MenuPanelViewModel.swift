@@ -17,6 +17,14 @@ struct MenuPanelLevel {
     let nodes: [MenuNode]
     /// How many submenus deep this level is. `0` is the top level.
     let depth: Int
+
+    /// Every level is built here, so tidying here is the one place it cannot be forgotten — the
+    /// panel's own rows and every flyout hanging off it come through this initializer.
+    init(title: String?, nodes: [MenuNode], depth: Int) {
+        self.title = title
+        self.nodes = nodes.tidied()
+        self.depth = depth
+    }
 }
 
 enum MenuPanelMoveDirection {
