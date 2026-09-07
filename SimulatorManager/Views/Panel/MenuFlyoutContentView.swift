@@ -62,7 +62,7 @@ private extension MenuFlyoutContentView {
     }
 
     var rows: some View {
-        MenuNodeRowsView(nodes: nodes, handlers: handlers)
+        MenuNodeRowsView(nodes: nodes, handlers: contentHeight == nil ? handlers.withoutRowFrames() : handlers)
             .padding(.vertical, MenuPanelStyle.listVerticalPadding)
             .onGeometryChange(for: CGFloat.self) { proxy in
                 proxy.size.height

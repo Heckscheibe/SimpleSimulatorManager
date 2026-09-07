@@ -148,7 +148,11 @@ private extension MenuFlyoutPresenter {
 
         // Ordered in transparent, and off the parent's own edge, so SwiftUI lays its contents out —
         // which is the only way to find out how big they are — without any of that being visible.
-        panel.setContentSize(CGSize(width: MenuPanelStyle.width, height: MenuPanelStyle.maximumListHeight))
+        //
+        // A fixed placeholder rather than the panel's own cap: that cap is the height of the screen,
+        // and a short level centred in a window that tall reports row positions half a screen away
+        // from where they end up.
+        panel.setContentSize(CGSize(width: MenuPanelStyle.width, height: MenuPanelStyle.fallbackListHeight))
         panel.setFrameOrigin(CGPoint(x: parent.frame.maxX, y: parent.frame.minY))
         panel.order(.above, relativeTo: parent.windowNumber)
         flyouts.append(flyout)

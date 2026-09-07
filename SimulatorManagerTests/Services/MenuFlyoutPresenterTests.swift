@@ -118,6 +118,13 @@ extension MenuBarPanelIntegrationTests {
             #expect(second.minX != first.minX, "The second flyout landed on top of the first")
             #expect(second.minX == first.maxX - MenuFlyoutGeometry.overlap
                 || second.maxX == first.minX + MenuFlyoutGeometry.overlap)
+
+            // And level with the row inside the first flyout that opened it. A flyout hung off a row
+            // position measured before its own window had been sized landed most of a screen away.
+            let rowTop = first.maxY - Self.anchorRowFrame.minY
+
+            #expect(second.maxY == rowTop + MenuPanelStyle.listVerticalPadding,
+                    "The nested flyout sits at \(second.maxY), nowhere near the row at \(rowTop)")
         }
 
         @Test("Closing the chain leaves no windows behind")

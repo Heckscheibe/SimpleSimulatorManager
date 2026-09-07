@@ -25,6 +25,23 @@ struct MenuRowHandlers {
     let activate: (MenuNode) -> Void
 }
 
+extension MenuRowHandlers {
+    /// A copy that says nothing about where its rows are.
+    ///
+    /// A flyout is ordered in at a placeholder size and only sized once its rows have been measured.
+    /// Until that has happened the rows are laid out against a window that is the wrong height and
+    /// sit wherever it centres them, so their positions are meaningless — and hanging a further
+    /// flyout off one of those positions puts it somewhere else entirely on the screen.
+    func withoutRowFrames() -> MenuRowHandlers {
+        MenuRowHandlers(depth: depth,
+                        isHighlighted: isHighlighted,
+                        isAwaitingConfirmation: isAwaitingConfirmation,
+                        hoverChanged: hoverChanged,
+                        frameChanged: { _, _ in },
+                        activate: activate)
+    }
+}
+
 /// One level's rows, in the order the tree gave them.
 struct MenuNodeRowsView: View {
     let nodes: [MenuNode]
