@@ -1,0 +1,597 @@
+{
+  ".claude/settings.local.json": {
+    "mtime": 1781721755.2865858,
+    "ast_hash": "3d94ff81bbb457a54f92989af44850d5",
+    "semantic_hash": "3d94ff81bbb457a54f92989af44850d5"
+  },
+  ".claude/skills/audit-xcode-security-settings/scripts/filter_build_settings.py": {
+    "mtime": 1787257619.440888,
+    "ast_hash": "e9d84cdf503f9eb389c22ceb3379fe8f",
+    "semantic_hash": "e9d84cdf503f9eb389c22ceb3379fe8f"
+  },
+  "Assets/AppIcon white.icon/icon.json": {
+    "mtime": 1765204191.7379568,
+    "ast_hash": "bbf2f1fcfe6b244a04e6e0adc5ac0236",
+    "semantic_hash": "bbf2f1fcfe6b244a04e6e0adc5ac0236"
+  },
+  "Assets/AppIcon.icon/icon.json": {
+    "mtime": 1765204191.7387123,
+    "ast_hash": "e463c2530d8ac6c1533099834d2ce1c0",
+    "semantic_hash": "e463c2530d8ac6c1533099834d2ce1c0"
+  },
+  "Assets/AppIcon_Alternative.icon/icon.json": {
+    "mtime": 1765204191.7394316,
+    "ast_hash": "1fadece69c7b91a12438e70c0239edbc",
+    "semantic_hash": "1fadece69c7b91a12438e70c0239edbc"
+  },
+  "Icon.xcassets/AppIcon.appiconset/Contents.json": {
+    "mtime": 1765204191.7495096,
+    "ast_hash": "b60bf84baeb67e64fdbfb7e81fd6eb23",
+    "semantic_hash": "b60bf84baeb67e64fdbfb7e81fd6eb23"
+  },
+  "Icon.xcassets/Contents.json": {
+    "mtime": 1765204191.7495844,
+    "ast_hash": "9deb2ada1cc834bbebf8bbad9c8978a1",
+    "semantic_hash": "9deb2ada1cc834bbebf8bbad9c8978a1"
+  },
+  "SimulatorManager/CustomPropertyListDecoder.swift": {
+    "mtime": 1773863691.8738964,
+    "ast_hash": "2045d9d0968321696563cb48d737288c",
+    "semantic_hash": "2045d9d0968321696563cb48d737288c"
+  },
+  "SimulatorManager/DeviceManager.swift": {
+    "mtime": 1787480861.442895,
+    "ast_hash": "7dd22c5985f6f014ccef7d9ed6dc5c33",
+    "semantic_hash": "7dd22c5985f6f014ccef7d9ed6dc5c33"
+  },
+  "SimulatorManager/Extensions.swift": {
+    "mtime": 1788783929.8410022,
+    "ast_hash": "a5c810b3d16d3f4c291133d8f2ecc51a",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/FolderMonitor/AppFolderMonitor.swift": {
+    "mtime": 1783623720.698582,
+    "ast_hash": "4854a400beaf25430a603bafabea08c7",
+    "semantic_hash": "4854a400beaf25430a603bafabea08c7"
+  },
+  "SimulatorManager/FolderMonitor/FolderMonitor.swift": {
+    "mtime": 1783623720.6991565,
+    "ast_hash": "2d11e80bd1bb0db3939082efd0a4d18d",
+    "semantic_hash": "2d11e80bd1bb0db3939082efd0a4d18d"
+  },
+  "SimulatorManager/FolderOpening.swift": {
+    "mtime": 1788783929.8415163,
+    "ast_hash": "4054ac46d5865c55bb4efa7ddc34c4b6",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Icon/AppIcon.icon/icon.json": {
+    "mtime": 1765204191.7518754,
+    "ast_hash": "e463c2530d8ac6c1533099834d2ce1c0",
+    "semantic_hash": "e463c2530d8ac6c1533099834d2ce1c0"
+  },
+  "SimulatorManager/Models/AppChange.swift": {
+    "mtime": 1765204191.7520661,
+    "ast_hash": "87fe720b6fc9209e8a60af30f0d04781",
+    "semantic_hash": "87fe720b6fc9209e8a60af30f0d04781"
+  },
+  "SimulatorManager/Models/AppGroup.swift": {
+    "mtime": 1788783929.8416855,
+    "ast_hash": "a5385c0b4d89a64d6723b12102555774",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Models/AppGroupPlist.swift": {
+    "mtime": 1775594844.1236818,
+    "ast_hash": "a16ec11332923246c4463dc2bdac553e",
+    "semantic_hash": "a16ec11332923246c4463dc2bdac553e"
+  },
+  "SimulatorManager/Models/AppInfoPlist.swift": {
+    "mtime": 1765204191.7522926,
+    "ast_hash": "1a8ae17ef0facc19ad27fbbb1547fec0",
+    "semantic_hash": "1a8ae17ef0facc19ad27fbbb1547fec0"
+  },
+  "SimulatorManager/Models/Device.swift": {
+    "mtime": 1783623720.6996155,
+    "ast_hash": "6837ac24519bbcc24d6737ca1dd6994a",
+    "semantic_hash": "6837ac24519bbcc24d6737ca1dd6994a"
+  },
+  "SimulatorManager/Models/DeviceState.swift": {
+    "mtime": 1773954788.3922706,
+    "ast_hash": "50587dcdbaac625e020a3b4ad811c8de",
+    "semantic_hash": "50587dcdbaac625e020a3b4ad811c8de"
+  },
+  "SimulatorManager/Models/DeviceType.swift": {
+    "mtime": 1765204191.7525165,
+    "ast_hash": "fba5d2b8f899f9595be871ffbe578e38",
+    "semantic_hash": "fba5d2b8f899f9595be871ffbe578e38"
+  },
+  "SimulatorManager/Models/GitHubRelease.swift": {
+    "mtime": 1765204191.752585,
+    "ast_hash": "909aeb33e9a1e706bc1ef9e39120ab1e",
+    "semantic_hash": "909aeb33e9a1e706bc1ef9e39120ab1e"
+  },
+  "SimulatorManager/Models/GlobalShortcut.swift": {
+    "mtime": 1787256732.940764,
+    "ast_hash": "d0717cc245edf51dc607893929f948ab",
+    "semantic_hash": "d0717cc245edf51dc607893929f948ab"
+  },
+  "SimulatorManager/Models/MetaDataPlist.swift": {
+    "mtime": 1765204191.752649,
+    "ast_hash": "7170b6a0a476ff211fa59c385aa8f97f",
+    "semantic_hash": "7170b6a0a476ff211fa59c385aa8f97f"
+  },
+  "SimulatorManager/Models/SimulatorApp.swift": {
+    "mtime": 1788783929.8420198,
+    "ast_hash": "ae75126e6da2a869d3a0d4b35ca99463",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Models/SimulatorCleanupCandidate.swift": {
+    "mtime": 1775594844.1242518,
+    "ast_hash": "7a6ce54fece2d8e4999ec53bec0d4cd9",
+    "semantic_hash": "7a6ce54fece2d8e4999ec53bec0d4cd9"
+  },
+  "SimulatorManager/Models/SimulatorPlatform.swift": {
+    "mtime": 1765204191.7527883,
+    "ast_hash": "54f7954a6343f1658ffd0763f0e98ed0",
+    "semantic_hash": "54f7954a6343f1658ffd0763f0e98ed0"
+  },
+  "SimulatorManager/Preview Content/Preview Assets.xcassets/Contents.json": {
+    "mtime": 1765204191.75294,
+    "ast_hash": "9deb2ada1cc834bbebf8bbad9c8978a1",
+    "semantic_hash": "9deb2ada1cc834bbebf8bbad9c8978a1"
+  },
+  "SimulatorManager/Services/AppDiscoveryService.swift": {
+    "mtime": 1788783929.8427055,
+    "ast_hash": "8c74f6db7e7f0f795ab9f7cf36821f9a",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Services/DestructiveActionConfirming.swift": {
+    "mtime": 1787480861.4431922,
+    "ast_hash": "4a9b3b75379dc4a4fd6ee80bc50249ff",
+    "semantic_hash": "4a9b3b75379dc4a4fd6ee80bc50249ff"
+  },
+  "SimulatorManager/Services/DeviceAppMonitoringService.swift": {
+    "mtime": 1787480861.4439971,
+    "ast_hash": "11732c193c911dd7a2c509dfe1e77789",
+    "semantic_hash": "11732c193c911dd7a2c509dfe1e77789"
+  },
+  "SimulatorManager/Services/GithubService.swift": {
+    "mtime": 1773863691.876008,
+    "ast_hash": "07b6d4eae664172a2b4ff9a691004923",
+    "semantic_hash": "07b6d4eae664172a2b4ff9a691004923"
+  },
+  "SimulatorManager/Services/GlobalHotkeyService.swift": {
+    "mtime": 1787256732.9410913,
+    "ast_hash": "b8763d7e1dad0d8c5f127b44bce8fbdb",
+    "semantic_hash": "b8763d7e1dad0d8c5f127b44bce8fbdb"
+  },
+  "SimulatorManager/Services/GlobalShortcutController.swift": {
+    "mtime": 1787256732.9413633,
+    "ast_hash": "d639d59ca031173fa89c35c493cfa1b3",
+    "semantic_hash": "d639d59ca031173fa89c35c493cfa1b3"
+  },
+  "SimulatorManager/Services/MenuBarMenuPresenter.swift": {
+    "mtime": 1787256732.9416344,
+    "ast_hash": "91d187ddeba63a340cb6c175bbc9d7c7",
+    "semantic_hash": "91d187ddeba63a340cb6c175bbc9d7c7"
+  },
+  "SimulatorManager/Services/SimulatorCleanupService.swift": {
+    "mtime": 1787480861.444361,
+    "ast_hash": "27bc207ba472bd1b066285721d44a9c4",
+    "semantic_hash": "27bc207ba472bd1b066285721d44a9c4"
+  },
+  "SimulatorManager/Services/SimulatorResetService.swift": {
+    "mtime": 1775674732.9376342,
+    "ast_hash": "47a7e0e1c6c589db144dd6de3f8be76d",
+    "semantic_hash": "47a7e0e1c6c589db144dd6de3f8be76d"
+  },
+  "SimulatorManager/Settings.swift": {
+    "mtime": 1787256732.9424171,
+    "ast_hash": "f906655e2612d588d70f3c2c548830a3",
+    "semantic_hash": "f906655e2612d588d70f3c2c548830a3"
+  },
+  "SimulatorManager/SimulatorManagerApp.swift": {
+    "mtime": 1787256732.9434977,
+    "ast_hash": "7010b01ac9cf956c3a819bd383bdb2df",
+    "semantic_hash": "7010b01ac9cf956c3a819bd383bdb2df"
+  },
+  "SimulatorManager/SimulatorPaths.swift": {
+    "mtime": 1775594844.1251612,
+    "ast_hash": "1f08274ae523d1b14c1ceed8f8594164",
+    "semantic_hash": "1f08274ae523d1b14c1ceed8f8594164"
+  },
+  "SimulatorManager/ViewModels/CleanupSimulatorsViewModel.swift": {
+    "mtime": 1787480861.4450245,
+    "ast_hash": "dca28fd68b3485c48e9820a6a20e653f",
+    "semantic_hash": "dca28fd68b3485c48e9820a6a20e653f"
+  },
+  "SimulatorManager/ViewModels/DeviceViewModel.swift": {
+    "mtime": 1788783929.8440135,
+    "ast_hash": "4e889da8dbbe6586d1da147bf23062dc",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/ViewModels/ResetSimulatorsViewModel.swift": {
+    "mtime": 1787480861.4456847,
+    "ast_hash": "8fc0bc53a805ecbe99119c173c0ea4a5",
+    "semantic_hash": "8fc0bc53a805ecbe99119c173c0ea4a5"
+  },
+  "SimulatorManager/ViewModels/SettingsViewModel.swift": {
+    "mtime": 1773954788.3934639,
+    "ast_hash": "f8bd452bdbc2e93521127948d204ee88",
+    "semantic_hash": "f8bd452bdbc2e93521127948d204ee88"
+  },
+  "SimulatorManager/ViewModels/ShortcutRecorderViewModel.swift": {
+    "mtime": 1787256732.9436915,
+    "ast_hash": "389adebd674ffbd52081cf271a6f80f5",
+    "semantic_hash": "389adebd674ffbd52081cf271a6f80f5"
+  },
+  "SimulatorManager/ViewModels/SimulatorManagerViewModel.swift": {
+    "mtime": 1788783929.844254,
+    "ast_hash": "686aaa5e8530b3805d09d6176e729519",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Views/AppGroupsView.swift": {
+    "mtime": 1788783929.8447154,
+    "ast_hash": "6c86c0c878c25a419eb3ee26f073aac5",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Views/AppsView.swift": {
+    "mtime": 1788783929.845021,
+    "ast_hash": "b1ff95560834db597fc3a882bcf00f71",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Views/CleanupSimulatorsView.swift": {
+    "mtime": 1775594844.1258209,
+    "ast_hash": "619c198758feac7e6e775183ffc5b32c",
+    "semantic_hash": "619c198758feac7e6e775183ffc5b32c"
+  },
+  "SimulatorManager/Views/DeviceTypeView.swift": {
+    "mtime": 1773954788.3944447,
+    "ast_hash": "6ff82e625e189ae826318638d16ab38e",
+    "semantic_hash": "6ff82e625e189ae826318638d16ab38e"
+  },
+  "SimulatorManager/Views/DeviceView.swift": {
+    "mtime": 1788783929.8451805,
+    "ast_hash": "bcb7fc23b61a40ab8dd594254cf9b0af",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Views/GitHubView.swift": {
+    "mtime": 1765204191.7543006,
+    "ast_hash": "169e7bb3f6ad51edb75645fe4cd19c64",
+    "semantic_hash": "169e7bb3f6ad51edb75645fe4cd19c64"
+  },
+  "SimulatorManager/Views/OpenPreferencesButton.swift": {
+    "mtime": 1787256732.9439712,
+    "ast_hash": "88d6f6b35722e12bf0b9033cca8def35",
+    "semantic_hash": "88d6f6b35722e12bf0b9033cca8def35"
+  },
+  "SimulatorManager/Views/PreferencesView.swift": {
+    "mtime": 1787256732.944225,
+    "ast_hash": "5e7d5f8eab26f8d143c3fa4c601a7e6e",
+    "semantic_hash": "5e7d5f8eab26f8d143c3fa4c601a7e6e"
+  },
+  "SimulatorManager/Views/RecentAppsView.swift": {
+    "mtime": 1788783929.8453288,
+    "ast_hash": "f11f34a3ddc32a4e3e7355287dcea5c3",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Views/ResetSimulatorsView.swift": {
+    "mtime": 1773954788.395137,
+    "ast_hash": "f18fffe8113a066b50883933c5f6c46b",
+    "semantic_hash": "f18fffe8113a066b50883933c5f6c46b"
+  },
+  "SimulatorManager/Views/SettingsView.swift": {
+    "mtime": 1773954788.3953686,
+    "ast_hash": "157b6a3e9e6885745685950375594dbe",
+    "semantic_hash": "157b6a3e9e6885745685950375594dbe"
+  },
+  "SimulatorManager/Views/ShortcutRecorderView.swift": {
+    "mtime": 1787256732.9444351,
+    "ast_hash": "e054ca44e446ef6e6d3cf4ea36a1af8d",
+    "semantic_hash": "e054ca44e446ef6e6d3cf4ea36a1af8d"
+  },
+  "SimulatorManagerTests/Helpers/DeviceFixtureDirectory.swift": {
+    "mtime": 1787480861.4463573,
+    "ast_hash": "9e90d26c29157185c21a8584c9ea6408",
+    "semantic_hash": "9e90d26c29157185c21a8584c9ea6408"
+  },
+  "SimulatorManagerTests/Helpers/TestDataHelpers.swift": {
+    "mtime": 1788783929.8459332,
+    "ast_hash": "8c9a3b523978fed691ec12393e72202d",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/Mocks/MockDestructiveActionConfirmer.swift": {
+    "mtime": 1787480861.4465473,
+    "ast_hash": "9ce4ccce621db6e6aa6de92a17d406c7",
+    "semantic_hash": "9ce4ccce621db6e6aa6de92a17d406c7"
+  },
+  "SimulatorManagerTests/Mocks/MockDeviceAppMonitoringService.swift": {
+    "mtime": 1773954788.3956325,
+    "ast_hash": "e363bc337321e10ee969a53fc58b02e1",
+    "semantic_hash": "e363bc337321e10ee969a53fc58b02e1"
+  },
+  "SimulatorManagerTests/Mocks/MockDeviceManager.swift": {
+    "mtime": 1787480861.4471617,
+    "ast_hash": "593966aa8c6a45737fa063b0bdcb144f",
+    "semantic_hash": "593966aa8c6a45737fa063b0bdcb144f"
+  },
+  "SimulatorManagerTests/Mocks/MockGlobalHotkeyService.swift": {
+    "mtime": 1787256732.9451325,
+    "ast_hash": "b845db6ef30a9dac8dd69dcdbde15ee6",
+    "semantic_hash": "b845db6ef30a9dac8dd69dcdbde15ee6"
+  },
+  "SimulatorManagerTests/Mocks/MockMenuBarMenuPresenter.swift": {
+    "mtime": 1787256732.9454582,
+    "ast_hash": "9237430c551871cc692b055aea7f51c1",
+    "semantic_hash": "9237430c551871cc692b055aea7f51c1"
+  },
+  "SimulatorManagerTests/Mocks/MockSimulatorCleanupService.swift": {
+    "mtime": 1787480861.4475627,
+    "ast_hash": "ce7394f62c5c22b4ab4565e53c777dc0",
+    "semantic_hash": "ce7394f62c5c22b4ab4565e53c777dc0"
+  },
+  "SimulatorManagerTests/Mocks/MockSimulatorDeviceActionService.swift": {
+    "mtime": 1773954788.3960388,
+    "ast_hash": "ddd8d62e9ad7a202c3513b61253339b1",
+    "semantic_hash": "ddd8d62e9ad7a202c3513b61253339b1"
+  },
+  "SimulatorManagerTests/Models/GlobalShortcutTests.swift": {
+    "mtime": 1787256732.945675,
+    "ast_hash": "4381625e353b919d29e4f8a07f84f8f0",
+    "semantic_hash": "4381625e353b919d29e4f8a07f84f8f0"
+  },
+  "SimulatorManagerTests/Models/SimulatorPlatformTests.swift": {
+    "mtime": 1773950771.1809819,
+    "ast_hash": "4f3b3b494eaa1a2ec8d3061c138759e1",
+    "semantic_hash": "4f3b3b494eaa1a2ec8d3061c138759e1"
+  },
+  "SimulatorManagerTests/Services/DeviceAppMonitoringServiceTests.swift": {
+    "mtime": 1783623720.7026186,
+    "ast_hash": "36af777c111b649fa3a129e2a5b4da6a",
+    "semantic_hash": "36af777c111b649fa3a129e2a5b4da6a"
+  },
+  "SimulatorManagerTests/Services/DeviceManagerReloadTests.swift": {
+    "mtime": 1787480861.44786,
+    "ast_hash": "1e8c10732902048f7f73e3920afeabf7",
+    "semantic_hash": "1e8c10732902048f7f73e3920afeabf7"
+  },
+  "SimulatorManagerTests/Services/FolderMonitorTests.swift": {
+    "mtime": 1783623720.70296,
+    "ast_hash": "33d09d99f7a9eb17d7733118601bf061",
+    "semantic_hash": "33d09d99f7a9eb17d7733118601bf061"
+  },
+  "SimulatorManagerTests/Services/GlobalHotkeyServiceTests.swift": {
+    "mtime": 1787256732.9459908,
+    "ast_hash": "90933505a5dacf0716c18fd222be7881",
+    "semantic_hash": "90933505a5dacf0716c18fd222be7881"
+  },
+  "SimulatorManagerTests/Services/GlobalShortcutControllerTests.swift": {
+    "mtime": 1787256732.9464736,
+    "ast_hash": "a637e73b484ea53c02bedf6853b779fe",
+    "semantic_hash": "a637e73b484ea53c02bedf6853b779fe"
+  },
+  "SimulatorManagerTests/Services/MenuBarMenuPresenterTests.swift": {
+    "mtime": 1787256732.946621,
+    "ast_hash": "3dac47473f725ce8e013481d822f97d1",
+    "semantic_hash": "3dac47473f725ce8e013481d822f97d1"
+  },
+  "SimulatorManagerTests/Services/SimulatorCleanupServiceTests.swift": {
+    "mtime": 1788510256.5044544,
+    "ast_hash": "1fef07f4a4487894e91f5a5923c2d2ba",
+    "semantic_hash": "1fef07f4a4487894e91f5a5923c2d2ba"
+  },
+  "SimulatorManagerTests/SettingsGlobalShortcutTests.swift": {
+    "mtime": 1787256732.9467726,
+    "ast_hash": "764c0e12fa400311e3f19f3aae91d482",
+    "semantic_hash": "764c0e12fa400311e3f19f3aae91d482"
+  },
+  "SimulatorManagerTests/ViewModels/CleanupSimulatorsViewModelTests.swift": {
+    "mtime": 1788510256.5048387,
+    "ast_hash": "1f42d75febd13721ad32305702ccfc8e",
+    "semantic_hash": "1f42d75febd13721ad32305702ccfc8e"
+  },
+  "SimulatorManagerTests/ViewModels/DeviceViewModelTests.swift": {
+    "mtime": 1788510256.5059495,
+    "ast_hash": "6d7565d16fef3ff74c691badebef1a0e",
+    "semantic_hash": "6d7565d16fef3ff74c691badebef1a0e"
+  },
+  "SimulatorManagerTests/ViewModels/SettingsMenuVisibilityTests.swift": {
+    "mtime": 1787480861.4499037,
+    "ast_hash": "0bd55a86cd4994a9a3d73f10ca84125a",
+    "semantic_hash": "0bd55a86cd4994a9a3d73f10ca84125a"
+  },
+  "SimulatorManagerTests/ViewModels/ShortcutRecorderViewModelTests.swift": {
+    "mtime": 1787256732.9471207,
+    "ast_hash": "f49e3472ff0cad629983ac7d974ce5aa",
+    "semantic_hash": "f49e3472ff0cad629983ac7d974ce5aa"
+  },
+  "SimulatorManagerTests/ViewModels/SimulatorManagerViewModelEdgeCaseTests.swift": {
+    "mtime": 1775594844.127474,
+    "ast_hash": "53b1c64654e300fa4ff25721a556713a",
+    "semantic_hash": "53b1c64654e300fa4ff25721a556713a"
+  },
+  "SimulatorManagerTests/ViewModels/SimulatorManagerViewModelTests.swift": {
+    "mtime": 1775594844.1279125,
+    "ast_hash": "ff2622063d13b0e0a44c234de47048cb",
+    "semantic_hash": "ff2622063d13b0e0a44c234de47048cb"
+  },
+  "build.sh": {
+    "mtime": 1788783929.847079,
+    "ast_hash": "ed928beb4efff650466b3f6e24c4be05",
+    "semantic_hash": ""
+  },
+  ".github/copilot-instructions.md": {
+    "mtime": 1787256732.9371793,
+    "ast_hash": "7396cd57a3785eb5dbb0590922d9dbbc",
+    "semantic_hash": "7396cd57a3785eb5dbb0590922d9dbbc"
+  },
+  ".github/pull_request_template.md": {
+    "mtime": 1787256732.9374697,
+    "ast_hash": "8b539c10658d7d4858f390a654f82b12",
+    "semantic_hash": "8b539c10658d7d4858f390a654f82b12"
+  },
+  ".swiftlint.yml": {
+    "mtime": 1783582738.3381014,
+    "ast_hash": "de4b8922afd7626cce48ac9276a33c1b",
+    "semantic_hash": "de4b8922afd7626cce48ac9276a33c1b"
+  },
+  "CLAUDE.md": {
+    "mtime": 1788782489.446965,
+    "ast_hash": "e3d9f6e1314e38704be99c9d1c86f211",
+    "semantic_hash": "e3d9f6e1314e38704be99c9d1c86f211"
+  },
+  "CONTRIBUTING.md": {
+    "mtime": 1788783929.8387053,
+    "ast_hash": "a3b7068eabed0608891e5fba46222fe5",
+    "semantic_hash": ""
+  },
+  "FASTLANE_README.md": {
+    "mtime": 1788783929.8395364,
+    "ast_hash": "d3461560a97ceb5f1a8b6d7ef1f0a6cf",
+    "semantic_hash": ""
+  },
+  "FolderMonitoringImplementation.md": {
+    "mtime": 1783623720.6965597,
+    "ast_hash": "b9238deeb6d8df0d2705e9b14022fa11",
+    "semantic_hash": "b9238deeb6d8df0d2705e9b14022fa11"
+  },
+  "README.md": {
+    "mtime": 1787484461.939879,
+    "ast_hash": "baa9096eefa7e1cee3370ff434aa9f7b",
+    "semantic_hash": "baa9096eefa7e1cee3370ff434aa9f7b"
+  },
+  "SimulatorManagerTests/README.md": {
+    "mtime": 1788510256.5038931,
+    "ast_hash": "790a79b3ce131081284dee6b71d45dae",
+    "semantic_hash": "790a79b3ce131081284dee6b71d45dae"
+  },
+  "fastlane/README.md": {
+    "mtime": 1788510256.5091128,
+    "ast_hash": "bd7855860d0139202c1c837017e14e19",
+    "semantic_hash": "bd7855860d0139202c1c837017e14e19"
+  },
+  "Screenshots/Screenshot 1.jpeg": {
+    "mtime": 1775679490.7535954,
+    "ast_hash": "44154915f6ac94ccff73967af3eeb0f2",
+    "semantic_hash": "44154915f6ac94ccff73967af3eeb0f2"
+  },
+  "Screenshots/Screenshot 2.jpeg": {
+    "mtime": 1787484218.1768036,
+    "ast_hash": "42ff6e9a1ea4e42df64219ac9b60e93a",
+    "semantic_hash": "42ff6e9a1ea4e42df64219ac9b60e93a"
+  },
+  "Screenshots/Screenshot 3.jpeg": {
+    "mtime": 1787484296.4258592,
+    "ast_hash": "f6ff680140099944af08127935b78f9a",
+    "semantic_hash": "f6ff680140099944af08127935b78f9a"
+  },
+  "SimulatorManagerTests/Helpers/AsyncTestSupport.swift": {
+    "mtime": 1788510256.5033562,
+    "ast_hash": "4b70519ef541a1e4b262230808eef986",
+    "semantic_hash": "4b70519ef541a1e4b262230808eef986"
+  },
+  "SimulatorManager/ContainerShortcutHandling.swift": {
+    "mtime": 1788783929.8403065,
+    "ast_hash": "6ec65a85454673670f245e32fe8f533e",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Models/ContainerShortcut.swift": {
+    "mtime": 1788783929.8417647,
+    "ast_hash": "520eb6f15560bafaf0c37662269c4071",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Models/UserDefaultsDomain.swift": {
+    "mtime": 1788783929.8420968,
+    "ast_hash": "be8697adb2bf14f9afa37fe9426c8fe6",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Services/ContainerContentService.swift": {
+    "mtime": 1788783929.8427896,
+    "ast_hash": "9becc39207345bb919c96ff62edb55ca",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Services/PasteboardWriting.swift": {
+    "mtime": 1788783929.8429894,
+    "ast_hash": "aa5f3d6662973696b6e863de5a0f0189",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Services/PropertyListJSONConverter.swift": {
+    "mtime": 1788783929.8432279,
+    "ast_hash": "62769499a2a991e5682465582829bd2e",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Services/UserDefaultsExportService.swift": {
+    "mtime": 1788783929.8434622,
+    "ast_hash": "2b4d52662ccb14458ea164da566c8fbc",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Services/UserFacingErrorReporting.swift": {
+    "mtime": 1788783929.8435528,
+    "ast_hash": "8a4e4ef5200727a066e3f4476ffebd2d",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Views/AppShortcutMenuItems.swift": {
+    "mtime": 1788783929.8447964,
+    "ast_hash": "37f0b21e894937a32af6362998ef43ce",
+    "semantic_hash": ""
+  },
+  "SimulatorManager/Views/UserDefaultsCopyMenuItems.swift": {
+    "mtime": 1788783929.845418,
+    "ast_hash": "9a03e28f1f127bd18af67802ff9368a7",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/Helpers/PreferencesFixtureDirectory.swift": {
+    "mtime": 1788783929.8455408,
+    "ast_hash": "b738e4fd006e7b1edd0d861c706981a6",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/Mocks/MockContainerContentCopier.swift": {
+    "mtime": 1788783929.8460205,
+    "ast_hash": "758cf32015fc11b0fbcf28dc93df9314",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/Mocks/MockPasteboard.swift": {
+    "mtime": 1788783929.8460994,
+    "ast_hash": "0ba052a90b966ccfa53ce0998d1dfc04",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/Mocks/MockUserDefaultsExporter.swift": {
+    "mtime": 1788783929.8461819,
+    "ast_hash": "8a8b17affd23f76aaf00f1b0b2c005c0",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/Mocks/MockUserFacingErrorReporter.swift": {
+    "mtime": 1788783929.8462713,
+    "ast_hash": "b00867783ce19054854f25baeaf90b7c",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/Models/ContainerShortcutTests.swift": {
+    "mtime": 1788783929.84637,
+    "ast_hash": "b8680215785f12ad12ff932bf4f8ffd7",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/Models/UserDefaultsDomainTests.swift": {
+    "mtime": 1788783929.8464587,
+    "ast_hash": "071e48af853ac1b033d1f75911ae767d",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/Services/ContainerContentServiceTests.swift": {
+    "mtime": 1788783929.8465538,
+    "ast_hash": "17f09cc889a3ebffe10f78efbb64b4fa",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/Services/PropertyListJSONConverterTests.swift": {
+    "mtime": 1788783929.846688,
+    "ast_hash": "9c18e74219d85609ff5870a9d1bdb9f4",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/Services/UserDefaultsExportServiceTests.swift": {
+    "mtime": 1788783929.8467896,
+    "ast_hash": "3ba1a71557b95efa218f1a3c6ede5eb1",
+    "semantic_hash": ""
+  },
+  "SimulatorManagerTests/ViewModels/ContainerShortcutHandlingTests.swift": {
+    "mtime": 1788783929.8469262,
+    "ast_hash": "aec96fd485d4b8cd238dc9ec7c401797",
+    "semantic_hash": ""
+  }
+}

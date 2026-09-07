@@ -113,3 +113,43 @@ vendor/bundle
 
 iOSInjectionProject/
 
+
+# graphify
+#
+# The knowledge graph itself IS committed, so every contributor starts with a
+# map (graphify's own guidance). Only the machine-specific and regenerable
+# parts are excluded:
+#
+#   cost.json         local token accounting
+#   .graphify_python  absolute interpreter path
+#   .graphify_root    absolute scan root
+#   cache/ast/        1.6 MB, 78 of 80 files embed absolute paths; tree-sitter
+#                     regenerates it locally at no API cost
+#   graph.html        1.3 MB of regenerable visualisation whose <title> embeds
+#                     the generating machine's path; `graphify export html`
+#                     recreates it from graph.json
+#   YYYY-MM-DD/       dated snapshots the post-checkout hook drops
+#
+# cache/semantic/ is deliberately NOT ignored — it is portable and is the only
+# part that costs LLM tokens to rebuild.
+graphify-out/cost.json
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/cache/ast/
+graphify-out/graph.html
+graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
+
+# Claude Code local configuration.
+#
+# graphify's installer suggests committing .claude/settings.json, but the
+# PreToolUse hooks it writes hardcode an absolute graphify path, so the file is
+# only valid on the machine that generated it. .claude/skills/ is vendored
+# Apple/Anthropic reference documentation, not this project's content (the same
+# reasoning as the .claude/ entry in .graphifyignore).
+#
+# Contributors get the graph-first behaviour by running `graphify claude install`
+# once, which writes the correct paths for their machine.
+.claude/
+
+# graphify: cache stat index embeds absolute paths and is rebuilt on demand.
+graphify-out/cache/stat-index.json
