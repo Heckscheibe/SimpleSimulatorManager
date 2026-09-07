@@ -1,0 +1,15 @@
+# graphify corpus exclusions — same syntax as .gitignore, evaluated after it.
+# Only ever excludes more; it cannot re-include anything .gitignore drops.
+
+# Local Claude Code config and vendored third-party skill documentation.
+# These are tooling, not this project's content — indexing them buries the
+# Swift app graph under ~80 files of Apple/Anthropic reference material.
+.claude/
+
+# App icon artwork: the same icon rendered at many sizes and tints.
+# Vision extraction on these costs one LLM call each and yields no structure.
+# Screenshots/ is deliberately NOT excluded — those images document real app UI
+# (menu bar dropdown, settings window) and produce useful nodes.
+*.icon/
+*.xcassets/
+Assets/Symbols/
