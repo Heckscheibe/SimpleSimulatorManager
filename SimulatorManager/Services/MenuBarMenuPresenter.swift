@@ -20,6 +20,11 @@ protocol MenuBarMenuPresenting: AnyObject {
     /// - Returns: `true` when the status item could be reached, `false` otherwise.
     @discardableResult
     func closeMenu() -> Bool
+
+    /// The window the panel is showing in, or `nil` when it is not showing. The flyouts are
+    /// positioned against it, so the one place that knows how to find it hands it over rather than
+    /// being reimplemented in a view.
+    func panelWindow() -> NSWindow?
 }
 
 /// Opens and closes the `MenuBarExtra` panel programmatically.

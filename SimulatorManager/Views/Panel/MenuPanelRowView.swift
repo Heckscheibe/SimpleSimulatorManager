@@ -113,9 +113,22 @@ private extension MenuPanelRowView {
                         .foregroundStyle(isHighlighted ? AnyShapeStyle(.white.opacity(0.8)) : AnyShapeStyle(.secondary))
                 }
             }
-            .lineLimit(1)
+            .lineLimit(wrapsText ? nil : 1)
             .truncationMode(.middle)
+            // Informational rows carry sentences rather than names, and a sentence truncated in the
+            // middle tells the user nothing — least of all when the sentence is explaining why an
+            // irreversible deletion is on offer. Everything else stays on one line, the way a menu
+            // item does.
+            .fixedSize(horizontal: false, vertical: wrapsText)
         }
+    }
+
+    var wrapsText: Bool {
+        if case .informational = node.kind {
+            return true
+        }
+
+        return false
     }
 
     var accessibilityTraits: AccessibilityTraits {

@@ -456,8 +456,31 @@ struct MenuTreeBuilderTests {
 
         #expect(nodes.node(withID: "cleanup.empty")?.title == "No invalid simulators found")
         #expect(nodes.node(withID: "cleanup.deleteAll") == nil)
-        #expect(nodes.node(withID: "cleanup.explanation") != nil)
         #expect(nodes.node(withID: "cleanup.refresh")?.isEnabled == true)
+    }
+
+    @Test("The cleanup menu explains itself in place rather than behind a submenu")
+    func cleanupExplainsItselfInPlace() throws {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        let cleanup = try #require(fixture.makeBuilder().makeNodes().node(withID: "cleanup"))
+        let explanation = cleanup.children.filter { $0.id.hasPrefix("cleanup.explanation") }
+
+        // A submenu titled "Why a simulator can be deleted" was a way around `NSMenu` having no
+        // information-only rows. The panel has them, so an explanation of an irreversible deletion
+        // does not have to be clicked on to be read.
+        #expect(cleanup.children.contains { $0.isSubmenu && $0.id.hasPrefix("cleanup.explanation") } == false)
+        let header = try #require(explanation.first)
+
+        #expect(explanation.count == 8)
+        #expect(explanation.allSatisfy { !$0.isSelectable })
+        // Marked as information, so prose under a list of deletions does not read as a report of
+        // what is about to happen.
+        #expect(header.kind.isSectionHeader)
+        #expect(header.title == "Information")
+        #expect(header.iconName == "info.circle")
+        #expect(explanation[1].id == "cleanup.explanation.intro")
     }
 
     @Test("An available update replaces the version row with an actionable one")
