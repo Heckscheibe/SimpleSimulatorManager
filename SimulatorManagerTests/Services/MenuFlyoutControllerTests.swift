@@ -193,6 +193,25 @@ struct MenuFlyoutControllerTests {
         #expect(presenter.hiddenFromIndices == [1])
     }
 
+    @Test("Closing the panel keeps where its rows are, so opening it again still finds them")
+    func resetKeepsRowFrames() {
+        let presenter = MockMenuFlyoutPresenter()
+        let controller = Self.makeController(presenter: presenter)
+        let window = NSWindow()
+
+        controller.rowFrameChanged(CGRect(x: 0, y: 40, width: 300, height: 22), for: Self.submenu(id: "device-type"))
+        controller.reset()
+
+        // Hiding the panel does not tear down the view inside it, so the rows are laid out at the
+        // positions they already had and `onGeometryChange` — which reports a *change* — says
+        // nothing. Forgetting the frames here left the second opening with nowhere to hang a flyout.
+        controller.synchronize(levels: Self.levels(count: 2),
+                               path: ["device-type"],
+                               rootWindow: window) { _, _, _ in AnyView(EmptyView()) }
+
+        #expect(presenter.shown.map(\.index) == [0])
+    }
+
     @Test("With no panel there is nothing to hang a flyout off")
     func noPanelClosesEverything() {
         let presenter = MockMenuFlyoutPresenter()

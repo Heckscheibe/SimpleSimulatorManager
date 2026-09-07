@@ -84,6 +84,12 @@ extension MenuBarPanelIntegrationTests {
                     "The panel collapsed to \(contentView.bounds.height) points, so its rows are not being measured")
             #expect(contentView.bounds.height <= MenuPanelStyle.maximumHeight,
                     "The panel grew past its cap, so a machine with many simulators would get a panel taller than the screen")
+
+            let visibleHeight = try #require(NSScreen.main?.visibleFrame.height)
+
+            // The cap is the screen, not a constant: a display with room for every simulator should
+            // show every simulator rather than scrolling.
+            #expect(contentView.bounds.height <= visibleHeight)
         }
 
         @Test("Closing hides the panel, and closing again does not reopen it")

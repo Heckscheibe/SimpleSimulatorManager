@@ -142,11 +142,14 @@ extension MenuFlyoutController {
         disarmSafeTriangle()
     }
 
-    /// Closing the panel takes the whole chain with it, and leaves nothing behind to be positioned
-    /// against windows that no longer exist.
+    /// Closing the panel takes the whole chain with it.
+    ///
+    /// The row frames deliberately survive. Closing the panel hides its window but does not tear
+    /// down the view inside it, so on the next opening the rows are laid out at the positions they
+    /// already had — and `onGeometryChange` reports a *change*, so it says nothing at all. Throwing
+    /// the frames away here left the second opening with nowhere to hang a flyout.
     func reset() {
         cancelPending()
-        rowFrames.removeAll()
         presenter.hideAll()
     }
 }
