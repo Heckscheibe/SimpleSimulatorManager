@@ -38,6 +38,38 @@ Release build (signed, notarized, requires `.env` with signing/notarization secr
 bundle exec fastlane build    # unsigned debug build only
 ```
 
+### Agent skills from Xcode
+
+Xcode 27 ships Apple-authored agent skills and exports them as a Claude Code plugin named
+`xcode-integration`. As of 27.0 RC (`27A266a`) there are 15:
+- SwiftUI and App Intents specialists
+- accessibility (Dynamic Type, sufficient contrast, VoiceOver)
+- `translation` / `translation-coordinator`
+- `device-interaction`, `modernize-tests`, security auditing and others
+
+Link them into a checkout with:
+
+```bash
+./Scripts/link-xcode-skills.sh
+```
+
+The script builds a skills-only wrapper at `.claude/skills/xcode-integration/`: Xcode's own
+`plugin.json` plus a symlink to Xcode's `skills` folder. Claude Code then loads the skills as
+`xcode-integration@skills-dir`, named `xcode-integration:<skill>`. Three facts drive that design:
+
+- **The namespace is required, not cosmetic.** Xcode's String Catalog MCP tools refuse to run until
+  the agent has activated `xcode-integration:translation` / `…:translation-coordinator`. Loose
+  copies of the same skills in `.claude/skills/<name>/` load unnamespaced and never match. The
+  script warns if one is found.
+- **The exported plugin's `.mcp.json` is deliberately left out.** It declares an `xcode` MCP
+  server; this repo doesn't configure Xcode's MCP tools, and adding them is a separate decision.
+- **The links are developer-local and follow the installed Xcode.**
+  - `.claude/skills/xcode-integration/` is git-ignored.
+  - The export directory is per Xcode build
+    (`~/Library/Developer/Xcode/CodingAssistant/ExportedPlugins/<build>/claude`).
+  - Re-run the script after every Xcode update and in every new worktree.
+  - Never commit copies of the skills: they go stale with the next Xcode release.
+
 ## Architecture
 
 Lightweight MVVM with service-based filesystem logic.

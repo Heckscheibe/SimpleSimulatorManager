@@ -106,6 +106,12 @@ vendor/bundle
 # directory out of the repository entirely.
 .codegraph/
 
+# Apple agent skills
+#
+# Scripts/link-xcode-skills.sh builds this wrapper from symlinks into a
+# developer-local, Xcode-build-specific directory, so it must never be committed.
+.claude/skills/xcode-integration/
+
 # Code Injection
 #
 # After new code Injection tools there's a generated folder /iOSInjectionProject
