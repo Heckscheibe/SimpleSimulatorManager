@@ -53,7 +53,9 @@ public struct DeviceLoader: Sendable {
 
     /// Decodes every device plus its apps and app groups, along with an `.installed` change per
     /// app for seeding the recent-apps list. Returns nil when the devices directory is unknown.
-    public func loadDevices() -> LoadedDevices? {
+    /// - Parameter includingAppGroups: Pass `false` to skip scanning app groups when only apps are
+    ///   needed; the devices' `appGroups` then stay empty.
+    public func loadDevices(includingAppGroups: Bool = true) -> LoadedDevices? {
         guard devicesDirectoryURL != nil else {
             return nil
         }
@@ -64,7 +66,9 @@ public struct DeviceLoader: Sendable {
         for device in devices {
             let appsAndTimeStamps = appDiscoveryService.loadAppsAndTimestamps(for: device)
             device.apps = appsAndTimeStamps.apps
-            device.appGroups = appDiscoveryService.loadAppGroups(for: device)
+            if includingAppGroups {
+                device.appGroups = appDiscoveryService.loadAppGroups(for: device)
+            }
             initialAppChanges.append(contentsOf: appsAndTimeStamps.appChanges)
         }
 

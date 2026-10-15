@@ -129,11 +129,7 @@ private extension ToolRegistry {
 
         let json = try await service.userDefaultsJSON(of: subject, onDeviceWithUdid: udid, domain: domain)
 
-        return CallTool.Result(
-            content: [.text(text: json, annotations: nil, _meta: nil)],
-            structuredContent: try? JSONDecoder().decode(Value.self, from: Data(json.utf8)),
-            isError: false
-        )
+        return try JSONOutput.result(json: Data(json.utf8))
     }
 }
 

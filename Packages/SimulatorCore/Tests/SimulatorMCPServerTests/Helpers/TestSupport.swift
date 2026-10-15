@@ -1,6 +1,7 @@
 import Foundation
 import MCP
 import SimulatorCore
+import SimulatorCoreTestSupport
 @testable import SimulatorMCPServer
 
 /// Known identifiers of the sample simulators ``SampleSimulators`` writes.
@@ -23,18 +24,18 @@ enum Sample {
 /// A fixture devices directory populated with a booted iPhone holding two apps and an app group,
 /// an iPad holding one of those apps, and an empty watch.
 struct SampleSimulators {
-    let fixture: FixtureDevicesDirectory
-    let notesOnIPhone: FixtureDevicesDirectory.InstalledApp
+    let fixture: DeviceFixtureDirectory
+    let notesOnIPhone: DeviceFixtureDirectory.InstalledApp
     let appGroupURL: URL
 
     init() throws {
-        fixture = try FixtureDevicesDirectory()
+        fixture = try DeviceFixtureDirectory()
 
         try fixture.writeDevice(udid: Sample.iPhoneUdid, name: "iPhone 16 Pro", state: .running, lastBootedAt: Sample.lastBootedAt)
-        try fixture.writeDevice(udid: Sample.iPadUdid, name: "iPad Air", deviceTypeIdentifier: FixtureDevicesDirectory.DeviceTypeIdentifier.iPad)
+        try fixture.writeDevice(udid: Sample.iPadUdid, name: "iPad Air", deviceTypeIdentifier: DeviceFixtureDirectory.DeviceTypeIdentifier.iPad)
         try fixture.writeDevice(udid: Sample.watchUdid,
                                 name: "Apple Watch",
-                                deviceTypeIdentifier: FixtureDevicesDirectory.DeviceTypeIdentifier.watch,
+                                deviceTypeIdentifier: DeviceFixtureDirectory.DeviceTypeIdentifier.watch,
                                 runtime: "com.apple.CoreSimulator.SimRuntime.watchOS-26-0")
 
         notesOnIPhone = try fixture.writeApp(

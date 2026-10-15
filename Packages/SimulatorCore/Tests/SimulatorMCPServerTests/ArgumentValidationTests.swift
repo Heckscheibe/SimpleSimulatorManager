@@ -103,6 +103,16 @@ struct ArgumentValidationTests {
         #expect(!integralDouble.failed)
     }
 
+    @Test("A limit beyond Int's range is clamped like any other", arguments: [1e20, -1e20])
+    func hugeLimitIsClamped(limit: Double) async throws {
+        defer { simulators.remove() }
+
+        let result = await simulators.registry().call("list_recent_apps", arguments: ["limit": .double(limit)])
+        let recentApps = try #require(try result.json()["recentApps"] as? [Any])
+
+        #expect(recentApps.count == (limit > 0 ? 3 : 1))
+    }
+
     @Test("list_recent_apps clamps limit to 1…20", arguments: [(-5, 1), (0, 1), (1, 1), (2, 2), (500, 3)])
     func limitIsClamped(limit: Int, expectedCount: Int) async throws {
         defer { simulators.remove() }
@@ -157,6 +167,18 @@ struct ArgumentValidationTests {
         defer { simulators.remove() }
 
         let result = await simulators.registry().call("list_apps", arguments: ["udid": .string("../\(Sample.iPhoneUdid)")])
+
+        #expect(result.failed)
+    }
+
+    @Test("A folder whose device.plist names another UDID is not that device", arguments: [".", "..", "renamed-folder"])
+    func folderMustMatchItsUdid(folder: String) async throws {
+        defer { simulators.remove() }
+        // A copy of the iPhone's device.plist in a folder with a different name.
+        let copy = simulators.fixture.url.appendingPathComponent("renamed-folder")
+        try FileManager.default.copyItem(at: simulators.fixture.deviceURL(udid: Sample.iPhoneUdid), to: copy)
+
+        let result = await simulators.registry().call("list_apps", arguments: ["udid": .string(folder)])
 
         #expect(result.failed)
     }

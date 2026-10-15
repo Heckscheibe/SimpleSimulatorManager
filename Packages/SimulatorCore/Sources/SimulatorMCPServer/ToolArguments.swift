@@ -53,7 +53,8 @@ struct ToolArguments {
         return string
     }
 
-    /// Accepts integral doubles too, since some clients send every JSON number as a double.
+    /// Accepts integral doubles too, since some clients send every JSON number as a double. One
+    /// beyond `Int`'s range saturates to `Int.min` / `Int.max`, so callers that clamp still can.
     func optionalInteger(_ name: String) throws -> Int? {
         guard let value = values[name], value != .null else {
             return nil
@@ -63,8 +64,8 @@ struct ToolArguments {
             return integer
         }
 
-        if let double = value.doubleValue, double.rounded() == double, let integer = Int(exactly: double) {
-            return integer
+        if let double = value.doubleValue, double.isFinite, double.rounded() == double {
+            return Int(exactly: double) ?? (double < 0 ? Int.min : Int.max)
         }
 
         throw ToolArgumentError(message: "Argument \(name) must be an integer.")

@@ -11,7 +11,8 @@ import MCP
 public enum SimulatorMCPServer {
     public static let name = "simple-simulator-manager"
     public static let executableName = "simple-simulator-mcp"
-    /// Kept equal to the app's `MARKETING_VERSION`; `ServerVersionTests` fails when they drift.
+    /// The app's `MARKETING_VERSION`. fastlane's `release` lane rewrites this line when it bumps the
+    /// version; `LaunchCommandTests` fails if the two ever drift.
     public static let version = "1.4.0"
 
     static let instructions = """

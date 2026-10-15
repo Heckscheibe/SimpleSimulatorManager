@@ -119,6 +119,21 @@ struct DTOEncodingTests {
         #expect(directory["diskUsageBytes"] == nil)
     }
 
+    @Test("Structured content keeps strings, numbers and booleans exactly as the JSON text has them")
+    func structuredContentMatchesText() throws {
+        let json = #"{"domain":{"dataURL":"data:text/plain,hello%20world","flag":true,"count":1,"ratio":0.5,"none":null}}"#
+
+        let result = try JSONOutput.result(json: Data(json.utf8))
+        let domain = try #require(result.structuredContent?.objectValue?["domain"]?.objectValue)
+
+        #expect(result.text == json)
+        #expect(domain["dataURL"] == .string("data:text/plain,hello%20world"))
+        #expect(domain["flag"] == .bool(true))
+        #expect(domain["count"] == .int(1))
+        #expect(domain["ratio"] == .double(0.5))
+        #expect(domain["none"] == .null)
+    }
+
     @Test("Tool results carry the same JSON as text and as structured content")
     func resultsCarryStructuredContent() throws {
         let device = Device(udid: "A", name: "iPhone", state: .running, simulatorPlatform: .iPhone, osVersion: "iOS 26.1")

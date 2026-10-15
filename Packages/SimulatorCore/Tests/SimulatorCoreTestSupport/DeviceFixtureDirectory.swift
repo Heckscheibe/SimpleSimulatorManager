@@ -1,33 +1,35 @@
 import Foundation
 import SimulatorCore
 
-/// A throwaway CoreSimulator `Devices` directory laid out the way CoreSimulator writes it, so the
-/// server can be exercised end to end without touching the machine's own simulators.
+/// A throwaway CoreSimulator `Devices` directory holding hand-written plist fixtures, laid out the
+/// way CoreSimulator writes it, so loading can be exercised against known devices, apps, app groups
+/// and UserDefaults instead of the machine's own simulators.
 ///
-/// Extends the SimulatorCore test fixture with UserDefaults and app groups, which the tools expose.
-struct FixtureDevicesDirectory {
-    enum DeviceTypeIdentifier {
-        static let iPhone = "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro"
-        static let iPad = "com.apple.CoreSimulator.SimDeviceType.iPad-Air-11-inch-M3"
-        static let watch = "com.apple.CoreSimulator.SimDeviceType.Apple-Watch-Series-10-46mm"
+/// Shared by every test target in this package. Mirrors
+/// `SimulatorManagerTests/Helpers/DeviceFixtureDirectory.swift`, plus installed apps.
+public struct DeviceFixtureDirectory {
+    public enum DeviceTypeIdentifier {
+        public static let iPhone = "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro"
+        public static let iPad = "com.apple.CoreSimulator.SimDeviceType.iPad-Air-11-inch-M3"
+        public static let watch = "com.apple.CoreSimulator.SimDeviceType.Apple-Watch-Series-10-46mm"
     }
 
-    /// Paths of an installed app, for asserting what the tools report.
-    struct InstalledApp {
-        let dataContainerURL: URL
-        let bundleURL: URL
+    /// Paths of an installed app, for asserting what loading reports.
+    public struct InstalledApp {
+        public let dataContainerURL: URL
+        public let bundleURL: URL
     }
 
-    let url: URL
+    public let url: URL
 
-    init() throws {
+    public init() throws {
         let temporaryURL = FileManager.default
             .temporaryDirectory
-            .appendingPathComponent("simulator-mcp-fixture-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("simulator-core-fixture-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temporaryURL, withIntermediateDirectories: true)
 
         // Directory enumeration reports `/private/var/…` for the temporary directory's `/var/…`, so
-        // the fixture uses the real path for its expectations to compare equal to what tools return.
+        // the fixture uses the real path for its expectations to compare equal to loaded paths.
         // `resolvingSymlinksInPath()` would strip `/private` again, hence `realpath`.
         guard let realPath = realpath(temporaryURL.path, nil) else {
             throw CocoaError(.fileNoSuchFile)
@@ -37,16 +39,16 @@ struct FixtureDevicesDirectory {
         url = URL(fileURLWithPath: String(cString: realPath), isDirectory: true)
     }
 
-    func remove() {
+    public func remove() {
         try? FileManager.default.removeItem(at: url)
     }
 
-    func deviceURL(udid: String) -> URL {
+    public func deviceURL(udid: String) -> URL {
         url.appendingPathComponent(udid, isDirectory: true)
     }
 
     /// Writes the same keys a real `device.plist` carries, including the uppercase `UDID`.
-    func writeDevice(
+    public func writeDevice(
         udid: String,
         name: String,
         deviceTypeIdentifier: String = DeviceTypeIdentifier.iPhone,
@@ -65,11 +67,23 @@ struct FixtureDevicesDirectory {
         try write(plist, to: deviceURL(udid: udid).appendingPathComponent(SimulatorPaths.devicePlistName))
     }
 
+    /// A device folder whose `device.plist` is missing entirely.
+    public func writeDeviceFolderWithoutPlist(udid: String) throws {
+        try FileManager.default.createDirectory(at: deviceURL(udid: udid), withIntermediateDirectories: true)
+    }
+
+    /// A device folder whose `device.plist` is not a property list.
+    public func writeDeviceWithUnreadablePlist(udid: String) throws {
+        let folder = deviceURL(udid: udid)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data("not a plist".utf8).write(to: folder.appendingPathComponent(SimulatorPaths.devicePlistName))
+    }
+
     /// Installs an iOS app: an `.app` bundle under `Containers/Bundle/Application` and a data
     /// container under `Containers/Data/Application`, tied together by the metadata identifier.
     /// Every entry of `userDefaults` becomes `Library/Preferences/<domain>.plist`.
     @discardableResult
-    func writeApp(
+    public func writeApp(
         bundleIdentifier: String,
         name: String,
         onDeviceWithUdid udid: String,
@@ -86,7 +100,7 @@ struct FixtureDevicesDirectory {
             "CFBundleIdentifier": bundleIdentifier,
             "CFBundleName": name,
             "DTPlatformName": "iphonesimulator"
-        ], to: bundleURL.appendingPathComponent("Info.plist"))
+        ], to: bundleURL.appendingPathComponent(Self.infoPlistFileName))
 
         let containerURL = dataFolder
             .appendingPathComponent(SimulatorPaths.appDataApplicationsPath)
@@ -105,7 +119,7 @@ struct FixtureDevicesDirectory {
     /// Writes an app group's shared container. Discovery only keeps a group whose name (the
     /// identifier after `group.`) is part of an installed app's bundle identifier.
     @discardableResult
-    func writeAppGroup(
+    public func writeAppGroup(
         identifier: String,
         onDeviceWithUdid udid: String,
         userDefaults: [String: [String: Any]] = [:]
@@ -121,6 +135,12 @@ struct FixtureDevicesDirectory {
         return groupURL
     }
 
+    public func writeDSStore() throws {
+        try Data().write(to: url.appendingPathComponent(".DS_Store"))
+    }
+
+    // The same names CoreSimulator uses; spelled out because SimulatorCore keeps its own internal.
+    private static let infoPlistFileName = "Info.plist"
     private static let metadataFileName = ".com.apple.mobile_container_manager.metadata.plist"
 
     private func writePreferences(_ userDefaults: [String: [String: Any]], inContainerAt containerURL: URL) throws {

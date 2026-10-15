@@ -117,7 +117,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
 
     public func installations(ofBundleIdentifier bundleIdentifier: String) async throws -> [AppInstallationDTO] {
         try await onWorkQueue { [self] in
-            let installations = try loadAllDevices()
+            let installations = try loadAllDevicesWithoutAppGroups()
                 .devices
                 .sorted { ($0.name, $0.udid) < ($1.name, $1.udid) }
                 .flatMap { device in
@@ -138,10 +138,8 @@ public struct SimulatorQueryService: SimulatorQuerying {
         try await onWorkQueue { [self] in
             let device = try loadDevice(withUdid: udid)
             let app = try Self.app(withBundleIdentifier: bundleIdentifier, on: device)
-            // The same association `AppDiscoveryService.loadAppGroups` uses to decide a group
-            // belongs to the device's apps at all.
             let appGroups = device.appGroups
-                .filter { app.bundleIdentifier.contains($0.name) }
+                .filter { Self.appGroup($0, belongsTo: app) }
                 .sorted { $0.identifier < $1.identifier }
 
             return AppContainersDTO(udid: device.udid, app: app, appGroups: appGroups)
@@ -160,7 +158,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     public func recentApps(limit: Int) async throws -> [RecentAppDTO] {
         try await onWorkQueue { [self] in
             // The menu's list first, then its head, so a limit never reorders or re-dedupes it.
-            try RecentApps.initial(from: loadAllDevices().initialAppChanges)
+            try RecentApps.initial(from: loadAllDevicesWithoutAppGroups().initialAppChanges)
                 .prefix(limit)
                 .map(RecentAppDTO.init(appChange:))
         }
@@ -272,24 +270,42 @@ private extension SimulatorQueryService {
         return app
     }
 
-    func loadAllDevices() throws -> DeviceLoader.LoadedDevices {
-        guard let loadedDevices = deviceLoader.loadDevices() else {
+    /// An app group belongs to an app whose bundle identifier is the group's name or starts with
+    /// it as a whole dot-separated prefix — so `group.com.example.notes` belongs to
+    /// `com.example.notes` and `com.example.notes.widget`, but not to `com.example.notesplus`.
+    static func appGroup(_ appGroup: AppGroup, belongsTo app: any SimulatorApp) -> Bool {
+        let name = appGroup.name
+
+        return !name.isEmpty && (app.bundleIdentifier == name || app.bundleIdentifier.hasPrefix(name + "."))
+    }
+
+    /// Every device with its apps. App groups are skipped: no caller of this needs them.
+    func loadAllDevicesWithoutAppGroups() throws -> DeviceLoader.LoadedDevices {
+        guard let loadedDevices = deviceLoader.loadDevices(includingAppGroups: false) else {
             throw SimulatorQueryError.devicesDirectoryUnavailable
         }
 
         return loadedDevices
     }
 
-    /// Validates `udid` against the device list before deriving any path from it, so a UDID such
-    /// as `../..` can never resolve to a folder outside the devices directory.
+    /// Loads the device whose folder is named `udid`. The UDID must be a single path component and
+    /// the folder's `device.plist` must carry the same UDID, so a value such as `../..` can never
+    /// resolve to a folder outside the devices directory — without decoding every other device.
     func loadDevice(withUdid udid: String) throws -> Device {
-        let device = try Self.deviceList(from: deviceLoader).first { $0.udid == udid }
-
-        guard let device, let loadedDevice = deviceLoader.loadDevice(withUdid: udid, existingURL: device.url) else {
+        guard deviceLoader.devicesDirectoryURL != nil else {
+            throw SimulatorQueryError.devicesDirectoryUnavailable
+        }
+        guard Self.isSinglePathComponent(udid),
+              let device = deviceLoader.loadDevice(withUdid: udid),
+              device.udid == udid else {
             throw SimulatorQueryError.unknownDevice(udid: udid)
         }
 
-        return loadedDevice
+        return device
+    }
+
+    static func isSinglePathComponent(_ name: String) -> Bool {
+        !name.isEmpty && name != "." && name != ".." && !name.contains("/")
     }
 
     func onWorkQueue<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {

@@ -32,12 +32,19 @@ let package = Package(
                 .product(name: "MCP", package: "swift-sdk")
             ]
         ),
-        .testTarget(name: "SimulatorCoreTests", dependencies: ["SimulatorCore"]),
+        // Fixtures shared by the test targets; not part of any product.
+        .target(
+            name: "SimulatorCoreTestSupport",
+            dependencies: ["SimulatorCore"],
+            path: "Tests/SimulatorCoreTestSupport"
+        ),
+        .testTarget(name: "SimulatorCoreTests", dependencies: ["SimulatorCore", "SimulatorCoreTestSupport"]),
         .testTarget(
             name: "SimulatorMCPServerTests",
             dependencies: [
                 "SimulatorMCPServer",
                 "SimulatorCore",
+                "SimulatorCoreTestSupport",
                 .product(name: "MCP", package: "swift-sdk")
             ]
         )

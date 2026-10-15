@@ -47,20 +47,11 @@ public struct AppDTO: Codable, Sendable, Equatable {
         contentModifiedAt = app.contentModifiedAt
         userDefaultsDomains = app.exportableUserDefaultsDomains
 
-        switch app {
-        case let watchApp as SimulatorWatchOSApp:
-            kind = "watchOS"
-            hasWatchApp = false
-            companionBundleIdentifier = watchApp.companioniOSAppBundleIdentifier
-        case let iOSApp as SimulatoriOSApp:
-            kind = "iOS"
-            hasWatchApp = iOSApp.hasWatchApp
-            companionBundleIdentifier = nil
-        default:
-            kind = "iOS"
-            hasWatchApp = false
-            companionBundleIdentifier = nil
-        }
+        // Discovery creates a watch app for `watchsimulator` bundles and an iOS app for everything else.
+        let watchApp = app as? SimulatorWatchOSApp
+        kind = watchApp == nil ? "iOS" : "watchOS"
+        hasWatchApp = (app as? SimulatoriOSApp)?.hasWatchApp ?? false
+        companionBundleIdentifier = watchApp?.companioniOSAppBundleIdentifier
     }
 }
 

@@ -27,16 +27,46 @@ enum JSONOutput {
     /// `content`, and as `structuredContent`. `value` must encode to a JSON object, as the MCP
     /// spec requires of structured content.
     static func result(_ value: some Encodable) throws -> CallTool.Result {
-        let data = try data(value)
-        // Decoded from the encoded JSON rather than built with `Value(_:)`, so dates keep the
-        // ISO 8601 strategy in the structured copy too.
-        let structuredContent: Value? = try JSONDecoder().decode(Value.self, from: data)
+        try result(json: data(value))
+    }
+
+    /// A successful tool result whose text content is `json` verbatim and whose structured content
+    /// holds the same document.
+    static func result(json: Data) throws -> CallTool.Result {
+        // Typed as optional so the non-generic initializer is chosen over the `Codable` one.
+        let structuredContent: Value? = try structuredContent(fromJSON: json)
 
         return CallTool.Result(
-            content: [.text(text: String(decoding: data, as: UTF8.self), annotations: nil, _meta: nil)],
+            content: [.text(text: String(decoding: json, as: UTF8.self), annotations: nil, _meta: nil)],
             structuredContent: structuredContent,
             isError: false
         )
+    }
+
+    /// Parses JSON into `Value` with `JSONSerialization` rather than `Value`'s own `Decodable`
+    /// conformance, which turns any string that looks like a data URL into `.data` and re-encodes
+    /// it differently — structured content has to say exactly what the text says.
+    static func structuredContent(fromJSON json: Data) throws -> Value {
+        try value(fromJSONObject: JSONSerialization.jsonObject(with: json, options: .fragmentsAllowed))
+    }
+
+    private static func value(fromJSONObject object: Any) -> Value {
+        switch object {
+        case let string as String:
+            .string(string)
+        case let number as NSNumber where CFGetTypeID(number) == CFBooleanGetTypeID():
+            .bool(number.boolValue)
+        case let number as NSNumber where CFNumberIsFloatType(number):
+            .double(number.doubleValue)
+        case let number as NSNumber:
+            .int(number.intValue)
+        case let array as [Any]:
+            .array(array.map(value(fromJSONObject:)))
+        case let object as [String: Any]:
+            .object(object.mapValues(value(fromJSONObject:)))
+        default:
+            .null
+        }
     }
 
     static func error(_ message: String) -> CallTool.Result {

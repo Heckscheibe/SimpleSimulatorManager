@@ -23,14 +23,19 @@ struct EndToEndTests {
         let client = Client(name: "test-client", version: "1.0")
         let (clientTransport, serverTransport) = await InMemoryTransport.createConnectedPair()
 
-        try await server.start(transport: serverTransport)
-        try await client.connect(transport: clientTransport)
-
-        let result = try await body(client)
-
-        await client.disconnect()
-        await server.stop()
-        return result
+        // Torn down on every path, so a failing expectation inside `body` leaves no server running.
+        do {
+            try await server.start(transport: serverTransport)
+            try await client.connect(transport: clientTransport)
+            let result = try await body(client)
+            await client.disconnect()
+            await server.stop()
+            return result
+        } catch {
+            await client.disconnect()
+            await server.stop()
+            throw error
+        }
     }
 
     private func callTool(_ client: Client, _ name: String, _ arguments: [String: Value]? = nil) async throws -> [String: Any] {
@@ -126,6 +131,21 @@ struct EndToEndTests {
         let installations = try #require(result["installations"] as? [[String: Any]])
         let udids = installations.compactMap { ($0["device"] as? [String: Any])?["udid"] as? String }
         #expect(Set(udids) == [Sample.iPhoneUdid, Sample.iPadUdid])
+    }
+
+    @Test("An app group belongs to apps it is a dot-separated prefix of, not to any substring match")
+    func appGroupAssociation() async throws {
+        defer { simulators.remove() }
+        try simulators.fixture.writeApp(bundleIdentifier: "com.example.notesplus", name: "Notes Plus", onDeviceWithUdid: Sample.iPhoneUdid)
+        try simulators.fixture.writeApp(bundleIdentifier: "com.example.notes.widget", name: "Notes Widget", onDeviceWithUdid: Sample.iPhoneUdid)
+
+        let (plus, widget) = try await withClient { client in
+            try await (callTool(client, "get_app_containers", ["udid": .string(Sample.iPhoneUdid), "bundle_id": .string("com.example.notesplus")]),
+                       callTool(client, "get_app_containers", ["udid": .string(Sample.iPhoneUdid), "bundle_id": .string("com.example.notes.widget")]))
+        }
+
+        #expect((plus["appGroups"] as? [Any])?.isEmpty == true)
+        #expect((widget["appGroups"] as? [[String: Any]])?.compactMap { $0["identifier"] as? String } == [Sample.appGroupId])
     }
 
     @Test("get_app_containers returns the menu's folders and the app's groups")
