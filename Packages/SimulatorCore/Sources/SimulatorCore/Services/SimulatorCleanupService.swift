@@ -1,56 +1,56 @@
 import Foundation
 import os
 
-protocol SimulatorCleanupServing: AnyObject, Sendable {
+public protocol SimulatorCleanupServing: AnyObject, Sendable {
     func loadCleanupCandidates() async throws -> [SimulatorCleanupCandidate]
     func deleteCleanupCandidate(_ candidate: SimulatorCleanupCandidate) async throws
 }
 
-struct SimctlDeviceRecord: Sendable, Equatable {
-    let udid: String
-    let name: String
-    let state: String
-    let runtimeIdentifier: String
-    let deviceTypeIdentifier: String
-    let dataPath: String?
-    let dataPathSize: Int64?
-    let isAvailable: Bool
-    let availabilityError: String?
+public struct SimctlDeviceRecord: Sendable, Equatable {
+    public let udid: String
+    public let name: String
+    public let state: String
+    public let runtimeIdentifier: String
+    public let deviceTypeIdentifier: String
+    public let dataPath: String?
+    public let dataPathSize: Int64?
+    public let isAvailable: Bool
+    public let availabilityError: String?
 }
 
-struct SimctlRuntimeRecord: Decodable, Sendable, Equatable {
-    let identifier: String
-    let isAvailable: Bool
+public struct SimctlRuntimeRecord: Decodable, Sendable, Equatable {
+    public let identifier: String
+    public let isAvailable: Bool
 }
 
-struct SimulatorDirectoryMetadata: Sendable, Equatable {
-    let udid: String
-    let name: String
-    let runtimeIdentifier: String
-    let deviceTypeIdentifier: String
-    let lastBootedAt: Date?
+public struct SimulatorDirectoryMetadata: Sendable, Equatable {
+    public let udid: String
+    public let name: String
+    public let runtimeIdentifier: String
+    public let deviceTypeIdentifier: String
+    public let lastBootedAt: Date?
 
-    var simulatorPlatform: SimulatorPlatform {
+    public var simulatorPlatform: SimulatorPlatform {
         SimulatorPlatform(from: deviceTypeIdentifier)
     }
 
-    var osVersion: String {
+    public var osVersion: String {
         SimulatorPaths.formattedOSVersion(from: runtimeIdentifier)
     }
 }
 
-struct SimulatorDirectoryRecord: Sendable, Equatable {
-    enum MetadataStatus: Sendable, Equatable {
+public struct SimulatorDirectoryRecord: Sendable, Equatable {
+    public enum MetadataStatus: Sendable, Equatable {
         case decoded(SimulatorDirectoryMetadata)
         case missingDevicePlist
         case unreadableDevicePlist
     }
 
-    let udid: String
-    let directoryURL: URL
-    let metadataStatus: MetadataStatus
+    public let udid: String
+    public let directoryURL: URL
+    public let metadataStatus: MetadataStatus
 
-    var metadata: SimulatorDirectoryMetadata? {
+    public var metadata: SimulatorDirectoryMetadata? {
         guard case let .decoded(metadata) = metadataStatus else {
             return nil
         }
@@ -59,11 +59,13 @@ struct SimulatorDirectoryRecord: Sendable, Equatable {
     }
 }
 
-final class SimulatorCleanupService: SimulatorCleanupServing {
+public final class SimulatorCleanupService: SimulatorCleanupServing {
+    public init() {}
+
     /// Upper bound on filesystem entries visited while sizing a single simulator directory.
     /// A healthy simulator holds on the order of 40k files, so anything far past this is
     /// pathological and not worth stalling the whole scan for.
-    static let directorySizeScanEntryLimit = 250_000
+    public static let directorySizeScanEntryLimit = 250_000
 
     /// Blocking work — process launches and recursive directory walks — must stay off the Swift
     /// concurrency cooperative pool. `Task.detached` shares that pool, so a multi-second directory
@@ -76,7 +78,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         attributes: .concurrent
     )
 
-    func loadCleanupCandidates() async throws -> [SimulatorCleanupCandidate] {
+    public func loadCleanupCandidates() async throws -> [SimulatorCleanupCandidate] {
         os_log("Cleanup service started loading candidates")
         async let simctlDevices = loadSimctlDevices()
         async let availableRuntimeIdentifiers = loadAvailableRuntimeIdentifiers()
@@ -109,7 +111,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         return candidates
     }
 
-    func deleteCleanupCandidate(_ candidate: SimulatorCleanupCandidate) async throws {
+    public func deleteCleanupCandidate(_ candidate: SimulatorCleanupCandidate) async throws {
         os_log("Cleanup service deleting candidate %{public}@ using %{public}@", candidate.id, String(describing: candidate.deletionMethod))
         switch candidate.deletionMethod {
         case let .simctlDelete(udid):
@@ -124,7 +126,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         }
     }
 
-    static func buildCleanupCandidates(
+    public static func buildCleanupCandidates(
         simctlDevices: [SimctlDeviceRecord],
         availableRuntimeIdentifiers: Set<String>,
         directoryRecords: [SimulatorDirectoryRecord],
@@ -379,7 +381,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         )
     }
 
-    static func makeDirectoryRecord(for directoryURL: URL) -> SimulatorDirectoryRecord? {
+    public static func makeDirectoryRecord(for directoryURL: URL) -> SimulatorDirectoryRecord? {
         guard UUID(uuidString: directoryURL.lastPathComponent) != nil else {
             return nil
         }
@@ -419,11 +421,11 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         }
     }
 
-    static func calculateDirectorySize(at directoryURL: URL) -> Int64? {
+    public static func calculateDirectorySize(at directoryURL: URL) -> Int64? {
         calculateDirectorySize(at: directoryURL, entryLimit: directorySizeScanEntryLimit)
     }
 
-    static func calculateDirectorySize(at directoryURL: URL, entryLimit: Int) -> Int64? {
+    public static func calculateDirectorySize(at directoryURL: URL, entryLimit: Int) -> Int64? {
         // Whether the walk skipped bytes it should have counted. Same rule as the entry cap below:
         // an incomplete total is worse than none, because this number drives a deletion decision.
         var enumerationFailed = false

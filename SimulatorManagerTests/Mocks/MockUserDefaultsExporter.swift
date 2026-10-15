@@ -1,5 +1,6 @@
 import Foundation
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 /// Records what an export was asked for and returns a canned result, so copy behaviour can be
 /// tested without laying out a container on disk.

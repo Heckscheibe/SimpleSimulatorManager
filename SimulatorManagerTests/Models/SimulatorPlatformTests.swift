@@ -7,6 +7,7 @@
 
 import Testing
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 @Suite("SimulatorPlatform Tests")
 struct SimulatorPlatformTests {

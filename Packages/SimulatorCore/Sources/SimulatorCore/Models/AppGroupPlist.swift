@@ -7,13 +7,13 @@
 
 import Foundation
 
-struct AppGroupPlist: DecodableURLContainer {
+public struct AppGroupPlist: DecodableURLContainer, Sendable {
     enum CodingKeys: String, CodingKey {
         case identifier = "MCMMetadataIdentifier"
         case uuid = "MCMMetadataUUID"
     }
     
-    var name: String {
+    public var name: String {
         guard let index = identifier.firstIndex(of: ".") else {
             return ""
         }
@@ -21,8 +21,8 @@ struct AppGroupPlist: DecodableURLContainer {
         return String(identifier.suffix(from: identifier.index(after: index)))
     }
     
-    let identifier: String
-    let uuid: String
+    public let identifier: String
+    public let uuid: String
     
-    var url: URL?
+    public var url: URL?
 }

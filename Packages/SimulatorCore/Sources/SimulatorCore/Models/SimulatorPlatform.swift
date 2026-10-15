@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum SimulatorPlatform {
+public enum SimulatorPlatform: Sendable {
     case iPhone
     case iPad
     case watch
@@ -15,7 +15,7 @@ enum SimulatorPlatform {
     case visionPro
     case iPodTouch
     
-    init(from deviceTypeIdentifier: String) {
+    public init(from deviceTypeIdentifier: String) {
         if deviceTypeIdentifier.contains("iPhone") {
             self = .iPhone
         } else if deviceTypeIdentifier.contains("iPad") {

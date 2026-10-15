@@ -9,22 +9,25 @@ import Foundation
 import os
 
 /// Service responsible for discovering and loading simulator apps from device directories
-class AppDiscoveryService {
+/// Holds no state, so one instance can be shared across isolation domains.
+public final class AppDiscoveryService: Sendable {
+    public init() {}
+
     // MARK: - Public Methods
-    
-    func loadApps(for device: Device) -> [any SimulatorApp] {
+
+    public func loadApps(for device: Device) -> [any SimulatorApp] {
         let (apps, _) = loadAppsAndTimestamps(for: device)
         os_log("Device \(device.name) with \(device.osVersion) has the following apps installed: \(apps.map { $0.displayName })")
         return apps
     }
     
     /// Load apps with their installation timestamps for initial recent apps population
-    func loadRecentInstalledApps(for device: Device) -> [AppChange] {
+    public func loadRecentInstalledApps(for device: Device) -> [AppChange] {
         let (_, appChanges) = loadAppsAndTimestamps(for: device)
         return appChanges
     }
     
-    func loadAppGroups(for device: Device) -> [AppGroup] {
+    public func loadAppGroups(for device: Device) -> [AppGroup] {
         guard let appGroupsFolderURL = device.appGroupsFolder else {
             return []
         }
@@ -56,7 +59,7 @@ class AppDiscoveryService {
     
     /// Load apps and their corresponding app changes with timestamps
     /// Returns a tuple of (apps, appChanges) to avoid code duplication
-    func loadAppsAndTimestamps(for device: Device) -> (apps: [any SimulatorApp], appChanges: [AppChange]) {
+    public func loadAppsAndTimestamps(for device: Device) -> (apps: [any SimulatorApp], appChanges: [AppChange]) {
         let infoPlists = loadAppInfoPlists(for: device)
         
         guard let appDataFolderURL = device.appDataFolder else {
@@ -148,7 +151,7 @@ class AppDiscoveryService {
         return containersByIdentifier
     }
     
-    func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
+    public func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
         guard let appPackageFolderPath = device.appPackagesFolder else {
             return []
         }
@@ -180,14 +183,14 @@ class AppDiscoveryService {
     /// The defaults domains a container holds. Listing them here costs nothing extra: this folder
     /// was already being enumerated to decide whether the app has UserDefaults at all, and knowing
     /// the names lets the menu offer each domain without touching the filesystem again.
-    func userDefaultsDomains(inContainerAt url: URL) -> [String] {
+    public func userDefaultsDomains(inContainerAt url: URL) -> [String] {
         getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath))
             .filter { $0.pathExtension == "plist" }
             .map { UserDefaultsDomain.domain(ofPreferencesFileAt: $0) }
             .sorted()
     }
     
-    func getContentOfDirectoryAt(url: URL) -> [URL] {
+    public func getContentOfDirectoryAt(url: URL) -> [URL] {
         guard FileManager.default.directoryExistsAtURL(url) else {
             return []
         }
@@ -203,7 +206,7 @@ class AppDiscoveryService {
     }
     
     /// Get the modification date of a file or directory
-    func getFileModificationDate(url: URL) -> Date? {
+    public func getFileModificationDate(url: URL) -> Date? {
         do {
             let resourceValues = try url.resourceValues(forKeys: [.contentModificationDateKey])
             return resourceValues.contentModificationDate

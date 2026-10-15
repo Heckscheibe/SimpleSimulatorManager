@@ -18,10 +18,10 @@ import os
 /// consume a file descriptor per watched folder. Because the watch is inherently
 /// recursive, the monitor signals on any change beneath `url`; callers scope what they
 /// watch by choosing an appropriately narrow `url`.
-final class FolderMonitor: @unchecked Sendable {
+public final class FolderMonitor: @unchecked Sendable {
     // MARK: - Types
 
-    enum MonitorError: Error {
+    public enum MonitorError: Error {
         case failedToStartMonitoring(path: String)
         case alreadyMonitoring
         case notMonitoring
@@ -45,12 +45,12 @@ final class FolderMonitor: @unchecked Sendable {
     // MARK: - Properties
 
     /// URL for the directory being monitored.
-    let url: URL
+    public let url: URL
 
     /// Emits on the main queue whenever a change is detected anywhere under `url`.
     /// Delivery is hopped to main (restoring the pre-FSEvents contract) so subscribers can
     /// update UI/`@Published` state directly, even though FSEvents fires on a private queue.
-    let folderDidChange: AnyPublisher<Void, Never>
+    public let folderDidChange: AnyPublisher<Void, Never>
 
     private let changeSubject: PassthroughSubject<Void, Never>
     private let latency: TimeInterval
@@ -61,7 +61,7 @@ final class FolderMonitor: @unchecked Sendable {
 
     // MARK: - Initializers
 
-    init(url: URL, latency: TimeInterval = 1.0) {
+    public init(url: URL, latency: TimeInterval = 1.0) {
         let subject = PassthroughSubject<Void, Never>()
         self.url = url
         self.latency = latency
@@ -77,7 +77,7 @@ final class FolderMonitor: @unchecked Sendable {
     // MARK: - Monitoring
 
     /// Start listening for changes to the directory (if we are not already).
-    func startMonitoring() throws {
+    public func startMonitoring() throws {
         stateLock.lock()
         defer { stateLock.unlock() }
 
@@ -139,7 +139,7 @@ final class FolderMonitor: @unchecked Sendable {
     }
 
     /// Stop listening for changes to the directory, if monitoring was started.
-    func stopMonitoring() throws {
+    public func stopMonitoring() throws {
         stateLock.lock()
         defer { stateLock.unlock() }
 

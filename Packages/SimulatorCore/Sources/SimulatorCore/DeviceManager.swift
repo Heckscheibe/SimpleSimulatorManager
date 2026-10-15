@@ -14,7 +14,7 @@ import os
 /// Protocol defining the interface for device management.
 /// Conformers must be safe to use across isolation domains because device refreshes
 /// are awaited from the main actor while loading happens in the background.
-protocol DeviceManaging: AnyObject, Sendable {
+public protocol DeviceManaging: AnyObject, Sendable {
     var deviceTypes: AnyPublisher<[DeviceType], Never> { get }
     var devices: AnyPublisher<[Device], Never> { get }
     var recentInstalledApps: AnyPublisher<[AppChange], Never> { get }
@@ -34,16 +34,16 @@ protocol DeviceManaging: AnyObject, Sendable {
 
 /// State lives in thread-safe `CurrentValueSubject`s; publisher values are only
 /// mutated on the main queue, and background loading runs on a serial queue.
-class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
-    var deviceTypes: AnyPublisher<[DeviceType], Never> {
+public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
+    public var deviceTypes: AnyPublisher<[DeviceType], Never> {
         deviceTypesPublisher.eraseToAnyPublisher()
     }
     
-    var devices: AnyPublisher<[Device], Never> {
+    public var devices: AnyPublisher<[Device], Never> {
         devicesPublisher.eraseToAnyPublisher()
     }
     
-    var recentInstalledApps: AnyPublisher<[AppChange], Never> {
+    public var recentInstalledApps: AnyPublisher<[AppChange], Never> {
         recentInstalledAppsPublisher.eraseToAnyPublisher()
     }
     
@@ -62,17 +62,17 @@ class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
     /// against a fixture directory instead of the machine's own simulators.
     private let devicesDirectoryURL: URL?
 
-    init(devicesDirectoryURL: URL? = SimulatorPaths.coreSimulatorDevicesDirectoryURL()) {
+    public init(devicesDirectoryURL: URL? = SimulatorPaths.coreSimulatorDevicesDirectoryURL()) {
         self.devicesDirectoryURL = devicesDirectoryURL
         loadDevices()
         bindDeviceTypes()
     }
     
-    func updateDevices() {
+    public func updateDevices() {
         loadDevices()
     }
     
-    func resetAndLoadDevices() async {
+    public func resetAndLoadDevices() async {
         // Reload off the main thread. A full load decodes every device, app and app-group plist
         // (a few thousand plists, ~1s on a typical install); running it inline on the caller froze
         // the menu bar UI for the duration of, for example, a cleanup deletion.
@@ -98,7 +98,7 @@ class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
     }
     
     @discardableResult
-    func refreshDevice(_ device: Device) async -> Device? {
+    public func refreshDevice(_ device: Device) async -> Device? {
         let udid = device.udid
         let existingURL = device.url
 
@@ -130,11 +130,11 @@ class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendable {
         return didApply ? refreshedDevice : nil
     }
     
-    func getDevice(withUdid udid: String) -> Device? {
+    public func getDevice(withUdid udid: String) -> Device? {
         return devicesPublisher.value.first { $0.udid == udid }
     }
     
-    func updateRecentApps(_ changes: [AppChange]) {
+    public func updateRecentApps(_ changes: [AppChange]) {
         // Publisher values are only mutated on the main queue (see the @unchecked Sendable
         // note on the type). DeviceManaging is Sendable, so a caller may invoke this off-main;
         // hop to main to keep the read-modify-write of the recent-apps list race-free.

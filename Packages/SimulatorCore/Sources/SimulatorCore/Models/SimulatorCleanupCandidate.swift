@@ -1,6 +1,6 @@
 import Foundation
 
-enum SimulatorCleanupReason: String, CaseIterable, Sendable, Hashable {
+public enum SimulatorCleanupReason: String, CaseIterable, Sendable, Hashable {
     case missingRuntime
     case missingDeviceType
     case unavailable
@@ -8,7 +8,7 @@ enum SimulatorCleanupReason: String, CaseIterable, Sendable, Hashable {
     case missingDevicePlist
     case unreadableDeviceMetadata
 
-    var title: String {
+    public var title: String {
         switch self {
         case .missingRuntime:
             "Missing Runtime"
@@ -25,7 +25,7 @@ enum SimulatorCleanupReason: String, CaseIterable, Sendable, Hashable {
         }
     }
 
-    var priority: Int {
+    public var priority: Int {
         switch self {
         case .missingRuntime:
             6
@@ -43,24 +43,24 @@ enum SimulatorCleanupReason: String, CaseIterable, Sendable, Hashable {
     }
 }
 
-enum SimulatorCleanupDeletionMethod: Sendable, Hashable {
+public enum SimulatorCleanupDeletionMethod: Sendable, Hashable {
     case simctlDelete(String)
     case trashDirectory(URL)
 }
 
-struct SimulatorCleanupCandidate: Identifiable, Sendable, Hashable {
-    let id: String
-    let name: String
-    let udid: String?
-    let simulatorPlatform: SimulatorPlatform?
-    let osVersion: String?
-    let lastBootedAt: Date?
-    let diskUsageBytes: Int64?
-    let reasons: [SimulatorCleanupReason]
-    let detailMessage: String?
-    let deletionMethod: SimulatorCleanupDeletionMethod
+public struct SimulatorCleanupCandidate: Identifiable, Sendable, Hashable {
+    public let id: String
+    public let name: String
+    public let udid: String?
+    public let simulatorPlatform: SimulatorPlatform?
+    public let osVersion: String?
+    public let lastBootedAt: Date?
+    public let diskUsageBytes: Int64?
+    public let reasons: [SimulatorCleanupReason]
+    public let detailMessage: String?
+    public let deletionMethod: SimulatorCleanupDeletionMethod
 
-    init(
+    public init(
         id: String,
         name: String,
         udid: String?,
@@ -86,11 +86,11 @@ struct SimulatorCleanupCandidate: Identifiable, Sendable, Hashable {
         self.deletionMethod = deletionMethod
     }
 
-    var reasonSummary: String {
+    public var reasonSummary: String {
         reasons.map(\.title).joined(separator: ", ")
     }
 
-    var formattedPlatform: String? {
+    public var formattedPlatform: String? {
         guard let simulatorPlatform else {
             return nil
         }
@@ -111,7 +111,7 @@ struct SimulatorCleanupCandidate: Identifiable, Sendable, Hashable {
         }
     }
 
-    var formattedDiskUsage: String? {
+    public var formattedDiskUsage: String? {
         guard let diskUsageBytes else {
             return nil
         }
@@ -119,11 +119,11 @@ struct SimulatorCleanupCandidate: Identifiable, Sendable, Hashable {
         return ByteCountFormatter.string(fromByteCount: diskUsageBytes, countStyle: .file)
     }
 
-    var versionGroupTitle: String {
+    public var versionGroupTitle: String {
         osVersion ?? "Unknown OS"
     }
 
-    var versionSortComponents: [Int] {
+    public var versionSortComponents: [Int] {
         guard let osVersion else {
             return []
         }
@@ -133,7 +133,7 @@ struct SimulatorCleanupCandidate: Identifiable, Sendable, Hashable {
             .compactMap { Int($0) }
     }
 
-    func updatingDiskUsageBytes(_ diskUsageBytes: Int64?) -> SimulatorCleanupCandidate {
+    public func updatingDiskUsageBytes(_ diskUsageBytes: Int64?) -> SimulatorCleanupCandidate {
         SimulatorCleanupCandidate(
             id: id,
             name: name,

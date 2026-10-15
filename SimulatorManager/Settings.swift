@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import os
+import SimulatorCore
 
 class Settings: ObservableObject {
     private enum Keys: String, CaseIterable {

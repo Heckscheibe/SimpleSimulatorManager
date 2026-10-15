@@ -7,11 +7,11 @@
 
 import Foundation
 
-enum DeviceState: Int, Decodable {
+public enum DeviceState: Int, Decodable, Sendable {
     case off = 1
     case running = 3
     
-    var stateDescription: String {
+    public var stateDescription: String {
         switch self {
         case .off:
             return "Off"

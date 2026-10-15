@@ -8,7 +8,7 @@
 import Foundation
 
 extension FileManager {
-    func directoryExistsAtURL(_ url: URL) -> Bool {
+    public func directoryExistsAtURL(_ url: URL) -> Bool {
         var isDirectory: ObjCBool = false
         _ = fileExists(atPath: url.path, isDirectory: &isDirectory)
         return isDirectory.boolValue
@@ -24,7 +24,7 @@ extension String {
     /// so what lands on the clipboard still reads like a plain path. Anything else — a space in an
     /// app group name, a quote in a device name — is backslash-escaped so the path stays a single
     /// argument.
-    var shellEscaped: String {
+    public var shellEscaped: String {
         let additionalSafeCharacters = CharacterSet(charactersIn: "_-./+:,=@%")
         let isSafe: (Unicode.Scalar) -> Bool = { scalar in
             CharacterSet.alphanumerics.contains(scalar) || additionalSafeCharacters.contains(scalar)
@@ -45,7 +45,7 @@ extension String {
 extension Process {
     /// Execute a shell command and return the result
     @discardableResult
-    static func execute(command: String, arguments: [String] = []) throws -> String {
+    public static func execute(command: String, arguments: [String] = []) throws -> String {
         let process = Process()
         let pipe = Pipe()
 

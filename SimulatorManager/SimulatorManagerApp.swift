@@ -7,6 +7,7 @@
 
 import SwiftUI
 import os
+import SimulatorCore
 
 @main
 struct SimulatorManagerApp: App {
