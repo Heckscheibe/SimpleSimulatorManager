@@ -22,6 +22,9 @@ xcodebuild -project SimulatorManager.xcodeproj -scheme SimulatorManager test
 # Run a single test (Swift Testing framework)
 xcodebuild -project SimulatorManager.xcodeproj -scheme SimulatorManager test \
   -only-testing:SimulatorManagerTests/DeviceViewModelTests
+
+# Run the SimulatorCore package tests on their own
+swift test --package-path Packages/SimulatorCore
 ```
 
 Formatting/linting run automatically as Xcode build phases (SwiftFormat then SwiftLint), but can be run manually:
@@ -40,10 +43,15 @@ bundle exec fastlane build    # unsigned debug build only
 
 ## Architecture
 
-Lightweight MVVM with service-based filesystem logic.
+Lightweight MVVM with service-based filesystem logic, split across two modules:
+
+- **`SimulatorCore`** (local Swift package in `Packages/SimulatorCore`, linked into the app): models, discovery, `DeviceManager`, reset/cleanup/UserDefaults-export services and folder monitoring. Foundation, Combine and CoreServices only — **never import AppKit, SwiftUI or Carbon there**; it is shared with consumers that have no UI (the MCP server, #100, and App Intents, #70). Declarations the app uses are `public`; implementation details stay internal and tests reach them via `@testable import SimulatorCore`. Package tests: `swift test --package-path Packages/SimulatorCore`
+- **App target** (`SimulatorManager/`): views, view models, `Settings`, global shortcut, and the AppKit seams (`FolderOpening`, `PasteboardWriting`, `UserFacingErrorReporting`, `DestructiveActionConfirming`)
 
 - **App entry**: `SimulatorManagerApp` wires shared state and dependencies (`DeviceManager`, `SimulatorResetService`, `Settings`)
-- **`DeviceManager`**: central coordinator/source of truth for simulator devices, device types, and recent installed apps
+- **`DeviceManager`**: central coordinator/source of truth for simulator devices, device types, and recent installed apps; delegates disk reads to `DeviceLoader`
+- **`DeviceLoader`**: pure, `Sendable` disk loading of devices (with or without their apps) — use it directly where publishers are not needed
+- **`RecentApps`**: the shared recent-apps rule (sort by most recent, cap at 20, dedupe by bundle identifier + device UDID) — reuse it rather than re-deriving the list
 - **`AppDiscoveryService`**: scans simulator folders, reads plist metadata (via `CustomPropertyListDecoder`), constructs app and app-group models
 - **`DeviceAppMonitoringService`**: main-actor service managing per-device `AppFolderMonitor` instances (built on `FolderMonitor`, which uses FSEvents); updates recent apps when simulator app containers change, debounced 3s; an app only counts as updated when its `contentModifiedAt` moved forward
 - **`Device`**: reference type with mutable `@Published` state for apps/app groups — do not convert to a value type without a clear architectural reason
@@ -60,7 +68,7 @@ Lightweight MVVM with service-based filesystem logic.
 - Keep views thin/presentation-only; discovery, monitoring, reset, and filesystem logic belongs in services/managers
 - New services used by view models should be defined behind a protocol when they need mocking (see `DeviceManaging`, `DeviceAppMonitoring`), with constructor injection
 - Handle missing files/folders/decode failures defensively; log recoverable failures with `os_log` instead of crashing; filter out `.DS_Store` and similar noise
-- Recent-apps behavior in `DeviceManager` must stay: dedupe by bundle identifier + device UDID, sort by most recent timestamp, cap list size; when comparing app changes, diff bundle identifiers and treat an app as updated only if its `contentModifiedAt` moved forward
+- Recent-apps behavior in `DeviceManager` / `RecentApps` must stay: dedupe by bundle identifier + device UDID, sort by most recent timestamp, cap list size; when comparing app changes, diff bundle identifiers and treat an app as updated only if its `contentModifiedAt` moved forward
 - AppKit usage is fine for Finder/system integration; don't leak iOS-only assumptions into shared code
 - Preserve the layer split above rather than unifying it: don't convert a view model to `ObservableObject`, and don't convert the model/service layer to `@Observable`, without a clear architectural reason
 

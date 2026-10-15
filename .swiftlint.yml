@@ -9,6 +9,7 @@ excluded:
   - build
   - release
   - .build
+  - Packages/*/.build
   - .claude
   - vendor
   - Pods
