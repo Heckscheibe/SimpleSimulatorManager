@@ -24,11 +24,14 @@ struct AgentIntegrationSection: View {
                     .font(.callout)
             }
 
-            LabeledContent("Server") {
+            // Stacked rather than LabeledContent: a path this long wraps into a ragged right-aligned
+            // block beside the label.
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Server")
                 Text(viewModel.executableURL.path)
                     .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.secondary)
                     .textSelection(.enabled)
-                    .multilineTextAlignment(.trailing)
             }
 
             VStack(alignment: .leading, spacing: 2) {
