@@ -17,11 +17,11 @@ import Foundation
 /// - `Data` becomes `{ "__type": "data", "base64": …, "byteCount": … }`
 /// - non-finite numbers become `"nan"`, `"inf"` or `"-inf"`, so one odd value cannot fail the export
 /// - anything else unexpected falls back to its textual description
-public enum PropertyListJSONConverter {
-    public enum ConversionError: LocalizedError {
+enum PropertyListJSONConverter {
+    enum ConversionError: LocalizedError {
         case notSerializable
 
-        public var errorDescription: String? {
+        var errorDescription: String? {
             switch self {
             case .notSerializable:
                 "The preferences could not be converted to JSON."
@@ -30,10 +30,10 @@ public enum PropertyListJSONConverter {
     }
 
     /// Key marking a value that JSON cannot express natively.
-    public static let typeMarkerKey = "__type"
+    static let typeMarkerKey = "__type"
 
     /// - Returns: Pretty-printed, key-sorted JSON for `propertyList`.
-    public static func jsonString(from propertyList: Any) throws -> String {
+    static func jsonString(from propertyList: Any) throws -> String {
         let jsonObject = jsonSafeValue(propertyList)
 
         guard JSONSerialization.isValidJSONObject(jsonObject) else {
@@ -56,7 +56,7 @@ public enum PropertyListJSONConverter {
     }
 
     /// Recursively maps a property list value onto types `JSONSerialization` accepts.
-    public static func jsonSafeValue(_ value: Any) -> Any {
+    static func jsonSafeValue(_ value: Any) -> Any {
         switch value {
         case let dictionary as [String: Any]:
             dictionary.mapValues { jsonSafeValue($0) }

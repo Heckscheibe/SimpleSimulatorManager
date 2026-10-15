@@ -22,7 +22,7 @@ public final class AppDiscoveryService: Sendable {
     }
     
     /// Load apps with their installation timestamps for initial recent apps population
-    public func loadRecentInstalledApps(for device: Device) -> [AppChange] {
+    func loadRecentInstalledApps(for device: Device) -> [AppChange] {
         let (_, appChanges) = loadAppsAndTimestamps(for: device)
         return appChanges
     }
@@ -59,7 +59,7 @@ public final class AppDiscoveryService: Sendable {
     
     /// Load apps and their corresponding app changes with timestamps
     /// Returns a tuple of (apps, appChanges) to avoid code duplication
-    public func loadAppsAndTimestamps(for device: Device) -> (apps: [any SimulatorApp], appChanges: [AppChange]) {
+    func loadAppsAndTimestamps(for device: Device) -> (apps: [any SimulatorApp], appChanges: [AppChange]) {
         let infoPlists = loadAppInfoPlists(for: device)
         
         guard let appDataFolderURL = device.appDataFolder else {
@@ -151,7 +151,7 @@ public final class AppDiscoveryService: Sendable {
         return containersByIdentifier
     }
     
-    public func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
+    func loadAppInfoPlists(for device: Device) -> [AppInfoPlist] {
         guard let appPackageFolderPath = device.appPackagesFolder else {
             return []
         }
@@ -183,14 +183,14 @@ public final class AppDiscoveryService: Sendable {
     /// The defaults domains a container holds. Listing them here costs nothing extra: this folder
     /// was already being enumerated to decide whether the app has UserDefaults at all, and knowing
     /// the names lets the menu offer each domain without touching the filesystem again.
-    public func userDefaultsDomains(inContainerAt url: URL) -> [String] {
+    func userDefaultsDomains(inContainerAt url: URL) -> [String] {
         getContentOfDirectoryAt(url: url.appendingPathComponent(SimulatorPaths.userDefaultsPath))
             .filter { $0.pathExtension == "plist" }
             .map { UserDefaultsDomain.domain(ofPreferencesFileAt: $0) }
             .sorted()
     }
     
-    public func getContentOfDirectoryAt(url: URL) -> [URL] {
+    func getContentOfDirectoryAt(url: URL) -> [URL] {
         guard FileManager.default.directoryExistsAtURL(url) else {
             return []
         }
@@ -206,7 +206,7 @@ public final class AppDiscoveryService: Sendable {
     }
     
     /// Get the modification date of a file or directory
-    public func getFileModificationDate(url: URL) -> Date? {
+    func getFileModificationDate(url: URL) -> Date? {
         do {
             let resourceValues = try url.resourceValues(forKeys: [.contentModificationDateKey])
             return resourceValues.contentModificationDate

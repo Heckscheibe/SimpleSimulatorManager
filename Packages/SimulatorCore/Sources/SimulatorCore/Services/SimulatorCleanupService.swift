@@ -6,51 +6,51 @@ public protocol SimulatorCleanupServing: AnyObject, Sendable {
     func deleteCleanupCandidate(_ candidate: SimulatorCleanupCandidate) async throws
 }
 
-public struct SimctlDeviceRecord: Sendable, Equatable {
-    public let udid: String
-    public let name: String
-    public let state: String
-    public let runtimeIdentifier: String
-    public let deviceTypeIdentifier: String
-    public let dataPath: String?
-    public let dataPathSize: Int64?
-    public let isAvailable: Bool
-    public let availabilityError: String?
+struct SimctlDeviceRecord: Sendable, Equatable {
+    let udid: String
+    let name: String
+    let state: String
+    let runtimeIdentifier: String
+    let deviceTypeIdentifier: String
+    let dataPath: String?
+    let dataPathSize: Int64?
+    let isAvailable: Bool
+    let availabilityError: String?
 }
 
-public struct SimctlRuntimeRecord: Decodable, Sendable, Equatable {
-    public let identifier: String
-    public let isAvailable: Bool
+struct SimctlRuntimeRecord: Decodable, Sendable, Equatable {
+    let identifier: String
+    let isAvailable: Bool
 }
 
-public struct SimulatorDirectoryMetadata: Sendable, Equatable {
-    public let udid: String
-    public let name: String
-    public let runtimeIdentifier: String
-    public let deviceTypeIdentifier: String
-    public let lastBootedAt: Date?
+struct SimulatorDirectoryMetadata: Sendable, Equatable {
+    let udid: String
+    let name: String
+    let runtimeIdentifier: String
+    let deviceTypeIdentifier: String
+    let lastBootedAt: Date?
 
-    public var simulatorPlatform: SimulatorPlatform {
+    var simulatorPlatform: SimulatorPlatform {
         SimulatorPlatform(from: deviceTypeIdentifier)
     }
 
-    public var osVersion: String {
+    var osVersion: String {
         SimulatorPaths.formattedOSVersion(from: runtimeIdentifier)
     }
 }
 
-public struct SimulatorDirectoryRecord: Sendable, Equatable {
-    public enum MetadataStatus: Sendable, Equatable {
+struct SimulatorDirectoryRecord: Sendable, Equatable {
+    enum MetadataStatus: Sendable, Equatable {
         case decoded(SimulatorDirectoryMetadata)
         case missingDevicePlist
         case unreadableDevicePlist
     }
 
-    public let udid: String
-    public let directoryURL: URL
-    public let metadataStatus: MetadataStatus
+    let udid: String
+    let directoryURL: URL
+    let metadataStatus: MetadataStatus
 
-    public var metadata: SimulatorDirectoryMetadata? {
+    var metadata: SimulatorDirectoryMetadata? {
         guard case let .decoded(metadata) = metadataStatus else {
             return nil
         }
@@ -65,7 +65,7 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
     /// Upper bound on filesystem entries visited while sizing a single simulator directory.
     /// A healthy simulator holds on the order of 40k files, so anything far past this is
     /// pathological and not worth stalling the whole scan for.
-    public static let directorySizeScanEntryLimit = 250_000
+    static let directorySizeScanEntryLimit = 250_000
 
     /// Blocking work — process launches and recursive directory walks — must stay off the Swift
     /// concurrency cooperative pool. `Task.detached` shares that pool, so a multi-second directory
@@ -126,7 +126,7 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
         }
     }
 
-    public static func buildCleanupCandidates(
+    static func buildCleanupCandidates(
         simctlDevices: [SimctlDeviceRecord],
         availableRuntimeIdentifiers: Set<String>,
         directoryRecords: [SimulatorDirectoryRecord],
@@ -381,7 +381,7 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
         )
     }
 
-    public static func makeDirectoryRecord(for directoryURL: URL) -> SimulatorDirectoryRecord? {
+    static func makeDirectoryRecord(for directoryURL: URL) -> SimulatorDirectoryRecord? {
         guard UUID(uuidString: directoryURL.lastPathComponent) != nil else {
             return nil
         }
@@ -421,11 +421,11 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
         }
     }
 
-    public static func calculateDirectorySize(at directoryURL: URL) -> Int64? {
+    static func calculateDirectorySize(at directoryURL: URL) -> Int64? {
         calculateDirectorySize(at: directoryURL, entryLimit: directorySizeScanEntryLimit)
     }
 
-    public static func calculateDirectorySize(at directoryURL: URL, entryLimit: Int) -> Int64? {
+    static func calculateDirectorySize(at directoryURL: URL, entryLimit: Int) -> Int64? {
         // Whether the walk skipped bytes it should have counted. Same rule as the entry cap below:
         // an incomplete total is worse than none, because this number drives a deletion decision.
         var enumerationFailed = false

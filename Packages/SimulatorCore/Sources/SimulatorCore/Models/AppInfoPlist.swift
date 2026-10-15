@@ -7,13 +7,13 @@
 
 import Foundation
 
-public enum AppTargetPlatform: String, Decodable, Sendable {
+enum AppTargetPlatform: String, Decodable, Sendable {
     case iphonesimulator
     case watchsimulator
 }
 
-public struct AppInfoPlist: DecodableURLContainer, Sendable {
-    public static let infoPlistFileName = "Info.plist"
+struct AppInfoPlist: DecodableURLContainer, Sendable {
+    static let infoPlistFileName = "Info.plist"
     
     enum CodingKeys: String, CodingKey {
         case cfBundleDisplayName = "CFBundleDisplayName"
@@ -23,17 +23,17 @@ public struct AppInfoPlist: DecodableURLContainer, Sendable {
         case wkCompanionAppBundleIdentifier = "WKCompanionAppBundleIdentifier"
     }
     
-    public var isWatchApp: Bool {
+    var isWatchApp: Bool {
         platform == .watchsimulator
     }
     
-    public let cfBundleDisplayName: String?
-    public let cfBundleName: String
-    public let cfBundleIdentifier: String
-    public let platform: AppTargetPlatform
-    public let wkCompanionAppBundleIdentifier: String?
+    let cfBundleDisplayName: String?
+    let cfBundleName: String
+    let cfBundleIdentifier: String
+    let platform: AppTargetPlatform
+    let wkCompanionAppBundleIdentifier: String?
     
     // not decoded attributes
-    public var hasCompanionWatchApp = false
-    public var url: URL?
+    var hasCompanionWatchApp = false
+    var url: URL?
 }

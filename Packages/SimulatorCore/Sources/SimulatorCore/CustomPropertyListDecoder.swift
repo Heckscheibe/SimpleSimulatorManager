@@ -7,12 +7,12 @@
 
 import Foundation
 
-public protocol DecodableURLContainer: Decodable {
+protocol DecodableURLContainer: Decodable {
     var url: URL? { get set }
 }
 
-public class CustomPropertyListDecoder: PropertyListDecoder, Sendable, @unchecked Sendable {
-    public func decode<T: DecodableURLContainer>(_ type: T.Type, at url: URL) throws -> T {
+class CustomPropertyListDecoder: PropertyListDecoder, Sendable, @unchecked Sendable {
+    func decode<T: DecodableURLContainer>(_ type: T.Type, at url: URL) throws -> T {
         let data = try Data(contentsOf: url)
         var object = try decode(T.self, from: data)
         object.url = url.deletingLastPathComponent()

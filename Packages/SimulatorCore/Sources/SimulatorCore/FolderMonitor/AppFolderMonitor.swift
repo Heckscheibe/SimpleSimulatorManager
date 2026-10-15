@@ -9,8 +9,8 @@ import Combine
 import Foundation
 import os
 
-public final class AppFolderMonitor {
-    public let appfolderDidChange: PassthroughSubject<Device, Never> = .init()
+final class AppFolderMonitor {
+    let appfolderDidChange: PassthroughSubject<Device, Never> = .init()
 
     /// The most recent device snapshot. Updated in place after each refresh (see `update(device:)`)
     /// so the change is emitted with fresh state without recreating the underlying FSEvents watch.
@@ -19,7 +19,7 @@ public final class AppFolderMonitor {
     /// True while no app is installed yet and we are watching the whole data folder.
     /// Once the dedicated app-packages folder appears, the owner should recreate the monitor
     /// to switch to the narrower watch.
-    public let isWatchingFallback: Bool
+    let isWatchingFallback: Bool
 
     /// Whether the underlying folder watch actually started. The owner should not cache a
     /// monitor that failed to start, so it can retry rather than hold a permanently dead one.
@@ -28,7 +28,7 @@ public final class AppFolderMonitor {
     private let folderMonitor: FolderMonitor?
     private var cancellables: Set<AnyCancellable> = []
 
-    public init(device: Device) {
+    init(device: Device) {
         self.device = device
 
         let url: URL?
@@ -80,7 +80,7 @@ public final class AppFolderMonitor {
 
     /// Refresh the captured device snapshot without touching the underlying folder watch,
     /// so the next emitted change diffs against the latest state.
-    public func update(device: Device) {
+    func update(device: Device) {
         self.device = device
     }
 
