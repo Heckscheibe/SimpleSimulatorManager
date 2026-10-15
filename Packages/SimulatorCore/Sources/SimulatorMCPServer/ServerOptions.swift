@@ -4,11 +4,12 @@
 //
 
 import Foundation
+import SimulatorCore
 
 /// What the agent opted into in its MCP config. Everything that is not opted into stays hidden.
 public struct ServerOptions: Sendable, Equatable {
-    public static let allowUserDefaultsFlag = "--allow-user-defaults"
-    public static let allowDestructiveFlag = "--allow-destructive"
+    public static let allowUserDefaultsFlag = MCPServerLaunch.allowUserDefaultsFlag
+    public static let allowDestructiveFlag = MCPServerLaunch.allowDestructiveFlag
 
     /// Reading UserDefaults content, which can hold tokens or personal data.
     public let allowUserDefaults: Bool

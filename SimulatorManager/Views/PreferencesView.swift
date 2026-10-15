@@ -28,6 +28,7 @@ struct PreferencesView: View {
     @ObservedObject var settings: Settings
     @ObservedObject var shortcutController: GlobalShortcutController
     let recorderViewModel: ShortcutRecorderViewModel
+    let agentIntegrationViewModel: AgentIntegrationViewModel
 
     var body: some View {
         Form {
@@ -61,6 +62,8 @@ struct PreferencesView: View {
                 Toggle("tvOS", isOn: settings.binding(for: \.showTVOS))
                 Toggle("visionOS", isOn: settings.binding(for: \.showVisionOS))
             }
+
+            AgentIntegrationSection(viewModel: agentIntegrationViewModel)
         }
         .formStyle(.grouped)
         .frame(width: 460)

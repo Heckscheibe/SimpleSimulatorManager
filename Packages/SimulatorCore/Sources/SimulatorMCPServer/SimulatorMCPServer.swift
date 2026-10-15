@@ -5,12 +5,13 @@
 
 import Foundation
 import MCP
+import SimulatorCore
 
 /// Builds the MCP server agents talk to. Transport-agnostic: the executable runs it on
 /// `StdioTransport`, tests on `InMemoryTransport`.
 public enum SimulatorMCPServer {
     public static let name = "simple-simulator-manager"
-    public static let executableName = "simple-simulator-mcp"
+    public static let executableName = MCPServerLaunch.executableName
     /// The app's `MARKETING_VERSION`. fastlane's `release` lane rewrites this line when it bumps the
     /// version; `LaunchCommandTests` fails if the two ever drift.
     public static let version = "1.4.0"
