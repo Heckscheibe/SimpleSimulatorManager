@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SimulatorCore
 
 /// A single hit from ``MenuSearching``.
 ///
