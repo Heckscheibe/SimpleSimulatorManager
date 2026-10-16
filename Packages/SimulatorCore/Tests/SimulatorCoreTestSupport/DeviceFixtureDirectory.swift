@@ -5,8 +5,8 @@ import SimulatorCore
 /// way CoreSimulator writes it, so loading can be exercised against known devices, apps, app groups
 /// and UserDefaults instead of the machine's own simulators.
 ///
-/// Shared by every test target in this package. Mirrors
-/// `SimulatorManagerTests/Helpers/DeviceFixtureDirectory.swift`, plus installed apps.
+/// Shared by every test target in this package, and compiled into the app's test target as well,
+/// so there is one fixture writer for both.
 public struct DeviceFixtureDirectory {
     public enum DeviceTypeIdentifier {
         public static let iPhone = "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro"
@@ -41,6 +41,10 @@ public struct DeviceFixtureDirectory {
 
     public func remove() {
         try? FileManager.default.removeItem(at: url)
+    }
+
+    public func removeDevice(udid: String) {
+        try? FileManager.default.removeItem(at: deviceURL(udid: udid))
     }
 
     public func deviceURL(udid: String) -> URL {
@@ -116,8 +120,9 @@ public struct DeviceFixtureDirectory {
         return InstalledApp(dataContainerURL: containerURL, bundleURL: bundleURL)
     }
 
-    /// Writes an app group's shared container. Discovery only keeps a group whose name (the
-    /// identifier after `group.`) is part of an installed app's bundle identifier.
+    /// Writes an app group's shared container. Discovery only keeps a group that belongs to an
+    /// installed app: its name (the identifier after `group.`) is the app's bundle identifier or a
+    /// dot-separated prefix of it.
     @discardableResult
     public func writeAppGroup(
         identifier: String,

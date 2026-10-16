@@ -81,7 +81,7 @@ struct ArgumentValidationTests {
         let registry = simulators.registry()
 
         let platform = await registry.call("list_devices", arguments: ["platform": .string("android")])
-        let state = await registry.call("list_devices", arguments: ["state": .string("booting")])
+        let state = await registry.call("list_devices", arguments: ["state": .string("suspended")])
 
         #expect(platform.failed)
         #expect(platform.text.contains("iPhone"))
@@ -160,6 +160,18 @@ struct ArgumentValidationTests {
         #expect(result.failed)
         #expect(result.text.contains(Sample.unknownUdid))
         #expect(resetService.calls.isEmpty)
+    }
+
+    @Test("A lowercased UDID names the same simulator")
+    func lowercasedUdidIsTheSameSimulator() async throws {
+        defer { simulators.remove() }
+        // Relies on the devices directory's volume being case-insensitive, as macOS volumes are by default.
+        let udid = "ABCDEF01-2345-6789-ABCD-EF0123456789"
+        try simulators.fixture.writeDevice(udid: udid, name: "iPhone 17")
+
+        let result = await simulators.registry().call("list_apps", arguments: ["udid": .string(udid.lowercased())])
+
+        #expect(!result.failed)
     }
 
     @Test("A UDID that walks out of the devices directory is unknown, not resolved")
