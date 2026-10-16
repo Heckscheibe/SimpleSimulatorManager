@@ -8,6 +8,7 @@
 import Foundation
 import Testing
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 /// A machine with several Xcode versions installed carries dozens of simulators, each with its own
 /// apps. The panel rebuilds its tree on every render and matches on every keystroke, so both have to

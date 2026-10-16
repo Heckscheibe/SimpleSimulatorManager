@@ -7,6 +7,7 @@
 
 import Foundation
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 /// Lets a test drive what search returns without depending on the real matching, so the panel's
 /// behaviour and the ranking rules are covered separately.

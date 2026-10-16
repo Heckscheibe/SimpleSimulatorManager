@@ -9,6 +9,7 @@ import Combine
 import Foundation
 import Testing
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 /// The recent-apps list is the one part of the menu the panel rewrite was forbidden to change:
 /// deduped by bundle identifier plus device UDID, sorted by most recent timestamp, and capped.

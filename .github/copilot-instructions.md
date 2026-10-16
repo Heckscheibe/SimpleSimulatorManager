@@ -12,6 +12,8 @@
 
 Simple Simulator Manager is a SwiftUI macOS app with a lightweight MVVM structure and service-based filesystem logic.
 
+- Modules: UI-free models and services (`DeviceManager`, `DeviceLoader`, `RecentApps`, `AppDiscoveryService`, reset/cleanup/UserDefaults-export services, folder monitoring) live in the local Swift package `Packages/SimulatorCore`; it must not import AppKit, SwiftUI or Carbon. Views, view models, `Settings` and AppKit integration stay in the app target. The same package holds the MCP server (`SimulatorMCPServer` library, `simple-simulator-mcp` executable), the only code depending on the MCP Swift SDK; its stdout belongs to the protocol, so nothing under `Packages/` may `print`
+
 - App entry point: `SimulatorManagerApp` wires shared state and dependencies, including `DeviceManager`, `SimulatorResetService`, and `Settings`
 - View models: `@MainActor @Observable` classes (Swift Observation), held by views with `@State`
 - Central coordinator: `DeviceManager` is the main source of truth for simulator devices, device types, and recent installed apps

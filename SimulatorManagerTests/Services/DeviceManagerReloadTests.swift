@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import Testing
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 /// Covers how `resetAndLoadDevices` is scheduled. A full reload decodes every device, app and
 /// app-group plist, so it must not run inline on the caller — that call happens on the main actor

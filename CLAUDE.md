@@ -16,12 +16,15 @@ Build and test via Xcode/xcodebuild (scheme: `SimulatorManager`, project: `Simul
 # Build
 xcodebuild -project SimulatorManager.xcodeproj -scheme SimulatorManager build
 
-# Run all tests
+# Run the app's tests (the scheme does not include the SimulatorCore package's tests)
 xcodebuild -project SimulatorManager.xcodeproj -scheme SimulatorManager test
 
 # Run a single test (Swift Testing framework)
 xcodebuild -project SimulatorManager.xcodeproj -scheme SimulatorManager test \
   -only-testing:SimulatorManagerTests/DeviceViewModelTests
+
+# Run the SimulatorCore package tests — always run these too; the command above skips them
+swift test --package-path Packages/SimulatorCore
 ```
 
 Formatting/linting run automatically as Xcode build phases (SwiftFormat then SwiftLint), but can be run manually:
@@ -40,7 +43,12 @@ bundle exec fastlane build    # unsigned debug build only
 
 ## Architecture
 
-Lightweight MVVM with service-based filesystem logic.
+Lightweight MVVM with service-based filesystem logic, split across modules:
+
+- **`SimulatorCore`** (local Swift package in `Packages/SimulatorCore`, linked into the app): models, discovery, `DeviceManager`, reset/cleanup/UserDefaults-export services and folder monitoring. Foundation, Combine and CoreServices only — **never import AppKit, SwiftUI or Carbon there**; it is shared with consumers that have no UI (the MCP server, #100, and App Intents, #70). Declarations the app uses are `public`; implementation details stay internal and tests reach them via `@testable import SimulatorCore`. Package tests: `swift test --package-path Packages/SimulatorCore`
+- **App target** (`SimulatorManager/`): views, view models, `Settings`, global shortcut, and the AppKit seams (`FolderOpening`, `PasteboardWriting`, `UserFacingErrorReporting`, `DestructiveActionConfirming`)
+- **MCP server** (same package): library `SimulatorMCPServer` (`SimulatorQueryService` façade, `ToolRegistry`, DTOs) plus executable `simple-simulator-mcp` (thin `main.swift`). Only these depend on `modelcontextprotocol/swift-sdk` (exact pin); the app links `SimulatorCore` alone. Tools reuse SimulatorCore services and take identifiers, never paths. **stdout belongs to the protocol** — no `print` under `Packages/` (enforced by the `no_print_in_packages` SwiftLint rule); log with `os_log`. `SimulatorMCPServer.version` must equal `MARKETING_VERSION` (fastlane's `release` lane rewrites it; a test checks it). Package tests share fixtures through the `SimulatorCoreTestSupport` target
+- **Shipped MCP server**: the Xcode command line tool target `simple-simulator-mcp` (`SimulatorManagerMCP/main.swift`) builds the same server from `SimulatorMCPServer.runCommandLine(arguments:)`, and the app embeds it at `Contents/Helpers/simple-simulator-mcp` (Code Sign On Copy, `SKIP_INSTALL = YES`). Launch flags and the executable name live in `SimulatorCore`'s `MCPServerLaunch`, so the app's Preferences section (`AgentIntegrationViewModel`, `MCPClientConfiguration`) can build client configs without linking the MCP SDK
 
 - **App entry**: `SimulatorManagerApp` wires shared state and dependencies (`DeviceManager`, `SimulatorResetService`, `Settings`)
 - **Two menu bar surfaces**: the searchable `.menuBarExtraStyle(.window)` panel (the default) and the original `NSMenu`, selected by the `LEGACY_MENU_BAR` compilation condition — see `MenuBarPresentation`. It has to be compile-time: `SceneBuilder` has no conditionals, the two `MenuBarExtra` styles are different types, and declaring both scenes puts **two** icons in the menu bar (`isInserted:` does not prevent the status item being created). Both surfaces are driven by the same view models, so behaviour lives in one place; only the rendering differs
@@ -49,7 +57,9 @@ Lightweight MVVM with service-based filesystem logic.
 - **`MenuPanelViewModel`**: drill-down path and keyboard state (selection, arrow movement, the two-step guard on destructive rows). The path is kept as identifiers resolved against a freshly built tree on every render, which is what lets FSEvents-driven changes land in an open panel
 - **`MenuSearchService`** (behind `MenuSearching`) + **`MenuSearchViewModel`**: type-to-filter search. The index is built from devices, recent apps and `Settings.visiblePlatforms`, follows those publishers, and never touches the filesystem; strings are normalised once at index time because matching runs per keystroke
 - **`MenuBarMenuPresenter`** (behind `MenuBarMenuPresenting`): opens and closes the panel by clicking the status item's button, found by class name in `NSApp.windows`. The one place that depends on `MenuBarExtra` internals — keep it isolated there
-- **`DeviceManager`**: central coordinator/source of truth for simulator devices, device types, and recent installed apps
+- **`DeviceManager`**: central coordinator/source of truth for simulator devices, device types, and recent installed apps; delegates disk reads to `DeviceLoader`
+- **`DeviceLoader`**: pure, `Sendable` disk loading of devices (with or without their apps) — use it directly where publishers are not needed
+- **`RecentApps`**: the shared recent-apps rule (sort by most recent, cap at 20, dedupe by bundle identifier + device UDID) — reuse it rather than re-deriving the list
 - **`AppDiscoveryService`**: scans simulator folders, reads plist metadata (via `CustomPropertyListDecoder`), constructs app and app-group models
 - **`DeviceAppMonitoringService`**: main-actor service managing per-device `AppFolderMonitor` instances (built on `FolderMonitor`, which uses FSEvents); updates recent apps when simulator app containers change, debounced 3s; an app only counts as updated when its `contentModifiedAt` moved forward
 - **`Device`**: reference type with mutable `@Published` state for apps/app groups — do not convert to a value type without a clear architectural reason
@@ -69,7 +79,7 @@ Lightweight MVVM with service-based filesystem logic.
 - The panel gets nothing for free that `NSMenu` used to supply. Arrow navigation, `↩`, submenu traversal, dismissal and **accessibility labels** are all hand-written — a new row kind needs its own selectability, its VoiceOver label and its keyboard behaviour, or it silently becomes unreachable
 - New services used by view models should be defined behind a protocol when they need mocking (see `DeviceManaging`, `DeviceAppMonitoring`), with constructor injection
 - Handle missing files/folders/decode failures defensively; log recoverable failures with `os_log` instead of crashing; filter out `.DS_Store` and similar noise
-- Recent-apps behavior in `DeviceManager` must stay: dedupe by bundle identifier + device UDID, sort by most recent timestamp, cap list size; when comparing app changes, diff bundle identifiers and treat an app as updated only if its `contentModifiedAt` moved forward
+- Recent-apps behavior in `DeviceManager` / `RecentApps` must stay: dedupe by bundle identifier + device UDID, sort by most recent timestamp, cap list size; when comparing app changes, diff bundle identifiers and treat an app as updated only if its `contentModifiedAt` moved forward
 - AppKit usage is fine for Finder/system integration; don't leak iOS-only assumptions into shared code
 - Preserve the layer split above rather than unifying it: don't convert a view model to `ObservableObject`, and don't convert the model/service layer to `@Observable`, without a clear architectural reason
 

@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import SimulatorCore
 
 /// The shortcuts offered for a single app, shared by the per-device apps list and the recent apps
 /// list so both stay in sync.
