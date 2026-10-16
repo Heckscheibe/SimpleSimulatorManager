@@ -17,6 +17,7 @@ struct SimulatorManagerApp: App {
     @State private var resetSimulatorsViewModel: ResetSimulatorsViewModel
     @State private var settingsViewModel: SettingsViewModel
     @State private var shortcutRecorderViewModel: ShortcutRecorderViewModel
+    @State private var menuSearchViewModel: MenuSearchViewModel
     @State private var agentIntegrationViewModel = AgentIntegrationViewModel()
     @StateObject private var settings: Settings
     @StateObject private var shortcutController: GlobalShortcutController
@@ -55,6 +56,8 @@ struct SimulatorManagerApp: App {
         self._settingsViewModel = State(initialValue: SettingsViewModel(settings: settings,
                                                                         simulatorManagerViewModel: viewModel))
         self._shortcutRecorderViewModel = State(initialValue: ShortcutRecorderViewModel(settings: settings))
+        self._menuSearchViewModel = State(initialValue: MenuSearchViewModel(deviceManager: deviceManager,
+                                                                            settings: settings))
         self._settings = StateObject(wrappedValue: settings)
         self._shortcutController = StateObject(wrappedValue: shortcutController)
     }
@@ -94,7 +97,8 @@ private extension SimulatorManagerApp {
                           resetViewModel: resetSimulatorsViewModel,
                           settings: settings,
                           githubService: githubService,
-                          menuPresenter: menuPresenter)
+                          menuPresenter: menuPresenter,
+                          searchViewModel: menuSearchViewModel)
         }
         .menuBarExtraStyle(.window)
     }
