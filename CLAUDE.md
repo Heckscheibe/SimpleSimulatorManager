@@ -16,14 +16,14 @@ Build and test via Xcode/xcodebuild (scheme: `SimulatorManager`, project: `Simul
 # Build
 xcodebuild -project SimulatorManager.xcodeproj -scheme SimulatorManager build
 
-# Run all tests
+# Run the app's tests (the scheme does not include the SimulatorCore package's tests)
 xcodebuild -project SimulatorManager.xcodeproj -scheme SimulatorManager test
 
 # Run a single test (Swift Testing framework)
 xcodebuild -project SimulatorManager.xcodeproj -scheme SimulatorManager test \
   -only-testing:SimulatorManagerTests/DeviceViewModelTests
 
-# Run the SimulatorCore package tests on their own
+# Run the SimulatorCore package tests — always run these too; the command above skips them
 swift test --package-path Packages/SimulatorCore
 ```
 

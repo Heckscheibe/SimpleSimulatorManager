@@ -46,6 +46,16 @@ struct DeviceLoaderTests {
         #expect(devices.map(\.udid) == [iPhoneUDID])
     }
 
+    @Test("Devices mid-transition still decode", arguments: [DeviceState.creating, .booting, .shuttingDown])
+    func deviceListDecodesTransitionalStates(state: DeviceState) throws {
+        let fixture = try DeviceFixtureDirectory()
+        defer { fixture.remove() }
+
+        try fixture.writeDevice(udid: iPhoneUDID, name: "iPhone 16 Pro", state: state)
+
+        #expect(DeviceLoader(devicesDirectoryURL: fixture.url).loadDeviceList().map(\.state) == [state])
+    }
+
     @Test("Device list does not scan apps")
     func deviceListDoesNotScanApps() throws {
         let fixture = try DeviceFixtureDirectory()

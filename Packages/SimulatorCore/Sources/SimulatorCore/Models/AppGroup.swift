@@ -31,6 +31,13 @@ public class AppGroup {
     }
 
     public var url: URL?
+
+    /// Whether this group belongs to the app with `bundleIdentifier`: the bundle identifier is the
+    /// group's name or starts with it as a whole dot-separated prefix — so `group.com.example.notes`
+    /// belongs to `com.example.notes` and `com.example.notes.widget`, but not to `com.example.notesplus`.
+    public func belongs(toAppWithBundleIdentifier bundleIdentifier: String) -> Bool {
+        !name.isEmpty && (bundleIdentifier == name || bundleIdentifier.hasPrefix(name + "."))
+    }
     
     public init(
         identifier: String,

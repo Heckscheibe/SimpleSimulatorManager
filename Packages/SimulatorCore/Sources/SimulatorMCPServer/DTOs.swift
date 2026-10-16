@@ -193,12 +193,18 @@ extension DeviceState {
     /// The value tools return and `list_devices(state:)` filters on.
     public var identifier: String {
         switch self {
+        case .creating:
+            "creating"
         case .off:
             "off"
+        case .booting:
+            "booting"
         case .running:
             "running"
+        case .shuttingDown:
+            "shuttingDown"
         }
     }
 
-    static let allIdentifiers = ["off", "running"]
+    static let allIdentifiers = allCases.map(\.identifier)
 }

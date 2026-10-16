@@ -76,9 +76,12 @@ public struct DeviceLoader: Sendable {
     }
 
     /// Reloads a single device with its apps and app groups.
-    /// - Parameter existingURL: The device's folder, when already known; otherwise it is derived
-    ///   from `udid` inside the devices directory.
-    public func loadDevice(withUdid udid: String, existingURL: URL? = nil) -> Device? {
+    /// - Parameters:
+    ///   - existingURL: The device's folder, when already known; otherwise it is derived from
+    ///     `udid` inside the devices directory.
+    ///   - includingAppGroups: Pass `false` to skip scanning app groups when only apps are needed;
+    ///     the device's `appGroups` then stay empty.
+    public func loadDevice(withUdid udid: String, existingURL: URL? = nil, includingAppGroups: Bool = true) -> Device? {
         guard let deviceDirectoryURL = existingURL ?? devicesDirectoryURL?.appendingPathComponent(udid) else {
             os_log("Missing simulator directory for udid %@", udid)
             return nil
@@ -89,7 +92,9 @@ public struct DeviceLoader: Sendable {
         do {
             let device = try CustomPropertyListDecoder().decode(Device.self, at: devicePlistURL)
             device.apps = appDiscoveryService.loadApps(for: device)
-            device.appGroups = appDiscoveryService.loadAppGroups(for: device)
+            if includingAppGroups {
+                device.appGroups = appDiscoveryService.loadAppGroups(for: device)
+            }
             return device
         } catch {
             os_log("Failed to reload device with udid %@ due to error %@", udid, String(describing: error))

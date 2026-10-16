@@ -108,7 +108,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
 
     public func apps(onDeviceWithUdid udid: String) async throws -> [AppDTO] {
         try await onWorkQueue { [self] in
-            try loadDevice(withUdid: udid)
+            try loadDevice(withUdid: udid, includingAppGroups: false)
                 .apps
                 .sorted(by: Self.appOrder)
                 .map(AppDTO.init(app:))
@@ -139,7 +139,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
             let device = try loadDevice(withUdid: udid)
             let app = try Self.app(withBundleIdentifier: bundleIdentifier, on: device)
             let appGroups = device.appGroups
-                .filter { Self.appGroup($0, belongsTo: app) }
+                .filter { $0.belongs(toAppWithBundleIdentifier: app.bundleIdentifier) }
                 .sorted { $0.identifier < $1.identifier }
 
             return AppContainersDTO(udid: device.udid, app: app, appGroups: appGroups)
@@ -170,7 +170,13 @@ public struct SimulatorQueryService: SimulatorQuerying {
 
     public func userDefaultsJSON(of subject: UserDefaultsSubject, onDeviceWithUdid udid: String, domain: String?) async throws -> String {
         try await onWorkQueue { [self] in
-            let device = try loadDevice(withUdid: udid)
+            let isAppGroup =
+                if case .appGroup = subject {
+                    true
+                } else {
+                    false
+                }
+            let device = try loadDevice(withUdid: udid, includingAppGroups: isAppGroup)
 
             // `ownDomain` is the bundle / group identifier, exactly as `ContainerShortcutHandling` passes it.
             let preferencesURL: URL?
@@ -187,7 +193,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
                 subjectName = "App \(bundleIdentifier)"
             case let .appGroup(identifier):
                 guard let appGroup = device.appGroups.first(where: { $0.identifier == identifier }) else {
-                    throw SimulatorQueryError.unknownAppGroup(identifier: identifier, udid: udid)
+                    throw SimulatorQueryError.unknownAppGroup(identifier: identifier, udid: device.udid)
                 }
 
                 preferencesURL = AppGroupShortcut.userDefaults.url(for: appGroup)
@@ -222,11 +228,11 @@ public struct SimulatorQueryService: SimulatorQuerying {
             try Self.deviceList(from: deviceLoader).map(\.udid)
         }
 
-        guard knownUdids.contains(udid) else {
+        guard let knownUdid = knownUdids.first(where: { Self.isSameUdid($0, udid) }) else {
             throw SimulatorQueryError.unknownDevice(udid: udid)
         }
 
-        try await resetService.shutDownAndEraseSimulator(deviceUdid: udid)
+        try await resetService.shutDownAndEraseSimulator(deviceUdid: knownUdid)
     }
 
     public func eraseAllSimulators() async throws {
@@ -235,8 +241,10 @@ public struct SimulatorQueryService: SimulatorQuerying {
 
     public func deleteCleanupCandidate(withId id: String) async throws -> CleanupCandidateDTO {
         // Reloaded rather than trusted from an earlier listing: only a candidate that still
-        // qualifies right now is deleted, and the caller never supplies a path.
-        guard let candidate = try await cleanupService.loadCleanupCandidates().first(where: { $0.id == id }) else {
+        // qualifies right now is deleted, and the caller never supplies a path. Sizing every
+        // candidate's folder isn't needed to tell whether it still qualifies.
+        guard let candidate = try await cleanupService.loadCleanupCandidates(includingDiskUsage: false)
+            .first(where: { $0.id == id }) else {
             throw SimulatorQueryError.unknownCleanupCandidate(id: id)
         }
 
@@ -270,15 +278,6 @@ private extension SimulatorQueryService {
         return app
     }
 
-    /// An app group belongs to an app whose bundle identifier is the group's name or starts with
-    /// it as a whole dot-separated prefix — so `group.com.example.notes` belongs to
-    /// `com.example.notes` and `com.example.notes.widget`, but not to `com.example.notesplus`.
-    static func appGroup(_ appGroup: AppGroup, belongsTo app: any SimulatorApp) -> Bool {
-        let name = appGroup.name
-
-        return !name.isEmpty && (app.bundleIdentifier == name || app.bundleIdentifier.hasPrefix(name + "."))
-    }
-
     /// Every device with its apps. App groups are skipped: no caller of this needs them.
     func loadAllDevicesWithoutAppGroups() throws -> DeviceLoader.LoadedDevices {
         guard let loadedDevices = deviceLoader.loadDevices(includingAppGroups: false) else {
@@ -291,17 +290,23 @@ private extension SimulatorQueryService {
     /// Loads the device whose folder is named `udid`. The UDID must be a single path component and
     /// the folder's `device.plist` must carry the same UDID, so a value such as `../..` can never
     /// resolve to a folder outside the devices directory — without decoding every other device.
-    func loadDevice(withUdid udid: String) throws -> Device {
+    func loadDevice(withUdid udid: String, includingAppGroups: Bool = true) throws -> Device {
         guard deviceLoader.devicesDirectoryURL != nil else {
             throw SimulatorQueryError.devicesDirectoryUnavailable
         }
         guard Self.isSinglePathComponent(udid),
-              let device = deviceLoader.loadDevice(withUdid: udid),
-              device.udid == udid else {
+              let device = deviceLoader.loadDevice(withUdid: udid, includingAppGroups: includingAppGroups),
+              Self.isSameUdid(device.udid, udid) else {
             throw SimulatorQueryError.unknownDevice(udid: udid)
         }
 
         return device
+    }
+
+    /// UDIDs are hex, and the devices directory sits on a case-insensitive volume, so an agent's
+    /// lowercased UDID names the same simulator.
+    static func isSameUdid(_ lhs: String, _ rhs: String) -> Bool {
+        lhs.caseInsensitiveCompare(rhs) == .orderedSame
     }
 
     static func isSinglePathComponent(_ name: String) -> Bool {

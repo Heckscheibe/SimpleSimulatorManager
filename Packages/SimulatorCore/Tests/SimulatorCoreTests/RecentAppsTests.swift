@@ -52,15 +52,15 @@ struct RecentAppsTests {
         #expect(recentApps.first?.timestamp == now.addingTimeInterval(-5))
     }
 
-    @Test("Deduplication runs after the cap, as the menu always has")
-    func dedupesAfterCap() {
+    @Test("Deduplication runs before the cap, so duplicates don't shorten the list")
+    func dedupesBeforeCap() {
         let changes = [
             change("com.example.app", on: iPhone, secondsAgo: 1),
             change("com.example.app", on: iPhone, secondsAgo: 2),
             change("com.example.other", on: iPhone, secondsAgo: 3)
         ]
 
-        #expect(RecentApps.initial(from: changes, limit: 2).map(\.app.bundleIdentifier) == ["com.example.app"])
+        #expect(RecentApps.initial(from: changes, limit: 2).map(\.app.bundleIdentifier) == ["com.example.app", "com.example.other"])
     }
 
     private func change(_ bundleIdentifier: String, on device: Device, secondsAgo: TimeInterval) -> AppChange {

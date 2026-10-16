@@ -3,7 +3,17 @@ import os
 
 public protocol SimulatorCleanupServing: AnyObject, Sendable {
     func loadCleanupCandidates() async throws -> [SimulatorCleanupCandidate]
+    /// - Parameter includingDiskUsage: Pass `false` when only the candidates themselves matter, for
+    ///   example to check one still qualifies; walking every directory to size it is skipped and
+    ///   `diskUsageBytes` is only what `simctl` reports.
+    func loadCleanupCandidates(includingDiskUsage: Bool) async throws -> [SimulatorCleanupCandidate]
     func deleteCleanupCandidate(_ candidate: SimulatorCleanupCandidate) async throws
+}
+
+public extension SimulatorCleanupServing {
+    func loadCleanupCandidates(includingDiskUsage: Bool) async throws -> [SimulatorCleanupCandidate] {
+        try await loadCleanupCandidates()
+    }
 }
 
 struct SimctlDeviceRecord: Sendable, Equatable {
@@ -79,6 +89,10 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
     )
 
     public func loadCleanupCandidates() async throws -> [SimulatorCleanupCandidate] {
+        try await loadCleanupCandidates(includingDiskUsage: true)
+    }
+
+    public func loadCleanupCandidates(includingDiskUsage: Bool) async throws -> [SimulatorCleanupCandidate] {
         os_log("Cleanup service started loading candidates")
         async let simctlDevices = loadSimctlDevices()
         async let availableRuntimeIdentifiers = loadAvailableRuntimeIdentifiers()
@@ -103,7 +117,8 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
             Self.buildCleanupCandidates(
                 simctlDevices: loadedSimctlDevices,
                 availableRuntimeIdentifiers: loadedRuntimeIdentifiers,
-                directoryRecords: loadedDirectoryRecords
+                directoryRecords: loadedDirectoryRecords,
+                directorySizeProvider: { includingDiskUsage ? Self.calculateDirectorySize(at: $0) : nil }
             )
         }
 
