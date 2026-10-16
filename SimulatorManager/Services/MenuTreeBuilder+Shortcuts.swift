@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SimulatorCore
 
 /// The container shortcuts a row offers: open the folder, copy its path, and — for preferences —
 /// copy the content itself.

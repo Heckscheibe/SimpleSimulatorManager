@@ -118,6 +118,93 @@ The app lives in the menu bar — there is no main window.
 
 <img width="460" alt="The Settings window, showing the Global Shortcut section with the recorder set to ⌃⌥⌘S alongside Clear and Reset buttons, and the Menu Contents section with toggles for Recent Apps and each platform" src="Screenshots/Screenshot 3.jpeg" />
 
+## Use with AI agents (MCP)
+
+`simple-simulator-mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that
+gives coding agents such as Claude Code, VS Code Copilot, Codex or Cursor the same knowledge the
+menu has: simulators, installed apps, their data, bundle and app-group containers, recent installs
+and cleanup candidates. It runs over stdio as a subprocess of the agent, works whether or not the
+menu bar app is running, and opens no network port. Tools take UDIDs, bundle identifiers and other
+identifiers — never file paths.
+
+It is read-only by default, plus `shutdown_all_simulators`, which loses no data. Two launch flags,
+set per agent in its MCP config, opt into more:
+
+- `--allow-user-defaults` enables `read_user_defaults` (UserDefaults can hold tokens or personal data)
+- `--allow-destructive` enables `erase_device`, `erase_all_simulators` and `delete_cleanup_candidate`
+
+| Tool | Available |
+|---|---|
+| `list_devices`, `list_apps`, `find_app`, `get_app_containers`, `list_app_groups`, `list_recent_apps`, `list_cleanup_candidates` | always (read-only) |
+| `shutdown_all_simulators` | always |
+| `read_user_defaults` | with `--allow-user-defaults` |
+| `erase_device`, `erase_all_simulators`, `delete_cleanup_candidate` | with `--allow-destructive` |
+
+> **Privacy:** `read_user_defaults` hands an app's preferences to the agent, and from there possibly
+> to a model provider. UserDefaults often hold tokens, user identifiers or other personal data, so
+> enable it only for agents you trust with that data.
+
+### Setup
+
+The server ships inside the app at
+`/Applications/Simulator Manager.app/Contents/Helpers/simple-simulator-mcp`, signed and notarized
+with it. The Homebrew cask also puts it on your `PATH` as `simple-simulator-mcp`.
+
+The easiest way to set it up is **Settings → Agent Integration (MCP)**. Choose your agent, tick
+the flags you want, and copy the ready-made config. To set it up by hand instead:
+
+**Claude Code**
+
+```bash
+claude mcp add --scope user simple-simulator -- "/Applications/Simulator Manager.app/Contents/Helpers/simple-simulator-mcp"
+```
+
+**VS Code (GitHub Copilot)**: add to `.vscode/mcp.json`, or to your user configuration via
+*MCP: Open User Configuration*. The tools then show up in Copilot Chat's Agent mode.
+
+```json
+{
+  "servers": {
+    "simple-simulator": {
+      "type": "stdio",
+      "command": "/Applications/Simulator Manager.app/Contents/Helpers/simple-simulator-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+**Codex**: add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.simple-simulator]
+command = "/Applications/Simulator Manager.app/Contents/Helpers/simple-simulator-mcp"
+args = []
+```
+
+**Cursor, Claude Desktop and other clients**: add to the client's `mcpServers` config, for example
+`~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "simple-simulator": {
+      "command": "/Applications/Simulator Manager.app/Contents/Helpers/simple-simulator-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+Put `--allow-user-defaults` and/or `--allow-destructive` into `args` (or after the path, for
+Claude Code) to opt in.
+
+To run it from a checkout instead, build it with SwiftPM:
+
+```bash
+swift build -c release --package-path Packages/SimulatorCore --product simple-simulator-mcp
+```
+
 ## Security and privacy
 
 Simple Simulator Manager runs with the [App Sandbox](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.app-sandbox)

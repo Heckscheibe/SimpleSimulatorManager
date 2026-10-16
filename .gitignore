@@ -106,6 +106,9 @@ vendor/bundle
 # directory out of the repository entirely.
 .codegraph/
 
+# Claude Code local tooling state (settings, worktrees) — not part of the project.
+.claude/
+
 # Code Injection
 #
 # After new code Injection tools there's a generated folder /iOSInjectionProject

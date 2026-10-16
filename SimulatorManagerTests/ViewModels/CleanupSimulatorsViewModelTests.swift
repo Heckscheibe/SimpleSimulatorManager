@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 @MainActor
 @Suite("CleanupSimulatorsViewModel Tests")

@@ -7,6 +7,7 @@
 
 import Foundation
 import Testing
+@testable import SimulatorCore
 @testable import SimulatorManager
 
 @Suite("MenuSearchService Tests")

@@ -7,6 +7,7 @@
 
 import Foundation
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 class MockDeviceAppMonitoringService: DeviceAppMonitoring {
     // MARK: - Call Tracking
