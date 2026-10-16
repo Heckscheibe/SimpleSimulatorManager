@@ -27,10 +27,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "simple-simulator-mcp",
-            dependencies: [
-                "SimulatorMCPServer",
-                .product(name: "MCP", package: "swift-sdk")
-            ]
+            dependencies: ["SimulatorMCPServer"]
         ),
         // Fixtures shared by the test targets; not part of any product.
         .target(

@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		3C99C0F22F00000100C0DE99 /* DeviceFixtureDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C99C0F12F00000100C0DE99 /* DeviceFixtureDirectory.swift */; };
 		3C99C0032F00000100C0DE99 /* SimulatorCore in Frameworks */ = {isa = PBXBuildFile; productRef = 3C99C0022F00000100C0DE99 /* SimulatorCore */; };
+		3C99C1072F00000100C0DE99 /* SimulatorMCPServer in Frameworks */ = {isa = PBXBuildFile; productRef = 3C99C1062F00000100C0DE99 /* SimulatorMCPServer */; };
+		3C99C10E2F00000100C0DE99 /* simple-simulator-mcp in Embed MCP Server */ = {isa = PBXBuildFile; fileRef = 3C99C1022F00000100C0DE99 /* simple-simulator-mcp */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -26,7 +28,28 @@
 			remoteGlobalIDString = 37F1DA522AD6E48F00C059DB;
 			remoteInfo = SimulatorManager;
 		};
+		3C99C10B2F00000100C0DE99 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 37F1DA4B2AD6E48E00C059DB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3C99C1032F00000100C0DE99;
+			remoteInfo = "simple-simulator-mcp";
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3C99C10D2F00000100C0DE99 /* Embed MCP Server */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Helpers;
+			dstSubfolderSpec = 1;
+			files = (
+				3C99C10E2F00000100C0DE99 /* simple-simulator-mcp in Embed MCP Server */,
+			);
+			name = "Embed MCP Server";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		3750F9272B2D07AD00F578ED /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -34,6 +57,7 @@
 		37F1DA532AD6E48F00C059DB /* Simulator Manager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Simulator Manager.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA642AD6E49000C059DB /* SimulatorManagerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C99C1022F00000100C0DE99 /* simple-simulator-mcp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "simple-simulator-mcp"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -49,6 +73,11 @@
 			exceptions = (
 			);
 			path = SimulatorManager;
+			sourceTree = "<group>";
+		};
+		3C99C1012F00000100C0DE99 /* SimulatorManagerMCP */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SimulatorManagerMCP;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -76,6 +105,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3C99C1052F00000100C0DE99 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3C99C1072F00000100C0DE99 /* SimulatorMCPServer in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -86,6 +123,7 @@
 				3C99C0F12F00000100C0DE99 /* DeviceFixtureDirectory.swift */,
 				3C385C3E2E5F1A44002AD325 /* SimulatorManager */,
 				3C385C0D2E5F1A17002AD325 /* SimulatorManagerTests */,
+				3C99C1012F00000100C0DE99 /* SimulatorManagerMCP */,
 				37F1DA542AD6E48F00C059DB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -96,6 +134,7 @@
 				37F1DA532AD6E48F00C059DB /* Simulator Manager.app */,
 				37F1DA642AD6E49000C059DB /* SimulatorManagerTests.xctest */,
 				37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */,
+				3C99C1022F00000100C0DE99 /* simple-simulator-mcp */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -112,10 +151,12 @@
 				37F1DA4F2AD6E48F00C059DB /* Sources */,
 				37F1DA502AD6E48F00C059DB /* Frameworks */,
 				37F1DA512AD6E48F00C059DB /* Resources */,
+				3C99C10D2F00000100C0DE99 /* Embed MCP Server */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				3C99C10C2F00000100C0DE99 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				3C385C3E2E5F1A44002AD325 /* SimulatorManager */,
@@ -167,6 +208,28 @@
 			productReference = 37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		3C99C1032F00000100C0DE99 /* simple-simulator-mcp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3C99C1082F00000100C0DE99 /* Build configuration list for PBXNativeTarget "simple-simulator-mcp" */;
+			buildPhases = (
+				3C99C1042F00000100C0DE99 /* Sources */,
+				3C99C1052F00000100C0DE99 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3C99C1012F00000100C0DE99 /* SimulatorManagerMCP */,
+			);
+			name = "simple-simulator-mcp";
+			packageProductDependencies = (
+				3C99C1062F00000100C0DE99 /* SimulatorMCPServer */,
+			);
+			productName = "simple-simulator-mcp";
+			productReference = 3C99C1022F00000100C0DE99 /* simple-simulator-mcp */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -187,6 +250,9 @@
 					37F1DA6D2AD6E49000C059DB = {
 						CreatedOnToolsVersion = 15.0;
 						TestTargetID = 37F1DA522AD6E48F00C059DB;
+					};
+					3C99C1032F00000100C0DE99 = {
+						CreatedOnToolsVersion = 27.0;
 					};
 				};
 			};
@@ -209,6 +275,7 @@
 				37F1DA522AD6E48F00C059DB /* Simulator Manager */,
 				37F1DA632AD6E49000C059DB /* SimulatorManagerTests */,
 				37F1DA6D2AD6E49000C059DB /* SimulatorManagerUITests */,
+				3C99C1032F00000100C0DE99 /* simple-simulator-mcp */,
 			);
 		};
 /* End PBXProject section */
@@ -299,6 +366,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3C99C1042F00000100C0DE99 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -311,6 +385,11 @@
 			isa = PBXTargetDependency;
 			target = 37F1DA522AD6E48F00C059DB /* Simulator Manager */;
 			targetProxy = 37F1DA6F2AD6E49000C059DB /* PBXContainerItemProxy */;
+		};
+		3C99C10C2F00000100C0DE99 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3C99C1032F00000100C0DE99 /* simple-simulator-mcp */;
+			targetProxy = 3C99C10B2F00000100C0DE99 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -615,6 +694,54 @@
 			};
 			name = Release;
 		};
+		3C99C1092F00000100C0DE99 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
+				CODE_SIGN_STYLE = Manual;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				CURRENT_PROJECT_VERSION = 55;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = C26VF67R9C;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager.mcp;
+				PRODUCT_NAME = "simple-simulator-mcp";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Debug;
+		};
+		3C99C10A2F00000100C0DE99 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				CURRENT_PROJECT_VERSION = 55;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = C26VF67R9C;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager.mcp;
+				PRODUCT_NAME = "simple-simulator-mcp";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -654,6 +781,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		3C99C1082F00000100C0DE99 /* Build configuration list for PBXNativeTarget "simple-simulator-mcp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3C99C1092F00000100C0DE99 /* Debug */,
+				3C99C10A2F00000100C0DE99 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -667,6 +803,10 @@
 		3C99C0022F00000100C0DE99 /* SimulatorCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SimulatorCore;
+		};
+		3C99C1062F00000100C0DE99 /* SimulatorMCPServer */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SimulatorMCPServer;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
