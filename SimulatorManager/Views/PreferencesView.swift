@@ -28,6 +28,7 @@ struct PreferencesView: View {
     @ObservedObject var settings: Settings
     @ObservedObject var shortcutController: GlobalShortcutController
     let recorderViewModel: ShortcutRecorderViewModel
+    let agentIntegrationViewModel: AgentIntegrationViewModel
 
     var body: some View {
         Form {
@@ -61,10 +62,15 @@ struct PreferencesView: View {
                 Toggle("tvOS", isOn: settings.binding(for: \.showTVOS))
                 Toggle("visionOS", isOn: settings.binding(for: \.showVisionOS))
             }
+
+            AgentIntegrationSection(viewModel: agentIntegrationViewModel)
         }
         .formStyle(.grouped)
+        // With the agent integration snippets the content is taller than a laptop screen, so the
+        // window no longer fits it exactly: it opens at a comfortable height, the form scrolls,
+        // and the window can be resized vertically.
         .frame(width: 460)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(minHeight: 360, idealHeight: 640, maxHeight: .infinity)
         .onAppear {
             // The app is an agent (LSUIElement), so it is not activated automatically and the
             // settings window would otherwise open behind whatever the user was working in.

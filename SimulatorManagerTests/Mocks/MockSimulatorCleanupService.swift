@@ -1,5 +1,6 @@
 import Foundation
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 actor MockSimulatorCleanupService: SimulatorCleanupServing {
     struct MockError: Error, LocalizedError {
