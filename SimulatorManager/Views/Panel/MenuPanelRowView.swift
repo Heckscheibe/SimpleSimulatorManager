@@ -13,9 +13,12 @@ import SwiftUI
 /// and reports a click.
 struct MenuPanelRowView: View {
     let node: MenuNode
+    /// Selection lives in the view model, so hover and the arrow keys drive one highlight rather
+    /// than two that can disagree.
+    let isSelected: Bool
+    let isAwaitingConfirmation: Bool
+    let hoverChanged: (Bool) -> Void
     let activate: () -> Void
-
-    @State private var isHovering = false
 
     var body: some View {
         switch node.kind {
@@ -38,7 +41,7 @@ struct MenuPanelRowView: View {
 
 private extension MenuPanelRowView {
     var isHighlighted: Bool {
-        isHovering && node.isEnabled
+        isSelected && node.isEnabled
     }
 
     var interactiveRow: some View {
@@ -46,6 +49,12 @@ private extension MenuPanelRowView {
             labelContent
 
             Spacer(minLength: 4)
+
+            if isAwaitingConfirmation {
+                Text("press ↩ again")
+                    .font(MenuPanelStyle.subtitleFont)
+                    .foregroundStyle(isHighlighted ? AnyShapeStyle(.white) : AnyShapeStyle(Color.red))
+            }
 
             if node.isSubmenu {
                 Image(systemName: "chevron.right")
@@ -62,7 +71,7 @@ private extension MenuPanelRowView {
         .padding(.horizontal, MenuPanelStyle.horizontalInset)
         .opacity(node.isEnabled ? 1 : MenuPanelStyle.disabledOpacity)
         .contentShape(Rectangle())
-        .onHover { isHovering = $0 }
+        .onHover(perform: hoverChanged)
         .onTapGesture {
             guard node.isEnabled else {
                 return
