@@ -54,7 +54,7 @@ public class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
     /// Diffs two app snapshots of a device into installed/updated/removed changes.
     /// An app only counts as updated when its content modification date moved forward,
     /// so unrelated apps on the same device don't flood the recent-apps list.
-    nonisolated static func computeAppChanges(
+    public nonisolated static func computeAppChanges(
         previousApps: [any SimulatorApp],
         currentApps: [any SimulatorApp],
         device: Device,

@@ -92,6 +92,112 @@ struct DeviceViewModelTests {
         #expect(!viewModel.isPerformingAction)
     }
 
+    // MARK: - Recent apps after erasing
+
+    @Test("A successful erase reports the device's apps as removed from Recent Apps")
+    @MainActor
+    func eraseReportsRemovedApps() async {
+        let deviceManager = MockDeviceManager()
+        let device = TestDataHelpers.createOfflineDevice(udid: "device-1")
+        device.apps = [
+            TestDataHelpers.createMockApp(bundleIdentifier: "com.test.app1"),
+            TestDataHelpers.createMockApp(bundleIdentifier: "com.test.app2")
+        ]
+        let erasedDevice = TestDataHelpers.createOfflineDevice(udid: "device-1")
+        let viewModel = DeviceViewModel(
+            device: device,
+            deviceManager: deviceManager,
+            simulatorResetService: MockSimulatorDeviceActionService()
+        )
+
+        deviceManager.setMockDevices([device])
+        deviceManager.refreshedDeviceOverride = erasedDevice
+
+        viewModel.eraseDevice()
+        await waitForActionToFinish(viewModel)
+
+        let changes = deviceManager.lastAddedChanges
+        #expect(deviceManager.updateRecentAppsCalled)
+        #expect(changes.count == 2)
+        #expect(changes.allSatisfy { $0.changeType == .removed })
+        #expect(changes.allSatisfy { $0.device.udid == "device-1" })
+        #expect(Set(changes.map(\.app.bundleIdentifier)) == ["com.test.app1", "com.test.app2"])
+        #expect(viewModel.actionErrorMessage == nil)
+    }
+
+    @Test("Erasing a device without apps leaves Recent Apps alone")
+    @MainActor
+    func eraseWithoutAppsSkipsRecentApps() async {
+        let deviceManager = MockDeviceManager()
+        let device = TestDataHelpers.createOfflineDevice(udid: "device-1")
+        let viewModel = DeviceViewModel(
+            device: device,
+            deviceManager: deviceManager,
+            simulatorResetService: MockSimulatorDeviceActionService()
+        )
+
+        deviceManager.setMockDevices([device])
+
+        viewModel.eraseDevice()
+        await waitForActionToFinish(viewModel)
+
+        #expect(deviceManager.refreshDeviceCalled)
+        #expect(!deviceManager.updateRecentAppsCalled)
+    }
+
+    @Test("A failed erase leaves Recent Apps alone")
+    @MainActor
+    func failedEraseKeepsRecentApps() async {
+        struct TestFailure: LocalizedError {
+            var errorDescription: String? {
+                "simctl failed"
+            }
+        }
+
+        let deviceManager = MockDeviceManager()
+        let service = MockSimulatorDeviceActionService()
+        await service.setError(TestFailure())
+
+        let device = TestDataHelpers.createOfflineDevice(udid: "device-1")
+        device.apps = [TestDataHelpers.createMockApp(bundleIdentifier: "com.test.app1")]
+        let viewModel = DeviceViewModel(
+            device: device,
+            deviceManager: deviceManager,
+            simulatorResetService: service
+        )
+
+        deviceManager.setMockDevices([device])
+        deviceManager.refreshedDeviceOverride = TestDataHelpers.createOfflineDevice(udid: "device-1")
+
+        viewModel.eraseDevice()
+        await waitForActionToFinish(viewModel)
+
+        #expect(!deviceManager.refreshDeviceCalled)
+        #expect(!deviceManager.updateRecentAppsCalled)
+        #expect(viewModel.actionErrorMessage == "simctl failed")
+    }
+
+    @Test("A failed refresh after erasing leaves Recent Apps alone")
+    @MainActor
+    func failedRefreshKeepsRecentApps() async {
+        let deviceManager = MockDeviceManager()
+        let device = TestDataHelpers.createOfflineDevice(udid: "device-1")
+        device.apps = [TestDataHelpers.createMockApp(bundleIdentifier: "com.test.app1")]
+        let viewModel = DeviceViewModel(
+            device: device,
+            deviceManager: deviceManager,
+            simulatorResetService: MockSimulatorDeviceActionService()
+        )
+
+        // The device is unknown to the manager, so the refresh returns nil.
+        viewModel.eraseDevice()
+        await waitForActionToFinish(viewModel)
+
+        #expect(deviceManager.refreshDeviceCalled)
+        #expect(!deviceManager.updateRecentAppsCalled)
+        #expect(viewModel.actionErrorMessage != nil)
+    }
+
     // MARK: - Waiting for asynchronous work
 
     /// `eraseDevice()` sets `currentAction` synchronously and clears it on both the success and the

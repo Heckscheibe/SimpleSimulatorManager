@@ -47,6 +47,10 @@ class MockDeviceManager: DeviceManaging {
     var lastUpdatedDevice: Device?
     var lastQueriedUdid: String?
     var lastAddedChanges: [AppChange] = []
+
+    /// When set, `refreshDevice` returns this device (e.g. an erased copy without apps)
+    /// instead of echoing the device it was given, as long as the udid is known.
+    var refreshedDeviceOverride: Device?
     
     // MARK: - Mock Setup Methods
     
@@ -124,9 +128,10 @@ class MockDeviceManager: DeviceManaging {
 
         // Update the device in mock data
         if let index = mockDevices.firstIndex(where: { $0.udid == device.udid }) {
-            mockDevices[index] = device
+            let refreshedDevice = refreshedDeviceOverride ?? device
+            mockDevices[index] = refreshedDevice
             devicesSubject.send(mockDevices)
-            return device
+            return refreshedDevice
         }
 
         return nil
