@@ -98,9 +98,10 @@ private extension DeviceViewModel {
 
         let deviceUdid = device.udid
         let deviceName = device.name
+        let appsBeforeAction = device.apps
         let resetService = simulatorResetService
 
-        Task { [weak self, resetService, deviceUdid, deviceName] in
+        Task { [weak self, resetService, deviceUdid, deviceName, appsBeforeAction] in
             guard let self else {
                 return
             }
@@ -117,6 +118,7 @@ private extension DeviceViewModel {
                 }
 
                 self.device = refreshedDevice
+                reportRemovedApps(previousApps: appsBeforeAction, refreshedDevice: refreshedDevice)
                 self.currentAction = nil
             } catch {
                 os_log("Failed to perform %@ for %@: %@", action.rawValue, deviceUdid, error.localizedDescription)
@@ -125,5 +127,22 @@ private extension DeviceViewModel {
                 self.actionErrorMessage = error.localizedDescription
             }
         }
+    }
+
+    /// The refresh publishes the erased device, which advances the folder monitor's snapshot
+    /// before its FSEvents diff runs, so the monitor never sees the erased apps go away.
+    /// Feed the difference through the usual recent-apps rule here instead.
+    func reportRemovedApps(previousApps: [any SimulatorApp], refreshedDevice: Device) {
+        let changes = DeviceAppMonitoringService.computeAppChanges(
+            previousApps: previousApps,
+            currentApps: refreshedDevice.apps,
+            device: refreshedDevice
+        )
+
+        guard !changes.isEmpty else {
+            return
+        }
+
+        deviceManager.updateRecentApps(changes)
     }
 }
