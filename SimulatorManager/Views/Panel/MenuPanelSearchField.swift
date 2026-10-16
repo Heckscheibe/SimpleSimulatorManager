@@ -99,6 +99,12 @@ extension MenuPanelSearchField {
             query.wrappedValue = field.stringValue
         }
 
+        /// The field's clear button empties it without sending `controlTextDidChange`, so the query
+        /// would otherwise keep the text the field no longer shows.
+        func searchFieldDidEndSearching(_ sender: NSSearchField) {
+            query.wrappedValue = sender.stringValue
+        }
+
         func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
             guard let command = Self.command(for: selector) else {
                 return false
