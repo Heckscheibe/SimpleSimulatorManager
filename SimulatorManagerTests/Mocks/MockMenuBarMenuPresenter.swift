@@ -13,9 +13,11 @@ class MockMenuBarMenuPresenter: MenuBarMenuPresenting {
     // MARK: - Call Tracking
 
     var openMenuCallCount = 0
+    var closeMenuCallCount = 0
 
     /// Controls whether the status item is considered reachable.
     var openMenuResult = true
+    var closeMenuResult = true
 
     // MARK: - MenuBarMenuPresenting Implementation
 
@@ -24,5 +26,12 @@ class MockMenuBarMenuPresenter: MenuBarMenuPresenting {
         openMenuCallCount += 1
 
         return openMenuResult
+    }
+
+    @discardableResult
+    func closeMenu() -> Bool {
+        closeMenuCallCount += 1
+
+        return closeMenuResult
     }
 }
