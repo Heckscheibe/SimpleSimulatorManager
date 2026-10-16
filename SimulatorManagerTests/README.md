@@ -156,4 +156,6 @@ SimulatorManagerTests/
     └── DeviceManagerProtocolTests.swift
 ```
 
+Tests for types that live in the `SimulatorCore` package add `@testable import SimulatorCore` next to `@testable import SimulatorManager`. New tests that need only `SimulatorCore` belong in `Packages/SimulatorCore/Tests/SimulatorCoreTests` and run with `swift test --package-path Packages/SimulatorCore`.
+
 This structure provides comprehensive test coverage while maintaining clean separation of concerns and enabling reliable, fast-running tests.

@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import SimulatorCore
 
 struct AppGroupsView: View {
     let viewModel: DeviceViewModel

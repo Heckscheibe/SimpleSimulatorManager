@@ -7,6 +7,7 @@
 
 import SwiftUI
 import os
+import SimulatorCore
 
 @main
 struct SimulatorManagerApp: App {
@@ -16,6 +17,7 @@ struct SimulatorManagerApp: App {
     @State private var resetSimulatorsViewModel: ResetSimulatorsViewModel
     @State private var settingsViewModel: SettingsViewModel
     @State private var shortcutRecorderViewModel: ShortcutRecorderViewModel
+    @State private var agentIntegrationViewModel = AgentIntegrationViewModel()
     @StateObject private var settings: Settings
     @StateObject private var shortcutController: GlobalShortcutController
 
@@ -76,7 +78,8 @@ struct SimulatorManagerApp: App {
         Window("Settings", id: PreferencesWindow.identifier) {
             PreferencesView(settings: settings,
                             shortcutController: shortcutController,
-                            recorderViewModel: shortcutRecorderViewModel)
+                            recorderViewModel: shortcutRecorderViewModel,
+                            agentIntegrationViewModel: agentIntegrationViewModel)
         }
         .windowResizability(.contentSize)
         .defaultPosition(.center)

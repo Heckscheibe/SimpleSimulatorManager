@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SimulatorCore
 
 /// The menu actions a container shortcut offers: reveal it in Finder, copy its path, or — for
 /// preferences — copy the content itself.

@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 class MockDeviceManager: DeviceManaging {
     // MARK: - Publishers

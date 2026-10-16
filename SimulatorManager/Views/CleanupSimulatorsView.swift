@@ -1,5 +1,6 @@
 import SwiftUI
 import os
+import SimulatorCore
 
 struct CleanupSimulatorsView: View {
     let viewModel: CleanupSimulatorsViewModel
