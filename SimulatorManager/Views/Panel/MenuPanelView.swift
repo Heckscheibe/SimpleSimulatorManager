@@ -37,12 +37,14 @@ struct MenuPanelView: View {
     @State private var viewModel = MenuPanelViewModel()
     @State private var flyouts = MenuFlyoutController()
     @State private var listHeight: CGFloat = MenuPanelStyle.rowMinimumHeight
+    /// The tree the last render drew. Not observed, so keeping it costs no render.
+    @State private var rootNodesCache = RootNodesCache()
 
     var body: some View {
         // Deliberately the root level and not the whole chain. Resolving the chain reads the open
         // path, and reading it here made every hover that opened a submenu rebuild the entire menu
         // tree and re-create all of its rows.
-        let rootLevel = MenuPanelLevel(title: nil, nodes: makeRootNodes(), depth: 0)
+        let rootLevel = MenuPanelLevel(title: nil, nodes: renderRootNodes(), depth: 0)
 
         VStack(alignment: .leading, spacing: 0) {
             MenuPanelSearchField(query: $searchViewModel.query,
@@ -62,8 +64,8 @@ struct MenuPanelView: View {
         }
         .frame(width: MenuPanelStyle.width)
         .background(shortcuts)
-        .background(MenuFlyoutChainView(rootNodes: rootLevel.nodes, viewModel: viewModel) { levels, path in
-            synchronizeFlyouts(levels: levels, path: path)
+        .background(MenuFlyoutChainView(rootNodes: rootLevel.nodes, viewModel: viewModel) {
+            showChain()
         })
         .onAppear {
             connectFlyouts()
@@ -97,9 +99,26 @@ private extension MenuPanelView {
         searchViewModel.hasQuery ? searchResultNodes() : makeNodes()
     }
 
+    /// Builds the tree for a render and remembers it.
+    ///
+    /// Building it walks every simulator and stats folders on disk, so it happens once per render.
+    /// A hover or a keypress reads what that render drew instead of building the whole tree again.
+    func renderRootNodes() -> [MenuNode] {
+        let nodes = makeRootNodes()
+
+        rootNodesCache.nodes = nodes
+
+        return nodes
+    }
+
+    /// What the last render drew, or a fresh build before there has been one.
+    func cachedRootNodes() -> [MenuNode] {
+        rootNodesCache.nodes ?? makeRootNodes()
+    }
+
     /// The level the keyboard works in: the deepest flyout, or the panel when none is open.
     func currentLevel() -> MenuPanelLevel {
-        viewModel.level(in: makeRootNodes())
+        viewModel.level(in: cachedRootNodes())
     }
 
     /// A query that matched nothing gets an explanation rather than a blank panel.
@@ -239,9 +258,7 @@ private extension MenuPanelView {
     /// opening late looks like. Measured on a real install, the work itself is around seven
     /// milliseconds; the lag was never the computation, it was the wait for the next pass.
     func showChain() {
-        let rootNodes = makeRootNodes()
-
-        synchronizeFlyouts(levels: viewModel.levels(in: rootNodes), path: viewModel.pathIdentifiers)
+        synchronizeFlyouts(levels: viewModel.levels(in: cachedRootNodes()), path: viewModel.pathIdentifiers)
     }
 
     func synchronizeFlyouts(levels: [MenuPanelLevel], path: [String]) {
@@ -294,15 +311,15 @@ private extension MenuPanelView {
 private struct MenuFlyoutChainView: View {
     let rootNodes: [MenuNode]
     let viewModel: MenuPanelViewModel
-    let synchronize: ([MenuPanelLevel], [String]) -> Void
+    let synchronize: () -> Void
 
     var body: some View {
-        let path = viewModel.pathIdentifiers
-        let levels = viewModel.levels(in: rootNodes)
-
-        MenuFlyoutSynchronizer {
-            synchronize(levels, path)
-        }
+        // Reading the open path is what subscribes this view to it. The chain itself is read again
+        // when the deferred synchronisation runs: a snapshot taken here can be stale by then, and
+        // replaying it closed a flyout a hover had just opened.
+        MenuFlyoutSynchronizer(treeSize: rootNodes.count,
+                               openPath: viewModel.pathIdentifiers,
+                               synchronize: synchronize)
     }
 }
 
@@ -334,6 +351,10 @@ private struct MenuPanelSelectionScroller: View {
 /// is what keeps an open flyout in step with a tree that changed underneath it. The work is
 /// deferred off the layout pass, because moving windows during one is not something AppKit expects.
 private struct MenuFlyoutSynchronizer: NSViewRepresentable {
+    /// Not used by the synchronisation, which reads current state itself. A new tree or a new open
+    /// path is what makes SwiftUI update this view, and so what makes the windows follow.
+    let treeSize: Int
+    let openPath: [String]
     let synchronize: () -> Void
 
     func makeNSView(context: Context) -> NSView {
@@ -399,8 +420,12 @@ private extension MenuPanelView {
     }
 
     func queryChanged() {
+        // Built fresh: this runs as the query changes, which may be before the render that would
+        // have refreshed what the cache holds.
+        let resultLevel = viewModel.level(in: makeRootNodes())
+
         changeChain {
-            viewModel.applyQueryChange(isSearching: searchViewModel.hasQuery, resultLevel: currentLevel())
+            viewModel.applyQueryChange(isSearching: searchViewModel.hasQuery, resultLevel: resultLevel)
         }
     }
 }
@@ -453,4 +478,9 @@ private extension MenuPanelView {
         .opacity(0)
         .accessibilityHidden(true)
     }
+}
+
+/// Holds the tree the panel last rendered, for the hover and keyboard paths to read.
+private final class RootNodesCache {
+    var nodes: [MenuNode]?
 }

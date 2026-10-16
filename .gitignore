@@ -113,3 +113,7 @@ vendor/bundle
 
 iOSInjectionProject/
 
+# LLVM code coverage
+#
+# Raw profile data a profiled test run drops in the working directory.
+*.profraw

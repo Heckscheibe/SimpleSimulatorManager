@@ -37,20 +37,30 @@ enum MenuFlyoutGeometry {
     ///   - visibleFrame: The screen area the flyout has to stay inside.
     ///   - alignmentInset: The flyout's own top padding, so its first row lines up with the row that
     ///     opened it rather than sitting a few points below it.
+    ///   - prefersLeft: Whether the window this hangs off opened to the left of *its* parent. The
+    ///     chain keeps going the way it started: a flyout to the right of one that flipped left
+    ///     would land on top of the panel.
     static func frame(
         ofSize size: CGSize,
         anchoredTo anchor: CGRect,
         besideWindow windowFrame: CGRect,
         onScreen visibleFrame: CGRect,
-        alignmentInset: CGFloat
+        alignmentInset: CGFloat,
+        prefersLeft: Bool = false
     ) -> CGRect {
-        var origin = CGPoint(x: windowFrame.maxX - overlap, y: anchor.maxY + alignmentInset - size.height)
+        let rightX = windowFrame.maxX - overlap
+        let leftX = windowFrame.minX + overlap - size.width
+        var origin = CGPoint(x: prefersLeft ? leftX : rightX, y: anchor.maxY + alignmentInset - size.height)
 
         // The status item sits near the right of the menu bar, so running out of room on the right
         // is the normal case rather than the edge case. Flipping to the left of the parent is what
         // `NSMenu` did, and it overlaps the parent for the same reason: there is nowhere else to go.
-        if origin.x + size.width > visibleFrame.maxX {
-            origin.x = windowFrame.minX + overlap - size.width
+        if prefersLeft {
+            if origin.x < visibleFrame.minX {
+                origin.x = rightX
+            }
+        } else if origin.x + size.width > visibleFrame.maxX {
+            origin.x = leftX
         }
 
         origin.x = clamp(origin.x, lower: visibleFrame.minX, upper: visibleFrame.maxX - size.width)

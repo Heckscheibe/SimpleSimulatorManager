@@ -30,6 +30,32 @@ struct MenuFlyoutControllerTests {
         #expect(recorder.opened == [ChainRecorder.Opened(identifier: "device-type", depth: 0)])
     }
 
+    @Test("A submenu whose opening starts work waits, so passing over its row does not pay for it")
+    func submenuWithSideEffectWaits() async {
+        let controller = Self.makeController(presenter: MockMenuFlyoutPresenter())
+        let recorder = ChainRecorder(controller: controller)
+        let node = Self.submenu(id: "cleanup", onEnter: {})
+
+        controller.hoverBegan(on: node, depth: 0)
+        #expect(recorder.opened.isEmpty)
+
+        await waitUntil { !recorder.opened.isEmpty }
+        #expect(recorder.opened == [ChainRecorder.Opened(identifier: "cleanup", depth: 0)])
+    }
+
+    @Test("Leaving a submenu that starts work before the delay is up opens nothing")
+    func leavingBeforeTheDelayOpensNothing() async throws {
+        let controller = Self.makeController(presenter: MockMenuFlyoutPresenter())
+        let recorder = ChainRecorder(controller: controller)
+        let node = Self.submenu(id: "cleanup", onEnter: {})
+
+        controller.hoverBegan(on: node, depth: 0)
+        controller.hoverEnded(on: node, depth: 0)
+        try await Task.sleep(for: .milliseconds(120))
+
+        #expect(recorder.opened.isEmpty)
+    }
+
     @Test("Moving between submenus swaps the flyout each time")
     func movingBetweenSubmenusSwapsTheFlyout() {
         let presenter = MockMenuFlyoutPresenter()
@@ -274,14 +300,15 @@ private extension MenuFlyoutControllerTests {
 
         // Short enough to keep the suite quick, long enough that "not yet" is still observable.
         controller.timing = MenuFlyoutController.Timing(close: .milliseconds(40),
+                                                        openWithSideEffect: .milliseconds(40),
                                                         safeTriangleGrace: .milliseconds(80))
         controller.pointerLocation = { .zero }
 
         return controller
     }
 
-    static func submenu(id: String) -> MenuNode {
-        .submenu(id: id, title: id, children: [.action(id: "\(id).child", title: "Child") {}])
+    static func submenu(id: String, onEnter: (@MainActor () -> Void)? = nil) -> MenuNode {
+        .submenu(id: id, title: id, onEnter: onEnter, children: [.action(id: "\(id).child", title: "Child") {}])
     }
 
     static func action(id: String) -> MenuNode {

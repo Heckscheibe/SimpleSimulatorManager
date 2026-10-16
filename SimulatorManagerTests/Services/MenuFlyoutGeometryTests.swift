@@ -67,6 +67,38 @@ struct MenuFlyoutGeometryTests {
         #expect(frame.minX >= Self.screen.minX)
     }
 
+    @Test("A flyout hanging off one that opened to the left keeps going left")
+    func nestedFlyoutFollowsItsParentLeft() {
+        // The first flyout flipped, so it sits to the left of the panel. Opening the next one to its
+        // right would put it on top of the panel.
+        let parent = CGRect(x: 1100, y: 500, width: 300, height: 220)
+        let anchor = CGRect(x: 1100, y: 600, width: 300, height: 22)
+
+        let frame = MenuFlyoutGeometry.frame(ofSize: Self.size,
+                                             anchoredTo: anchor,
+                                             besideWindow: parent,
+                                             onScreen: Self.screen,
+                                             alignmentInset: MenuPanelStyle.listVerticalPadding,
+                                             prefersLeft: true)
+
+        #expect(frame.maxX == parent.minX + MenuFlyoutGeometry.overlap)
+    }
+
+    @Test("A flyout that prefers the left still opens right when there is no room on the left")
+    func leftPreferenceFallsBackToTheRight() {
+        let parent = CGRect(x: 100, y: 500, width: 300, height: 220)
+        let anchor = CGRect(x: 100, y: 600, width: 300, height: 22)
+
+        let frame = MenuFlyoutGeometry.frame(ofSize: Self.size,
+                                             anchoredTo: anchor,
+                                             besideWindow: parent,
+                                             onScreen: Self.screen,
+                                             alignmentInset: MenuPanelStyle.listVerticalPadding,
+                                             prefersLeft: true)
+
+        #expect(frame.minX == parent.maxX - MenuFlyoutGeometry.overlap)
+    }
+
     @Test("A flyout taller than the room below its row is pushed back onto the screen")
     func flyoutStaysOnScreenVertically() {
         let anchor = CGRect(x: 1047, y: 120, width: 300, height: 22)

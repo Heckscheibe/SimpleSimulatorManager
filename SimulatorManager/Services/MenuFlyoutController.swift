@@ -26,6 +26,10 @@ final class MenuFlyoutController {
         /// no counterpart for opening: a submenu the pointer is on is one the user is asking for, and
         /// any wait at all leaves the previous flyout standing under a row they have already left.
         var close: Duration = .milliseconds(250)
+        /// Applied to a submenu whose opening starts work (``MenuNode/onEnter``), and only to those.
+        /// Opening one is no longer free, so the pointer crossing its row on the way somewhere else
+        /// must not be enough to pay for it — which a native menu's own open delay used to ensure.
+        var openWithSideEffect: Duration = .milliseconds(250)
         /// How long a flyout stays protected from the rows between it and the pointer.
         var safeTriangleGrace: Duration = .milliseconds(500)
     }
@@ -93,6 +97,15 @@ extension MenuFlyoutController {
             // this level.
             pendingTask = schedule(after: timing.close) { [weak self] in
                 self?.closeFlyouts?(depth)
+            }
+
+            return
+        }
+
+        if node.onEnter != nil {
+            // Leaving the row before the delay runs out cancels it (see `hoverEnded`).
+            pendingTask = schedule(after: timing.openWithSideEffect) { [weak self] in
+                self?.openFlyout?(node, depth)
             }
 
             return
@@ -192,7 +205,9 @@ extension MenuFlyoutController {
             }
 
             let level = levels[index + 1]
-            let signature = Self.signature(of: level, anchoredTo: anchorRowFrame)
+            let signature = Self.signature(of: level,
+                                           anchoredTo: anchorRowFrame,
+                                           hangingOffFrame: parentFrame(forIndex: index, rootWindow: rootWindow))
 
             signatures.append(signature)
 
@@ -221,21 +236,41 @@ private extension MenuFlyoutController {
         shownSignatures = Array(shownSignatures.prefix(index))
     }
 
-    /// Everything about a level that changes what its window looks like or where it sits. Actions
-    /// are left out on purpose: they close over view models by reference, so a row keeps doing the
-    /// right thing without the window being rebuilt to hear about it.
-    static func signature(of level: MenuPanelLevel, anchoredTo anchor: CGRect) -> Int {
+    /// The window flyout `index` hangs off, on screen. A flyout is placed against it, so one that
+    /// moved or resized takes the flyouts below it with it.
+    func parentFrame(forIndex index: Int, rootWindow: NSWindow) -> CGRect {
+        guard index > 0 else {
+            return rootWindow.frame
+        }
+
+        let frames = presenter.flyoutFrames
+
+        return frames.indices.contains(index - 1) ? frames[index - 1] : .zero
+    }
+
+    /// Everything about a level that changes what its window looks like or where it sits. The
+    /// actions' closures are left out on purpose: they close over view models by reference, so a
+    /// row keeps doing the right thing without the window being rebuilt to hear about it. Their
+    /// titles are not, because a row gaining or losing an action is a change to the row.
+    static func signature(of level: MenuPanelLevel, anchoredTo anchor: CGRect, hangingOffFrame parent: CGRect) -> Int {
         var hasher = Hasher()
 
         hasher.combine(anchor.minX)
         hasher.combine(anchor.minY)
+        hasher.combine(parent.minX)
+        hasher.combine(parent.minY)
+        hasher.combine(parent.width)
+        hasher.combine(parent.height)
 
         for node in level.nodes {
             hasher.combine(node.id)
             hasher.combine(node.title)
             hasher.combine(node.subtitle)
+            hasher.combine(node.iconName)
+            hasher.combine(node.isSubmenu)
             hasher.combine(node.isEnabled)
             hasher.combine(node.isDestructive)
+            hasher.combine(node.actions.map(\.title))
         }
 
         return hasher.finalize()

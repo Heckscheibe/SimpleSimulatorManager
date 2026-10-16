@@ -58,6 +58,9 @@ final class MenuFlyoutPresenter: MenuFlyoutPresenting {
         /// first and shown second — and showing it at a guessed size would snap to the real one in
         /// front of the user.
         var isSized = false
+        /// Whether it opened to the left of its parent, so the flyout hanging off it carries on in
+        /// the same direction instead of landing back on the panel.
+        var opensLeft = false
 
         init(panel: NSPanel, parent: NSWindow) {
             self.panel = panel
@@ -191,8 +194,10 @@ private extension MenuFlyoutPresenter {
                                              anchoredTo: anchorFrame,
                                              besideWindow: parentFrame,
                                              onScreen: visibleFrame,
-                                             alignmentInset: MenuPanelStyle.listVerticalPadding)
+                                             alignmentInset: MenuPanelStyle.listVerticalPadding,
+                                             prefersLeft: index > 0 && flyouts[index - 1].opensLeft)
 
+        flyout.opensLeft = frame.midX < parentFrame.midX
         flyout.panel.setFrame(frame, display: true)
         flyout.panel.alphaValue = 1
         flyout.isSized = true
