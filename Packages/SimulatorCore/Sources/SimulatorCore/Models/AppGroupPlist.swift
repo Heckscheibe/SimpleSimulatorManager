@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct AppGroupPlist: DecodableURLContainer {
+struct AppGroupPlist: DecodableURLContainer, Sendable {
     enum CodingKeys: String, CodingKey {
         case identifier = "MCMMetadataIdentifier"
         case uuid = "MCMMetadataUUID"

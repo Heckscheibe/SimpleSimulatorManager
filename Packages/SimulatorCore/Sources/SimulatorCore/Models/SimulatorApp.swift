@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol SimulatorApp: Identifiable, Sendable {
+public protocol SimulatorApp: Identifiable, Sendable {
     var displayName: String { get }
     var bundleIdentifier: String { get }
     var appDocumentsFolderURL: URL? { get }
@@ -21,36 +21,36 @@ protocol SimulatorApp: Identifiable, Sendable {
 }
 
 extension SimulatorApp {
-    var id: String {
+    public var id: String {
         bundleIdentifier
     }
 
-    var hasUserDefaults: Bool {
+    public var hasUserDefaults: Bool {
         !userDefaultsDomains.isEmpty
     }
 
     /// The domains the menu offers and the export writes, in the order they are listed.
-    var exportableUserDefaultsDomains: [String] {
+    public var exportableUserDefaultsDomains: [String] {
         UserDefaultsDomain.appDomains(in: userDefaultsDomains, ownDomain: bundleIdentifier)
     }
 
-    var contentModifiedAt: Date? {
+    public var contentModifiedAt: Date? {
         nil
     }
 }
 
-final class SimulatoriOSApp: SimulatorApp {
-    let displayName: String
-    let bundleIdentifier: String
-    let appDocumentsFolderURL: URL?
-    let appPackageURL: URL?
-    let userDefaultsDomains: [String]
-    let contentModifiedAt: Date?
-    let iconName = "iphone.gen3"
+public final class SimulatoriOSApp: SimulatorApp {
+    public let displayName: String
+    public let bundleIdentifier: String
+    public let appDocumentsFolderURL: URL?
+    public let appPackageURL: URL?
+    public let userDefaultsDomains: [String]
+    public let contentModifiedAt: Date?
+    public let iconName = "iphone.gen3"
 
-    let hasWatchApp: Bool
+    public let hasWatchApp: Bool
 
-    init(
+    public init(
         displayName: String,
         bundleIdentifier: String,
         appDocumentsFolderURL: URL?,
@@ -69,18 +69,18 @@ final class SimulatoriOSApp: SimulatorApp {
     }
 }
 
-final class SimulatorWatchOSApp: SimulatorApp {
-    let displayName: String
-    let bundleIdentifier: String
-    let appDocumentsFolderURL: URL?
-    let userDefaultsDomains: [String]
-    let appPackageURL: URL?
-    let contentModifiedAt: Date?
-    let iconName = "applewatch"
+public final class SimulatorWatchOSApp: SimulatorApp {
+    public let displayName: String
+    public let bundleIdentifier: String
+    public let appDocumentsFolderURL: URL?
+    public let userDefaultsDomains: [String]
+    public let appPackageURL: URL?
+    public let contentModifiedAt: Date?
+    public let iconName = "applewatch"
 
-    let companioniOSAppBundleIdentifier: String?
+    public let companioniOSAppBundleIdentifier: String?
 
-    init(
+    public init(
         displayName: String,
         bundleIdentifier: String,
         appDocumentsFolderURL: URL?,

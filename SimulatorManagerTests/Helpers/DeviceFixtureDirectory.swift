@@ -1,5 +1,6 @@
 import Foundation
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 /// A throwaway CoreSimulator `Devices` directory holding hand-written `device.plist` fixtures,
 /// so loading can be exercised against known devices instead of the machine's own simulators.

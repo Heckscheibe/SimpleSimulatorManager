@@ -7,12 +7,12 @@
 
 import Foundation
 
-enum AppTargetPlatform: String, Decodable {
+enum AppTargetPlatform: String, Decodable, Sendable {
     case iphonesimulator
     case watchsimulator
 }
 
-struct AppInfoPlist: DecodableURLContainer {
+struct AppInfoPlist: DecodableURLContainer, Sendable {
     static let infoPlistFileName = "Info.plist"
     
     enum CodingKeys: String, CodingKey {

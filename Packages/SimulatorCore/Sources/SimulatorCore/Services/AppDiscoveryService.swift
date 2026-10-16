@@ -9,10 +9,13 @@ import Foundation
 import os
 
 /// Service responsible for discovering and loading simulator apps from device directories
-class AppDiscoveryService {
+/// Holds no state, so one instance can be shared across isolation domains.
+public final class AppDiscoveryService: Sendable {
+    public init() {}
+
     // MARK: - Public Methods
-    
-    func loadApps(for device: Device) -> [any SimulatorApp] {
+
+    public func loadApps(for device: Device) -> [any SimulatorApp] {
         let (apps, _) = loadAppsAndTimestamps(for: device)
         os_log("Device \(device.name) with \(device.osVersion) has the following apps installed: \(apps.map { $0.displayName })")
         return apps
@@ -24,7 +27,7 @@ class AppDiscoveryService {
         return appChanges
     }
     
-    func loadAppGroups(for device: Device) -> [AppGroup] {
+    public func loadAppGroups(for device: Device) -> [AppGroup] {
         guard let appGroupsFolderURL = device.appGroupsFolder else {
             return []
         }

@@ -1,7 +1,7 @@
 import Foundation
 import os
 
-protocol SimulatorCleanupServing: AnyObject, Sendable {
+public protocol SimulatorCleanupServing: AnyObject, Sendable {
     func loadCleanupCandidates() async throws -> [SimulatorCleanupCandidate]
     func deleteCleanupCandidate(_ candidate: SimulatorCleanupCandidate) async throws
 }
@@ -59,7 +59,9 @@ struct SimulatorDirectoryRecord: Sendable, Equatable {
     }
 }
 
-final class SimulatorCleanupService: SimulatorCleanupServing {
+public final class SimulatorCleanupService: SimulatorCleanupServing {
+    public init() {}
+
     /// Upper bound on filesystem entries visited while sizing a single simulator directory.
     /// A healthy simulator holds on the order of 40k files, so anything far past this is
     /// pathological and not worth stalling the whole scan for.
@@ -76,7 +78,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         attributes: .concurrent
     )
 
-    func loadCleanupCandidates() async throws -> [SimulatorCleanupCandidate] {
+    public func loadCleanupCandidates() async throws -> [SimulatorCleanupCandidate] {
         os_log("Cleanup service started loading candidates")
         async let simctlDevices = loadSimctlDevices()
         async let availableRuntimeIdentifiers = loadAvailableRuntimeIdentifiers()
@@ -109,7 +111,7 @@ final class SimulatorCleanupService: SimulatorCleanupServing {
         return candidates
     }
 
-    func deleteCleanupCandidate(_ candidate: SimulatorCleanupCandidate) async throws {
+    public func deleteCleanupCandidate(_ candidate: SimulatorCleanupCandidate) async throws {
         os_log("Cleanup service deleting candidate %{public}@ using %{public}@", candidate.id, String(describing: candidate.deletionMethod))
         switch candidate.deletionMethod {
         case let .simctlDelete(udid):

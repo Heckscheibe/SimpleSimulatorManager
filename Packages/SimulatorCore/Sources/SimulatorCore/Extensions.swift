@@ -24,7 +24,7 @@ extension String {
     /// so what lands on the clipboard still reads like a plain path. Anything else — a space in an
     /// app group name, a quote in a device name — is backslash-escaped so the path stays a single
     /// argument.
-    var shellEscaped: String {
+    public var shellEscaped: String {
         let additionalSafeCharacters = CharacterSet(charactersIn: "_-./+:,=@%")
         let isSafe: (Unicode.Scalar) -> Bool = { scalar in
             CharacterSet.alphanumerics.contains(scalar) || additionalSafeCharacters.contains(scalar)

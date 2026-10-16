@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3C99C0032F00000100C0DE99 /* SimulatorCore in Frameworks */ = {isa = PBXBuildFile; productRef = 3C99C0022F00000100C0DE99 /* SimulatorCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		37F1DA652AD6E49000C059DB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C99C0032F00000100C0DE99 /* SimulatorCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -113,6 +118,9 @@
 				3C385C3E2E5F1A44002AD325 /* SimulatorManager */,
 			);
 			name = "Simulator Manager";
+			packageProductDependencies = (
+				3C99C0022F00000100C0DE99 /* SimulatorCore */,
+			);
 			productName = SimulatorManager;
 			productReference = 37F1DA532AD6E48F00C059DB /* Simulator Manager.app */;
 			productType = "com.apple.product-type.application";
@@ -187,6 +195,9 @@
 				Base,
 			);
 			mainGroup = 37F1DA4A2AD6E48E00C059DB;
+			packageReferences = (
+				3C99C0012F00000100C0DE99 /* XCLocalSwiftPackageReference "Packages/SimulatorCore" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 37F1DA542AD6E48F00C059DB /* Products */;
 			projectDirPath = "";
@@ -640,6 +651,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		3C99C0012F00000100C0DE99 /* XCLocalSwiftPackageReference "Packages/SimulatorCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SimulatorCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3C99C0022F00000100C0DE99 /* SimulatorCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SimulatorCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 37F1DA4B2AD6E48E00C059DB /* Project object */;
 }

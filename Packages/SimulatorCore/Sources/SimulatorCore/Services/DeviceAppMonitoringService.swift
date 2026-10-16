@@ -13,14 +13,14 @@ import os
 
 /// Protocol defining the interface for device app monitoring
 @MainActor
-protocol DeviceAppMonitoring: AnyObject {
+public protocol DeviceAppMonitoring: AnyObject {
     func resetMonitoring()
 }
 
 /// Service that monitors simulator app changes and integrates with DeviceManager.
 /// All monitor callbacks are delivered on the main queue, so the whole service is main-actor-isolated.
 @MainActor
-class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
+public class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
     // MARK: - Types
 
     /// Bundles a monitor with its change subscription so both share one lifetime.
@@ -37,14 +37,14 @@ class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
 
     // MARK: - Initialization
 
-    init(deviceManager: DeviceManaging) {
+    public init(deviceManager: DeviceManaging) {
         self.deviceManager = deviceManager
         setupDeviceMonitoring()
     }
 
     // MARK: - Public Methods
 
-    func resetMonitoring() {
+    public func resetMonitoring() {
         stopMonitoring()
         setupDeviceMonitoring()
     }

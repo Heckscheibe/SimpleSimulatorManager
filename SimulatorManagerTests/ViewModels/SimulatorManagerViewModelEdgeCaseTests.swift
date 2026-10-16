@@ -9,6 +9,7 @@ import Foundation
 import Testing
 import Combine
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 @Suite("SimulatorManagerViewModel Edge Cases")
 @MainActor

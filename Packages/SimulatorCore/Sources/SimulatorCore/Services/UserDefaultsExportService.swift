@@ -9,7 +9,7 @@ import Foundation
 import os
 
 /// Turns the plists in a container's `Library/Preferences` into readable JSON.
-protocol UserDefaultsExporting: Sendable {
+public protocol UserDefaultsExporting: Sendable {
     /// - Parameters:
     ///   - url: The container's `Library/Preferences` directory.
     ///   - ownDomain: The subject's standard defaults domain — the bundle identifier for an app,
@@ -32,12 +32,14 @@ protocol UserDefaultsExporting: Sendable {
 ///
 /// A suite named after an app group is the exception: it lives in the group container instead, and
 /// is reached through the app group's own menu.
-struct UserDefaultsExportService: UserDefaultsExporting {
-    enum ExportError: LocalizedError, Equatable {
+public struct UserDefaultsExportService: UserDefaultsExporting {
+    public init() {}
+
+    public enum ExportError: LocalizedError, Equatable {
         case noPreferencesFound
         case unreadablePreferences(fileName: String)
 
-        var errorDescription: String? {
+        public var errorDescription: String? {
             switch self {
             case .noPreferencesFound:
                 "No preferences file was found in this container."
@@ -47,7 +49,7 @@ struct UserDefaultsExportService: UserDefaultsExporting {
         }
     }
 
-    func exportJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String, domain requestedDomain: String?) throws -> String {
+    public func exportJSON(fromPreferencesDirectoryAt url: URL, ownDomain: String, domain requestedDomain: String?) throws -> String {
         let plistURLs = plistURLs(in: url)
 
         guard !plistURLs.isEmpty else {

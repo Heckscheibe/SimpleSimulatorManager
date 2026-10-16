@@ -8,7 +8,7 @@
 import Foundation
 import os
 
-class Device: ObservableObject, DecodableURLContainer {
+public class Device: ObservableObject, DecodableURLContainer {
     enum CodingKeys: String, CodingKey {
         case udid = "UDID"
         case name
@@ -18,42 +18,42 @@ class Device: ObservableObject, DecodableURLContainer {
         case deviceType
     }
     
-    let udid: String
-    let name: String
-    let lastBootedAt: Date?
-    let state: DeviceState
-    let simulatorPlatform: SimulatorPlatform
-    let osVersion: String
+    public let udid: String
+    public let name: String
+    public let lastBootedAt: Date?
+    public let state: DeviceState
+    public let simulatorPlatform: SimulatorPlatform
+    public let osVersion: String
     
     /// not decoded properties
-    var dataFolder: URL? {
+    public var dataFolder: URL? {
         url?.appendingPathComponent(SimulatorPaths.dataFolderName)
     }
     
-    var appDataFolder: URL? {
+    public var appDataFolder: URL? {
         dataFolder?.appendingPathComponent(SimulatorPaths.appDataApplicationsPath)
     }
     
-    var appPackagesFolder: URL? {
+    public var appPackagesFolder: URL? {
         dataFolder?.appendingPathComponent(SimulatorPaths.appBundleApplicationsPath)
     }
     
-    var appGroupsFolder: URL? {
+    public var appGroupsFolder: URL? {
         url?.appendingPathComponent(SimulatorPaths.appGroupsPath)
     }
     
-    var hasAppsInstalled: Bool {
+    public var hasAppsInstalled: Bool {
         !apps.isEmpty
     }
     
-    @Published var apps: [any SimulatorApp] = []
-    @Published var appGroups: [AppGroup] = []
+    @Published public var apps: [any SimulatorApp] = []
+    @Published public var appGroups: [AppGroup] = []
     
-    var url: URL?
+    public var url: URL?
     
     // MARK: - Custom Decoder
     
-    required init(from decoder: Decoder) throws {
+    public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
         udid = try container.decode(String.self, forKey: .udid)
@@ -70,7 +70,7 @@ class Device: ObservableObject, DecodableURLContainer {
     
     // MARK: - Custom Initializer
     
-    init(udid: String, name: String, state: DeviceState, simulatorPlatform: SimulatorPlatform, osVersion: String) {
+    public init(udid: String, name: String, state: DeviceState, simulatorPlatform: SimulatorPlatform, osVersion: String) {
         self.udid = udid
         self.name = name
         self.lastBootedAt = nil
@@ -81,7 +81,7 @@ class Device: ObservableObject, DecodableURLContainer {
 }
 
 extension Device: Identifiable {
-    var id: String {
+    public var id: String {
         udid
     }
 }

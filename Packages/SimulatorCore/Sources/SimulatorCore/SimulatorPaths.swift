@@ -1,14 +1,14 @@
 import Foundation
 
-enum SimulatorPaths {
-    static let devicePlistName = "device.plist"
-    static let dataFolderName = "data"
-    static let appDataApplicationsPath = "Containers/Data/Application"
-    static let appBundleApplicationsPath = "Containers/Bundle/Application"
-    static let appGroupsPath = "data/Containers/Shared/AppGroup"
-    static let userDefaultsPath = "Library/Preferences"
+public enum SimulatorPaths {
+    public static let devicePlistName = "device.plist"
+    public static let dataFolderName = "data"
+    public static let appDataApplicationsPath = "Containers/Data/Application"
+    public static let appBundleApplicationsPath = "Containers/Bundle/Application"
+    public static let appGroupsPath = "data/Containers/Shared/AppGroup"
+    public static let userDefaultsPath = "Library/Preferences"
 
-    static func coreSimulatorDevicesDirectoryURL(fileManager: FileManager = .default) -> URL? {
+    public static func coreSimulatorDevicesDirectoryURL(fileManager: FileManager = .default) -> URL? {
         fileManager
             .urls(for: .libraryDirectory, in: .userDomainMask)
             .first?
@@ -17,7 +17,7 @@ enum SimulatorPaths {
             .appendingPathComponent("Devices", isDirectory: true)
     }
 
-    static func formattedOSVersion(from runtimeIdentifier: String) -> String {
+    public static func formattedOSVersion(from runtimeIdentifier: String) -> String {
         guard let lastComponent = runtimeIdentifier.split(separator: ".").last else {
             return runtimeIdentifier
         }

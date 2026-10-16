@@ -8,6 +8,7 @@
 import Foundation
 @preconcurrency import Combine
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 actor MockSimulatorDeviceActionService: SimulatorResetServing {
     nonisolated var didResetAllSimulators: AnyPublisher<Void, Never> {

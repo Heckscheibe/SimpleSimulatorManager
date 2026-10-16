@@ -15,16 +15,16 @@ import Foundation
 ///
 /// The menu and the export have to agree on which of them belong to the app, so the rule lives
 /// here rather than in either of them.
-enum UserDefaultsDomain {
-    static let globalPreferences = ".GlobalPreferences"
-    static let systemDomainPrefix = "com.apple."
+public enum UserDefaultsDomain {
+    public static let globalPreferences = ".GlobalPreferences"
+    public static let systemDomainPrefix = "com.apple."
 
-    static func domain(ofPreferencesFileAt url: URL) -> String {
+    public static func domain(ofPreferencesFileAt url: URL) -> String {
         url.deletingPathExtension().lastPathComponent
     }
 
     /// Domains the OS wrote on the app's behalf are device rather than app state.
-    static func isSystemManaged(_ domain: String) -> Bool {
+    public static func isSystemManaged(_ domain: String) -> Bool {
         domain == globalPreferences || domain.hasPrefix(systemDomainPrefix)
     }
 
@@ -33,7 +33,7 @@ enum UserDefaultsDomain {
     /// System-managed domains drop out, with two exceptions so nothing goes missing: the container's
     /// own domain always stays — an Apple app's domain *is* `com.apple.…` — and a container holding
     /// nothing else keeps everything it has.
-    static func appDomains(in domains: [String], ownDomain: String) -> [String] {
+    public static func appDomains(in domains: [String], ownDomain: String) -> [String] {
         let appDomains = domains.filter { !isSystemManaged($0) || $0 == ownDomain }
 
         return (appDomains.isEmpty ? domains : appDomains).sorted()

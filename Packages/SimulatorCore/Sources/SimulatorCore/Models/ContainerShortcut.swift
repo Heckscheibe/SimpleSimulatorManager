@@ -11,16 +11,16 @@ import Foundation
 ///
 /// Opening the folder in Finder and copying its path have to agree on which URL a shortcut points
 /// at, so the derivation lives here instead of in the individual actions.
-enum AppContainerShortcut: String, CaseIterable, Identifiable {
+public enum AppContainerShortcut: String, CaseIterable, Identifiable, Sendable {
     case documents
     case appPackage
     case userDefaults
 
-    var id: String {
+    public var id: String {
         rawValue
     }
 
-    var title: String {
+    public var title: String {
         switch self {
         case .documents:
             "Documents Folder"
@@ -31,7 +31,7 @@ enum AppContainerShortcut: String, CaseIterable, Identifiable {
         }
     }
 
-    func url(for app: any SimulatorApp) -> URL? {
+    public func url(for app: any SimulatorApp) -> URL? {
         switch self {
         case .documents:
             app.appDocumentsFolderURL
@@ -48,7 +48,7 @@ enum AppContainerShortcut: String, CaseIterable, Identifiable {
     ///
     /// `Library/Preferences` only exists once an app has written preferences, which discovery
     /// already determined — no second filesystem check here.
-    static func available(for app: any SimulatorApp) -> [AppContainerShortcut] {
+    public static func available(for app: any SimulatorApp) -> [AppContainerShortcut] {
         allCases.filter { shortcut in
             guard shortcut.url(for: app) != nil else {
                 return false
@@ -60,15 +60,15 @@ enum AppContainerShortcut: String, CaseIterable, Identifiable {
 }
 
 /// The same idea for an app group's shared container.
-enum AppGroupShortcut: String, CaseIterable, Identifiable {
+public enum AppGroupShortcut: String, CaseIterable, Identifiable, Sendable {
     case groupFolder
     case userDefaults
 
-    var id: String {
+    public var id: String {
         rawValue
     }
 
-    var title: String {
+    public var title: String {
         switch self {
         case .groupFolder:
             "Group Folder"
@@ -77,7 +77,7 @@ enum AppGroupShortcut: String, CaseIterable, Identifiable {
         }
     }
 
-    func url(for appGroup: AppGroup) -> URL? {
+    public func url(for appGroup: AppGroup) -> URL? {
         switch self {
         case .groupFolder:
             appGroup.url
@@ -86,7 +86,7 @@ enum AppGroupShortcut: String, CaseIterable, Identifiable {
         }
     }
 
-    static func available(for appGroup: AppGroup) -> [AppGroupShortcut] {
+    public static func available(for appGroup: AppGroup) -> [AppGroupShortcut] {
         allCases.filter { shortcut in
             guard shortcut.url(for: appGroup) != nil else {
                 return false

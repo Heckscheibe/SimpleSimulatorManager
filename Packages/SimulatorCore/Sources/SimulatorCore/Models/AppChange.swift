@@ -9,20 +9,20 @@ import Foundation
 
 // MARK: - AppChange Types
 
-struct AppChange: Hashable {
-    let app: any SimulatorApp
-    let device: Device
-    let changeType: ChangeType
-    let timestamp: Date
+public struct AppChange: Hashable, Sendable {
+    public let app: any SimulatorApp
+    public let device: Device
+    public let changeType: ChangeType
+    public let timestamp: Date
     
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(app.bundleIdentifier)
         hasher.combine(device.udid)
         hasher.combine(changeType)
         hasher.combine(timestamp)
     }
     
-    static func == (lhs: AppChange, rhs: AppChange) -> Bool {
+    public static func == (lhs: AppChange, rhs: AppChange) -> Bool {
         lhs.app.bundleIdentifier == rhs.app.bundleIdentifier &&
             lhs.device.udid == rhs.device.udid &&
             lhs.changeType == rhs.changeType &&
@@ -30,7 +30,7 @@ struct AppChange: Hashable {
     }
 }
 
-enum ChangeType {
+public enum ChangeType: Sendable {
     case installed
     case updated
     case removed
@@ -39,7 +39,7 @@ enum ChangeType {
 // MARK: - Extensions
 
 extension AppChange: Identifiable {
-    var id: String {
+    public var id: String {
         "\(app.bundleIdentifier)-\(device.udid)-\(timestamp.timeIntervalSince1970)"
     }
 }

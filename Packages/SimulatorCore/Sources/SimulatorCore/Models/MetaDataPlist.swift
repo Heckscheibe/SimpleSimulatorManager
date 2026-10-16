@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct MetaDataPlist: DecodableURLContainer {
+struct MetaDataPlist: DecodableURLContainer, Sendable {
     static let fileName = ".com.apple.mobile_container_manager.metadata.plist"
     
     enum CodingKeys: String, CodingKey {
