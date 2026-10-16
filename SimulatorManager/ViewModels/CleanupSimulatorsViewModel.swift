@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import os
+import SimulatorCore
 
 @MainActor
 @Observable

@@ -8,6 +8,7 @@
 import Combine
 import Foundation
 import Observation
+import SimulatorCore
 
 /// The panel's search state: the query, and the ranked hits for it.
 ///

@@ -6,6 +6,7 @@
 import Foundation
 import Testing
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 @Suite("DeviceAppMonitoringService Change Detection")
 struct DeviceAppMonitoringServiceTests {

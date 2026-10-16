@@ -7,6 +7,7 @@
 
 import Foundation
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 enum TestDataHelpers {
     // MARK: - Device Test Data

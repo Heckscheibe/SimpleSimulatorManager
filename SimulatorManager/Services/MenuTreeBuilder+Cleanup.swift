@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SimulatorCore
 
 /// The cleanup section, kept apart from the rest of the tree because it is by far the deepest part
 /// of the menu: candidates are grouped by OS version, each group can be deleted wholesale, and each
