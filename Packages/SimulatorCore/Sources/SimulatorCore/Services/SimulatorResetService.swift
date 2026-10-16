@@ -46,8 +46,15 @@ public final class SimulatorResetService: SimulatorResetServing, Sendable {
     private nonisolated(unsafe) var didResetAllSimulatorsPublisher: PassthroughSubject<Void, Never> = .init()
 
     public func shutDownAndEraseSimulator(deviceUdid: String) async throws {
-        let shutDownResult = try await runSimctlCommand(arguments: ["shutdown", deviceUdid])
-        os_log("Shut down simulator %@: %@", deviceUdid, shutDownResult)
+        // `simctl shutdown` fails on a simulator that is already shut down, the usual state before
+        // an erase. Carry on regardless: if the simulator really is still booted, the erase below
+        // fails with its own error.
+        do {
+            let shutDownResult = try await runSimctlCommand(arguments: ["shutdown", deviceUdid])
+            os_log("Shut down simulator %@: %@", deviceUdid, shutDownResult)
+        } catch {
+            os_log("Did not shut down simulator %@ before erasing: %@", deviceUdid, error.localizedDescription)
+        }
 
         let eraseResult = try await runSimctlCommand(arguments: ["erase", deviceUdid])
         os_log("Erased simulator %@: %@", deviceUdid, eraseResult)

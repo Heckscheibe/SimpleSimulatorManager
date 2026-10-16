@@ -43,10 +43,11 @@ bundle exec fastlane build    # unsigned debug build only
 
 ## Architecture
 
-Lightweight MVVM with service-based filesystem logic, split across two modules:
+Lightweight MVVM with service-based filesystem logic, split across modules:
 
 - **`SimulatorCore`** (local Swift package in `Packages/SimulatorCore`, linked into the app): models, discovery, `DeviceManager`, reset/cleanup/UserDefaults-export services and folder monitoring. Foundation, Combine and CoreServices only — **never import AppKit, SwiftUI or Carbon there**; it is shared with consumers that have no UI (the MCP server, #100, and App Intents, #70). Declarations the app uses are `public`; implementation details stay internal and tests reach them via `@testable import SimulatorCore`. Package tests: `swift test --package-path Packages/SimulatorCore`
 - **App target** (`SimulatorManager/`): views, view models, `Settings`, global shortcut, and the AppKit seams (`FolderOpening`, `PasteboardWriting`, `UserFacingErrorReporting`, `DestructiveActionConfirming`)
+- **MCP server** (same package): library `SimulatorMCPServer` (`SimulatorQueryService` façade, `ToolRegistry`, DTOs) plus executable `simple-simulator-mcp` (thin `main.swift`). Only these depend on `modelcontextprotocol/swift-sdk` (exact pin); the app links `SimulatorCore` alone. Tools reuse SimulatorCore services and take identifiers, never paths. **stdout belongs to the protocol** — no `print` under `Packages/` (enforced by the `no_print_in_packages` SwiftLint rule); log with `os_log`. `SimulatorMCPServer.version` must equal `MARKETING_VERSION` (fastlane's `release` lane rewrites it; a test checks it). Package tests share fixtures through the `SimulatorCoreTestSupport` target
 
 - **App entry**: `SimulatorManagerApp` wires shared state and dependencies (`DeviceManager`, `SimulatorResetService`, `Settings`)
 - **`DeviceManager`**: central coordinator/source of truth for simulator devices, device types, and recent installed apps; delegates disk reads to `DeviceLoader`

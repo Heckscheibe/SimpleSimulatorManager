@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import Testing
 @testable import SimulatorCore
+import SimulatorCoreTestSupport
 
 @Suite("DeviceLoader")
 struct DeviceLoaderTests {
@@ -43,6 +44,16 @@ struct DeviceLoaderTests {
         let devices = DeviceLoader(devicesDirectoryURL: fixture.url).loadDeviceList()
 
         #expect(devices.map(\.udid) == [iPhoneUDID])
+    }
+
+    @Test("Devices mid-transition still decode", arguments: [DeviceState.creating, .booting, .shuttingDown])
+    func deviceListDecodesTransitionalStates(state: DeviceState) throws {
+        let fixture = try DeviceFixtureDirectory()
+        defer { fixture.remove() }
+
+        try fixture.writeDevice(udid: iPhoneUDID, name: "iPhone 16 Pro", state: state)
+
+        #expect(DeviceLoader(devicesDirectoryURL: fixture.url).loadDeviceList().map(\.state) == [state])
     }
 
     @Test("Device list does not scan apps")
@@ -118,6 +129,25 @@ struct DeviceLoaderTests {
             == loaded.devices.flatMap { $0.apps.map(\.bundleIdentifier) }.sorted())
         #expect(publishedRecentApps.map(RecentApps.key(for:)) == RecentApps.initial(from: loaded.initialAppChanges).map(RecentApps.key(for:)))
         cancellables.removeAll()
+    }
+
+    @Test("Loading without app groups still loads apps and changes but skips the groups")
+    func loadWithoutAppGroups() throws {
+        let fixture = try DeviceFixtureDirectory()
+        defer { fixture.remove() }
+
+        try fixture.writeDevice(udid: iPhoneUDID, name: "iPhone 16 Pro")
+        try fixture.writeApp(bundleIdentifier: "com.example.app", name: "Example", onDeviceWithUdid: iPhoneUDID)
+        try fixture.writeAppGroup(identifier: "group.com.example.app", onDeviceWithUdid: iPhoneUDID)
+
+        let loader = DeviceLoader(devicesDirectoryURL: fixture.url)
+        let withGroups = try #require(loader.loadDevices())
+        let withoutGroups = try #require(loader.loadDevices(includingAppGroups: false))
+
+        #expect(withGroups.devices.first?.appGroups.map(\.identifier) == ["group.com.example.app"])
+        #expect(withoutGroups.devices.first?.appGroups.isEmpty == true)
+        #expect(withoutGroups.devices.first?.apps.map(\.bundleIdentifier) == ["com.example.app"])
+        #expect(withoutGroups.initialAppChanges.count == withGroups.initialAppChanges.count)
     }
 
     // MARK: - Single device

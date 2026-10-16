@@ -33,6 +33,7 @@ only_rules:
 - contains_over_filter_is_empty
 - contains_over_first_not_nil
 - control_statement
+- custom_rules
 - cyclomatic_complexity
 - deployment_target
 - discouraged_direct_init
@@ -387,6 +388,22 @@ void_return:
   severity: error
 xctfail_message:
   severity: error
+
+# ============================================================================
+# Custom Rules
+# ============================================================================
+
+custom_rules:
+  # The MCP server speaks JSON-RPC over stdout, so any stray output there breaks the protocol for
+  # the connected agent. Package code logs with os_log and writes anything else to stderr.
+  no_print_in_packages:
+    name: "No print in packages"
+    included: ".*/Packages/.*\\.swift$"
+    regex: "\\b(print|debugPrint|dump)\\s*\\("
+    match_kinds:
+      - identifier
+    message: "stdout belongs to the MCP protocol: log with os_log or write to FileHandle.standardError instead."
+    severity: error
 
 # ============================================================================
 # Reporter Configuration

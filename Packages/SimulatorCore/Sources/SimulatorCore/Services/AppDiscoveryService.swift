@@ -49,11 +49,7 @@ public final class AppDiscoveryService: Sendable {
             }
         }
         .filter { (appGroup: AppGroup) in
-            device.apps
-                .map { $0.bundleIdentifier }
-                .contains(where: {
-                    $0.contains(appGroup.name)
-                })
+            device.apps.contains { appGroup.belongs(toAppWithBundleIdentifier: $0.bundleIdentifier) }
         }
     }
     

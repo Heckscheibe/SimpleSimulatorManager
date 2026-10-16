@@ -25,6 +25,9 @@ PROJECT_ROOT = File.expand_path("..", __dir__)
 BUILD_DIR = File.join(PROJECT_ROOT, "build")
 RELEASE_DIR = File.join(PROJECT_ROOT, "release")
 PROJECT_FILE = File.join(PROJECT_ROOT, "SimulatorManager.xcodeproj")
+# The MCP server reports the app's version; SwiftPM can't read MARKETING_VERSION, so the release
+# lane writes it into this constant too.
+MCP_SERVER_VERSION_FILE = File.join(PROJECT_ROOT, "Packages/SimulatorCore/Sources/SimulatorMCPServer/SimulatorMCPServer.swift")
 
 # Homebrew tap (Heckscheibe/homebrew-tap). Defaults to a clone sitting next to this
 # repo; override with HOMEBREW_TAP_PATH. The cask is updated locally and pushed using
@@ -137,7 +140,11 @@ platform :mac do
     increment_build_number(
       xcodeproj: PROJECT_FILE
     )
-    UI.success("🔢 Version set to #{release_version} and build number incremented.")
+    mcp_server_source = File.read(MCP_SERVER_VERSION_FILE, encoding: "UTF-8")
+    version_pattern = /(public static let version = )"[^"]*"/
+    UI.user_error!("SimulatorMCPServer.version not found in #{MCP_SERVER_VERSION_FILE}") unless mcp_server_source.match?(version_pattern)
+    File.write(MCP_SERVER_VERSION_FILE, mcp_server_source.sub(version_pattern, "\\1\"#{release_version}\""))
+    UI.success("🔢 Version set to #{release_version} (app and MCP server) and build number incremented.")
 
     # Build the app. If this fails — including at the new sync_signing_assets/match step,
     # which can fail on a network/git-access/MATCH_PASSWORD problem unrelated to the version
@@ -146,8 +153,8 @@ platform :mac do
     begin
       build
     rescue StandardError => e
-      UI.error("❌ Build failed — reverting the version/build number bump on #{PROJECT_FILE}.")
-      sh("git -C '#{PROJECT_ROOT}' checkout -- '#{PROJECT_FILE}'")
+      UI.error("❌ Build failed — reverting the version/build number bump on #{PROJECT_FILE} and #{MCP_SERVER_VERSION_FILE}.")
+      sh("git -C '#{PROJECT_ROOT}' checkout -- '#{PROJECT_FILE}' '#{MCP_SERVER_VERSION_FILE}'")
       raise e
     end
 

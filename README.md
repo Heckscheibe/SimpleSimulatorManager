@@ -118,6 +118,31 @@ The app lives in the menu bar — there is no main window.
 
 <img width="460" alt="The Settings window, showing the Global Shortcut section with the recorder set to ⌃⌥⌘S alongside Clear and Reset buttons, and the Menu Contents section with toggles for Recent Apps and each platform" src="Screenshots/Screenshot 3.jpeg" />
 
+## Use with AI agents (MCP)
+
+`simple-simulator-mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that
+gives coding agents such as Claude Code, VS Code Copilot, Codex or Cursor the same knowledge the
+menu has: simulators, installed apps, their data, bundle and app-group containers, recent installs
+and cleanup candidates. It runs over stdio as a subprocess of the agent, works whether or not the
+menu bar app is running, and opens no network port. Tools take UDIDs, bundle identifiers and other
+identifiers — never file paths.
+
+It is read-only by default, plus `shutdown_all_simulators`, which loses no data. Two launch flags,
+set per agent in its MCP config, opt into more:
+
+- `--allow-user-defaults` enables `read_user_defaults` (UserDefaults can hold tokens or personal data)
+- `--allow-destructive` enables `erase_device`, `erase_all_simulators` and `delete_cleanup_candidate`
+
+Until it ships inside the app, build and register it from a checkout:
+
+```bash
+swift build -c release --package-path Packages/SimulatorCore --product simple-simulator-mcp
+```
+
+```bash
+claude mcp add simple-simulator -- "$PWD/Packages/SimulatorCore/.build/release/simple-simulator-mcp"
+```
+
 ## Security and privacy
 
 Simple Simulator Manager runs with the [App Sandbox](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.app-sandbox)
