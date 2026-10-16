@@ -401,7 +401,7 @@ struct MenuTreeBuilderTests {
 
     // MARK: - Reset, cleanup and GitHub
 
-    @Test("Resetting replaces the confirm action with a progress row and disables the submenu")
+    @Test("Resetting shows its progress in the row's title and disables the submenu")
     func resetShowsProgressWhileRunning() throws {
         let fixture = MenuTreeFixture()
         defer { fixture.tearDown() }
@@ -416,7 +416,7 @@ struct MenuTreeBuilderTests {
         let running = try #require(fixture.makeBuilder().makeNodes().node(withID: "reset"))
         #expect(!running.isEnabled)
         #expect(running.title == "Resetting...")
-        #expect(running.children.identifiers == ["reset.progress"])
+        #expect(running.children.identifiers == ["reset.confirm"])
     }
 
     @Test("Cleanup lists its candidate groups, and disables its actions while deleting")

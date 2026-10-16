@@ -119,7 +119,11 @@ extension MenuTreeBuilder {
             nodes.append(.informational(id: "\(prefix).noApps", title: "No apps installed"))
         }
 
-        nodes.append(contentsOf: deviceFolderNodes(for: viewModel, prefix: prefix))
+        // Each is a filesystem stat, so asked once per device rather than once per row that
+        // depends on it.
+        let folders = DeviceFolders(hasApps: viewModel.hasAppsFolder, hasAppPackages: viewModel.hasAppPackagesFolder)
+
+        nodes.append(contentsOf: deviceFolderNodes(for: viewModel, prefix: prefix, folders: folders))
 
         if viewModel.isPerformingAction {
             nodes.append(.informational(id: "\(prefix).actionProgress", title: viewModel.currentActionTitle))
@@ -135,7 +139,7 @@ extension MenuTreeBuilder {
         return nodes
     }
 
-    private func deviceFolderNodes(for viewModel: DeviceViewModel, prefix: String) -> [MenuNode] {
+    private func deviceFolderNodes(for viewModel: DeviceViewModel, prefix: String, folders: DeviceFolders) -> [MenuNode] {
         let device = viewModel.device
         var nodes: [MenuNode] = [
             .action(id: "\(prefix).simulatorFolder",
@@ -143,25 +147,25 @@ extension MenuTreeBuilder {
                     actions: [MenuActionItem(title: "Simulator Folder") { viewModel.didSelectSimulatorFolder(for: device) }])
         ]
 
-        if viewModel.hasAppsFolder {
+        if folders.hasApps {
             nodes.append(.action(id: "\(prefix).appFolder",
                                  title: "App Folder",
                                  actions: [MenuActionItem(title: "App Folder") { viewModel.didSelectAppsFolder(for: device) }]))
         }
 
-        if viewModel.hasAppPackagesFolder {
+        if folders.hasAppPackages {
             nodes.append(.action(id: "\(prefix).appPackageFolder",
                                  title: "App Package Folder",
                                  actions: [MenuActionItem(title: "App Package Folder") { viewModel.didSelectAppPackagesFolder(for: device) }]))
         }
 
-        nodes.append(deviceCopyPathNode(for: viewModel, prefix: prefix))
+        nodes.append(deviceCopyPathNode(for: viewModel, prefix: prefix, folders: folders))
 
         return nodes
     }
 
     /// Mirrors the folder rows above: whatever can be opened can also have its path copied.
-    private func deviceCopyPathNode(for viewModel: DeviceViewModel, prefix: String) -> MenuNode {
+    private func deviceCopyPathNode(for viewModel: DeviceViewModel, prefix: String, folders: DeviceFolders) -> MenuNode {
         let device = viewModel.device
         var children: [MenuNode] = [
             .action(id: "\(prefix).copyPath.simulatorFolder", title: "Simulator Folder") {
@@ -169,13 +173,13 @@ extension MenuTreeBuilder {
             }
         ]
 
-        if viewModel.hasAppsFolder {
+        if folders.hasApps {
             children.append(.action(id: "\(prefix).copyPath.appFolder", title: "App Folder") {
                 viewModel.didSelectCopyPath(of: device.appDataFolder)
             })
         }
 
-        if viewModel.hasAppPackagesFolder {
+        if folders.hasAppPackages {
             children.append(.action(id: "\(prefix).copyPath.appPackageFolder", title: "App Package Folder") {
                 viewModel.didSelectCopyPath(of: device.appPackagesFolder)
             })
@@ -312,19 +316,14 @@ extension MenuTreeBuilder {
                                           title: confirmTitle,
                                           isDestructive: true,
                                           actions: [confirmAction])
-        let children: [MenuNode]
 
-        if resetViewModel.isResettingSimulators {
-            children = [.informational(id: "reset.progress", title: "Resetting...")]
-        } else {
-            children = [confirmNode]
-        }
-
+        // Progress is the row's own title ("Resetting..."). The submenu is disabled while a reset
+        // runs, so it can never be opened to show anything of its own.
         return .submenu(id: "reset",
                         title: resetViewModel.resetButtonText,
                         iconName: resetViewModel.resetButtonIcon,
                         isEnabled: !resetViewModel.isResettingSimulators,
-                        children: children)
+                        children: [confirmNode])
     }
 
     func gitHubNodes() -> [MenuNode] {
@@ -369,4 +368,11 @@ extension MenuTreeBuilder {
                     actions: [action])
         }
     }
+}
+
+/// Which of a device's folders exist, read once so the rows that depend on them agree and the
+/// filesystem is asked once per device rather than once per row.
+private struct DeviceFolders {
+    let hasApps: Bool
+    let hasAppPackages: Bool
 }
