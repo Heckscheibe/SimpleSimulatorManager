@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SimulatorCore
 
 /// Describes the menu bar menu as a ``MenuNode`` tree.
 ///

@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 /// The settings section of the menu bar popup shows a per-platform toggle only when a simulator of
 /// that platform exists. Those flags read `SimulatorManagerViewModel.deviceTypes`, which is derived

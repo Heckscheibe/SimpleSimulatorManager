@@ -8,6 +8,7 @@
 import Foundation
 @preconcurrency import Combine
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 /// Wires up everything `MenuTreeBuilder` needs, against mocks, so a test can describe a menu state
 /// and read back the tree it produces.

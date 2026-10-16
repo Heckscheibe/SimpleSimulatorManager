@@ -7,6 +7,7 @@ import Combine
 import Foundation
 import Testing
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 @Suite("FolderMonitor", .serialized)
 struct FolderMonitorTests {

@@ -171,3 +171,28 @@ Since this app is distributed outside the Mac App Store:
 - It's signed with a Developer ID certificate
 - The release ZIP contains a stapled notarized app bundle
 - Gatekeeper should accept the app without the old notarization warning, assuming signing credentials remain valid
+
+### Embedded MCP server
+
+The app bundle carries a second executable, the MCP server, at
+`Simulator Manager.app/Contents/Helpers/simple-simulator-mcp`. It is built by the
+`simple-simulator-mcp` command line tool target and copied in by the app target's
+"Embed MCP Server" phase with Code Sign On Copy, so it is signed with the same Developer ID identity
+and notarized as part of the app. The target uses hardened runtime and no entitlements, so it needs
+no provisioning profile of its own. `SKIP_INSTALL = YES` keeps it out of the archive's top level,
+leaving the app as the only exported product, and the `export_options` in the `build` lane only map
+the app's identifier.
+
+After a release build, check the helper:
+
+```bash
+codesign -dv --verbose=4 "build/Simulator Manager.app/Contents/Helpers/simple-simulator-mcp"
+```
+
+The output should show `Authority=Developer ID Application: …`, `flags=0x10000(runtime)` and
+`Identifier=com.nicolashiller.SimpleSimulatorManager.mcp`. If the export ever complains about a
+missing provisioning profile for the helper, add its bundle identifier to `export_options` rather than
+giving it entitlements.
+
+The Homebrew cask exposes the helper on the `PATH` with a `binary` stanza pointing at
+`#{appdir}/Simulator Manager.app/Contents/Helpers/simple-simulator-mcp`.

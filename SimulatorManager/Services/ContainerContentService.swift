@@ -7,6 +7,7 @@
 
 import Foundation
 import os
+import SimulatorCore
 
 /// Puts container *content* on the clipboard, as opposed to ``FolderOpening``, which reveals
 /// containers in Finder.

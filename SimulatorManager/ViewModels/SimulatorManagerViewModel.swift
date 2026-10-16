@@ -10,6 +10,7 @@ import AppKit
 import Combine
 import Observation
 import os
+import SimulatorCore
 
 @MainActor
 @Observable

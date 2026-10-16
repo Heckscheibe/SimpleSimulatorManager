@@ -8,6 +8,7 @@
 import Foundation
 import Testing
 @testable import SimulatorManager
+@testable import SimulatorCore
 
 @Suite("UserDefaultsExportService Tests")
 struct UserDefaultsExportServiceTests {
