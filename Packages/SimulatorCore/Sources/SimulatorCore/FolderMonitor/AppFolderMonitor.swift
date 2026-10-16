@@ -16,7 +16,8 @@ final class AppFolderMonitor {
     /// so the change is emitted with fresh state without recreating the underlying FSEvents watch.
     private(set) var device: Device
 
-    /// True while no app is installed yet and we are watching the whole data folder.
+    /// True while no app is installed yet and we are watching the data folder, filtered to the
+    /// app-packages subtree.
     /// Once the dedicated app-packages folder appears, the owner should recreate the monitor
     /// to switch to the narrower watch.
     let isWatchingFallback: Bool
@@ -32,15 +33,20 @@ final class AppFolderMonitor {
         self.device = device
 
         let url: URL?
+        let relevantSubpaths: [String]
         let watchingFallback: Bool
         if let appPackagesFolder = device.appPackagesFolder,
            FileManager.default.directoryExistsAtURL(appPackagesFolder) {
             url = appPackagesFolder
+            relevantSubpaths = []
             watchingFallback = false
         } else {
-            // The app packages folder only exists once the first app is installed.
-            // Until then, watch the whole data folder so we notice the install.
+            // The app packages folder only exists once the first app is installed. Until then,
+            // watch the data folder so we notice the install, but only react to the app-packages
+            // subtree: a booted simulator writes elsewhere in `data` every few seconds, and that
+            // churn would keep resetting the debounce so it never fires.
             url = device.dataFolder
+            relevantSubpaths = [SimulatorPaths.appBundleApplicationsPath]
             watchingFallback = true
         }
         self.isWatchingFallback = watchingFallback
@@ -53,7 +59,7 @@ final class AppFolderMonitor {
 
         // Keep the FSEvents latency small: the 3s debounce below is the coalescing window, so a
         // large FSEvents latency would stack on top of it (~4s notification delay) for no benefit.
-        let monitor = FolderMonitor(url: url, latency: 0.1)
+        let monitor = FolderMonitor(url: url, latency: 0.1, relevantSubpaths: relevantSubpaths)
         folderMonitor = monitor
 
         monitor.folderDidChange

@@ -17,7 +17,8 @@ import os
 /// and recreated (simulator erase), delivers kernel-coalesced events, and does not
 /// consume a file descriptor per watched folder. Because the watch is inherently
 /// recursive, the monitor signals on any change beneath `url`; callers scope what they
-/// watch by choosing an appropriately narrow `url`.
+/// watch by choosing an appropriately narrow `url`, or — when the narrow folder does not
+/// exist yet — by passing `relevantSubpaths` so changes elsewhere under `url` are ignored.
 final class FolderMonitor: @unchecked Sendable {
     // MARK: - Types
 
@@ -27,17 +28,63 @@ final class FolderMonitor: @unchecked Sendable {
         case notMonitoring
     }
 
+    /// Decides whether an FSEvents path falls inside one of the watched subtrees.
+    ///
+    /// Prefixes are absolute and carry both the watched path as given and its symlink-resolved
+    /// form, because FSEvents reports real paths (`/var/...` arrives as `/private/var/...`).
+    struct EventPathFilter: Sendable {
+        let prefixes: [String]
+
+        init(root: URL, relevantSubpaths: [String]) {
+            var roots = [Self.normalized(root.standardizedFileURL.path)]
+            if let resolved = realpath(root.path, nil) {
+                roots.append(Self.normalized(String(cString: resolved)))
+                free(resolved)
+            }
+
+            let subpaths = relevantSubpaths.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "/")) }
+            prefixes = Array(Set(roots.flatMap { root in subpaths.map { "\(root)/\($0)" } }))
+        }
+
+        /// A path matches when it lies inside a relevant subtree. An ancestor of one only matches
+        /// when FSEvents asks for a rescan (coalesced or dropped events), since the change may
+        /// then be hidden anywhere below it.
+        func matches(path: String, flags: FSEventStreamEventFlags) -> Bool {
+            let path = Self.normalized(path)
+            let mustScanSubDirs = flags & FSEventStreamEventFlags(kFSEventStreamEventFlagMustScanSubDirs) != 0
+
+            return prefixes.contains { prefix in
+                if path == prefix || path.hasPrefix(prefix + "/") {
+                    return true
+                }
+
+                return mustScanSubDirs && prefix.hasPrefix(path + "/")
+            }
+        }
+
+        /// FSEvents reports directories with a trailing slash; compare without it.
+        private static func normalized(_ path: String) -> String {
+            path.hasSuffix("/") ? String(path.dropLast()) : path
+        }
+    }
+
     /// Holds the change subject for the FSEvents C callback. The stream context retains
     /// this object (via the context retain/release callbacks), so an in-flight callback
     /// can never touch deallocated memory even while the monitor itself is being torn down.
     private final class EventSink {
         private let subject: PassthroughSubject<Void, Never>
+        private let filter: EventPathFilter?
 
-        init(subject: PassthroughSubject<Void, Never>) {
+        init(subject: PassthroughSubject<Void, Never>, filter: EventPathFilter?) {
             self.subject = subject
+            self.filter = filter
         }
 
-        func handleEvents() {
+        func handleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
+            if let filter, !zip(paths, flags).contains(where: { filter.matches(path: $0, flags: $1) }) {
+                return
+            }
+
             subject.send(())
         }
     }
@@ -47,7 +94,8 @@ final class FolderMonitor: @unchecked Sendable {
     /// URL for the directory being monitored.
     let url: URL
 
-    /// Emits on the main queue whenever a change is detected anywhere under `url`.
+    /// Emits on the main queue whenever a change is detected under `url` (restricted to
+    /// `relevantSubpaths` when those were given).
     /// Delivery is hopped to main (restoring the pre-FSEvents contract) so subscribers can
     /// update UI/`@Published` state directly, even though FSEvents fires on a private queue.
     let folderDidChange: AnyPublisher<Void, Never>
@@ -61,13 +109,16 @@ final class FolderMonitor: @unchecked Sendable {
 
     // MARK: - Initializers
 
-    init(url: URL, latency: TimeInterval = 1.0) {
+    /// - Parameter relevantSubpaths: Paths relative to `url`. When non-empty, only changes inside
+    ///   these subtrees are reported; they don't need to exist yet.
+    init(url: URL, latency: TimeInterval = 1.0, relevantSubpaths: [String] = []) {
         let subject = PassthroughSubject<Void, Never>()
         self.url = url
         self.latency = latency
         self.changeSubject = subject
         self.folderDidChange = subject.receive(on: DispatchQueue.main).eraseToAnyPublisher()
-        self.sink = EventSink(subject: subject)
+        let filter = relevantSubpaths.isEmpty ? nil : EventPathFilter(root: url, relevantSubpaths: relevantSubpaths)
+        self.sink = EventSink(subject: subject, filter: filter)
     }
 
     deinit {
@@ -106,13 +157,16 @@ final class FolderMonitor: @unchecked Sendable {
             copyDescription: nil
         )
 
-        let callback: FSEventStreamCallback = { _, info, _, _, _, _ in
+        let callback: FSEventStreamCallback = { _, info, eventCount, eventPaths, eventFlags, _ in
             guard let info else {
                 return
             }
 
             let sink = Unmanaged<EventSink>.fromOpaque(info).takeUnretainedValue()
-            sink.handleEvents()
+            // `kFSEventStreamCreateFlagUseCFTypes` makes `eventPaths` a CFArray of CFStrings.
+            let paths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue() as? [String] ?? []
+            let flags = Array(UnsafeBufferPointer(start: eventFlags, count: eventCount))
+            sink.handleEvents(paths: paths, flags: flags)
         }
 
         guard let newStream = FSEventStreamCreate(
@@ -122,7 +176,7 @@ final class FolderMonitor: @unchecked Sendable {
             [url.path] as CFArray,
             FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
             latency,
-            FSEventStreamCreateFlags(kFSEventStreamCreateFlagNoDefer)
+            FSEventStreamCreateFlags(kFSEventStreamCreateFlagNoDefer | kFSEventStreamCreateFlagUseCFTypes)
         ) else {
             throw MonitorError.failedToStartMonitoring(path: url.path)
         }

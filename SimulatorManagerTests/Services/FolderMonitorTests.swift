@@ -4,6 +4,7 @@
 //
 
 import Combine
+import CoreServices
 import Foundation
 import Testing
 @testable import SimulatorManager
@@ -135,6 +136,95 @@ struct FolderMonitorTests {
         // Restart after a stop must work
         try monitor.startMonitoring()
         try monitor.stopMonitoring()
+    }
+
+    // MARK: - Subpath filtering
+
+    @Test("Ignores changes outside the relevant subpaths")
+    func ignoresChangesOutsideRelevantSubpaths() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let noisy = directory.appendingPathComponent("Library/Caches", isDirectory: true)
+        try FileManager.default.createDirectory(at: noisy, withIntermediateDirectories: true)
+
+        let monitor = FolderMonitor(url: directory, latency: 0.1, relevantSubpaths: ["Containers/Bundle/Application"])
+        try monitor.startMonitoring()
+
+        async let changed = waitForChange(of: monitor, timeout: 1.5)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        for index in 0 ..< 5 {
+            try "noise".write(to: noisy.appendingPathComponent("file-\(index).txt"), atomically: true, encoding: .utf8)
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+        // A sibling that only shares a string prefix with the relevant subpath is still outside it.
+        try FileManager.default.createDirectory(at: directory.appendingPathComponent("Containers/Bundle/ApplicationCache"),
+                                                withIntermediateDirectories: true)
+
+        #expect(await changed == false)
+        try monitor.stopMonitoring()
+    }
+
+    @Test("Reports changes inside a relevant subpath created after monitoring started")
+    func reportsChangesInsideLateCreatedSubpath() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let monitor = FolderMonitor(url: directory, latency: 0.1, relevantSubpaths: ["Containers/Bundle/Application"])
+        try monitor.startMonitoring()
+
+        async let changed = waitForChange(of: monitor)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        let appFolder = directory.appendingPathComponent("Containers/Bundle/Application/\(UUID().uuidString)/Test.app",
+                                                         isDirectory: true)
+        try FileManager.default.createDirectory(at: appFolder, withIntermediateDirectories: true)
+        try "plist".write(to: appFolder.appendingPathComponent("Info.plist"), atomically: true, encoding: .utf8)
+
+        #expect(await changed)
+        try monitor.stopMonitoring()
+    }
+
+    @Test("Subpath filtering works when the watched URL goes through a symlink")
+    func filtersThroughSymlinkedRoot() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let realRoot = directory.appendingPathComponent("real", isDirectory: true)
+        try FileManager.default.createDirectory(at: realRoot, withIntermediateDirectories: true)
+        let linkedRoot = directory.appendingPathComponent("link", isDirectory: true)
+        try FileManager.default.createSymbolicLink(at: linkedRoot, withDestinationURL: realRoot)
+
+        // FSEvents reports the resolved path, so the filter must match it rather than the link.
+        let monitor = FolderMonitor(url: linkedRoot, latency: 0.1, relevantSubpaths: ["Containers/Bundle/Application"])
+        try monitor.startMonitoring()
+
+        async let changed = waitForChange(of: monitor)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        try FileManager.default.createDirectory(at: linkedRoot.appendingPathComponent("Containers/Bundle/Application/App"),
+                                                withIntermediateDirectories: true)
+
+        #expect(await changed)
+        try monitor.stopMonitoring()
+    }
+
+    @Test("Event path filter matches the subtree, not siblings or plain ancestors")
+    func eventPathFilterMatching() {
+        let root = URL(fileURLWithPath: "/sim/data", isDirectory: true)
+        let filter = FolderMonitor.EventPathFilter(root: root, relevantSubpaths: ["Containers/Bundle/Application"])
+        let none = FSEventStreamEventFlags(kFSEventStreamEventFlagNone)
+        let mustScan = FSEventStreamEventFlags(kFSEventStreamEventFlagMustScanSubDirs)
+
+        #expect(filter.matches(path: "/sim/data/Containers/Bundle/Application/", flags: none))
+        #expect(filter.matches(path: "/sim/data/Containers/Bundle/Application/UUID/App.app", flags: none))
+        #expect(!filter.matches(path: "/sim/data/Containers/Bundle/ApplicationCache/", flags: none))
+        #expect(!filter.matches(path: "/sim/data/Containers/Data/PluginKitPlugin/UUID/", flags: none))
+        #expect(!filter.matches(path: "/sim/data/Library/Preferences/", flags: none))
+        #expect(!filter.matches(path: "/sim/data/Containers/", flags: none))
+
+        // A rescan request on an ancestor may hide an install, so it counts; one elsewhere does not.
+        #expect(filter.matches(path: "/sim/data/Containers/", flags: mustScan))
+        #expect(filter.matches(path: "/", flags: mustScan))
+        #expect(!filter.matches(path: "/sim/data/Library/", flags: mustScan))
     }
 }
 
