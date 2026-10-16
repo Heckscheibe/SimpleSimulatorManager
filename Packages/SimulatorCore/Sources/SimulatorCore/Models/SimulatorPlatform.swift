@@ -31,3 +31,23 @@ public enum SimulatorPlatform: Sendable {
         }
     }
 }
+
+extension SimulatorPlatform {
+    /// SF Symbol representing the platform, for rows that show a device rather than an app.
+    public var iconName: String {
+        switch self {
+        case .iPhone:
+            return "iphone.gen3"
+        case .iPad:
+            return "ipad"
+        case .watch:
+            return "applewatch"
+        case .appleTV:
+            return "appletv"
+        case .visionPro:
+            return "vision.pro"
+        case .iPodTouch:
+            return "ipodtouch"
+        }
+    }
+}
