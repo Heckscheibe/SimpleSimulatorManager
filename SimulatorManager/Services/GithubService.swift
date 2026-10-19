@@ -16,6 +16,10 @@ class GithubService: ObservableObject {
     
     private let apiURL = "https://api.github.com/repos/Heckscheibe/SimpleSimulatorManager/releases/latest"
     private let projectURL = "https://github.com/Heckscheibe/SimpleSimulatorManager"
+    /// Held so a second call cannot start a second never-ending loop. The check used to be kicked
+    /// off from a menu view's `onAppear`; the panel starts it from a `.task`, which runs again every
+    /// time the panel is shown.
+    private var updateCheckTask: Task<Void, Never>?
     
     func openLatestRelease() {
         guard let release = latestRelease,
@@ -36,7 +40,11 @@ class GithubService: ObservableObject {
     
     /// Check for updates periodically (e.g., every 24 hours)
     func startPeriodicUpdateCheck() {
-        Task {
+        guard updateCheckTask == nil else {
+            return
+        }
+
+        updateCheckTask = Task {
             // Check immediately
             await checkForUpdates()
             
