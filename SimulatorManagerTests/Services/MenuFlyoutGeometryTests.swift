@@ -162,6 +162,51 @@ struct MenuFlyoutGeometryTests {
     func noTriangleWithoutAFlyout() {
         #expect(MenuFlyoutSafeTriangle(apex: CGPoint(x: 1000, y: 500), flyoutFrame: .zero) == nil)
     }
+
+    // MARK: - Approach
+
+    @Test("A pointer that keeps closing in on the flyout has not stalled")
+    func steadyApproachHasNotStalled() {
+        let start = ContinuousClock.now
+        var approach = MenuFlyoutApproach(towardsEdgeAt: 1043)
+
+        for step in 0 ..< 10 {
+            approach.record(CGPoint(x: 1010 + CGFloat(step) * 2, y: 480), at: start + .milliseconds(step * 10))
+        }
+
+        #expect(!approach.hasStalled(at: start + .milliseconds(100), after: .milliseconds(60)))
+    }
+
+    @Test("A pointer that stops short of the flyout has stalled once the pause is long enough")
+    func stoppedPointerStalls() {
+        let start = ContinuousClock.now
+        var approach = MenuFlyoutApproach(towardsEdgeAt: 1043)
+
+        approach.record(CGPoint(x: 1020, y: 480), at: start)
+
+        #expect(!approach.hasStalled(at: start + .milliseconds(30), after: .milliseconds(60)))
+        #expect(approach.hasStalled(at: start + .milliseconds(60), after: .milliseconds(60)))
+    }
+
+    @Test("Jitter and movement along the panel are not progress towards the flyout")
+    func sidewaysMovementIsNotProgress() {
+        let start = ContinuousClock.now
+        var approach = MenuFlyoutApproach(towardsEdgeAt: 1043)
+
+        approach.record(CGPoint(x: 1020, y: 480), at: start)
+        // A hand resting on the mouse, then the pointer sliding down the panel.
+        approach.record(CGPoint(x: 1020.3, y: 479), at: start + .milliseconds(20))
+        approach.record(CGPoint(x: 1020, y: 440), at: start + .milliseconds(40))
+
+        #expect(approach.hasStalled(at: start + .milliseconds(60), after: .milliseconds(60)))
+    }
+
+    @Test("Before the pointer has been looked at there is nothing to call a stall")
+    func noRecordNoStall() {
+        let approach = MenuFlyoutApproach(towardsEdgeAt: 1043)
+
+        #expect(!approach.hasStalled(at: .now, after: .zero))
+    }
 }
 
 private extension MenuFlyoutGeometryTests {

@@ -26,12 +26,18 @@ final class MenuFlyoutController {
         /// no counterpart for opening: a submenu the pointer is on is one the user is asking for, and
         /// any wait at all leaves the previous flyout standing under a row they have already left.
         var close: Duration = .milliseconds(250)
-        /// Applied to a submenu whose opening starts work (``MenuNode/onEnter``), and only to those.
-        /// Opening one is no longer free, so the pointer crossing its row on the way somewhere else
-        /// must not be enough to pay for it — which a native menu's own open delay used to ensure.
-        var openWithSideEffect: Duration = .milliseconds(250)
-        /// How long a flyout stays protected from the rows between it and the pointer.
+        /// The longest a flyout stays protected from the rows between it and the pointer, however
+        /// steadily the pointer keeps closing in on it.
         var safeTriangleGrace: Duration = .milliseconds(500)
+        /// How long the pointer may go without getting any closer to the protected flyout before the
+        /// row it is on is taken up. A pointer heading into the flyout closes in on it every few
+        /// milliseconds; one that has stopped, or is travelling along the panel instead, has picked
+        /// the row it is on — and making it sit out the whole grace first is a submenu opening late.
+        var safeTriangleStall: Duration = .milliseconds(60)
+        /// How often the pointer is looked at while a hover is held off. Hover only reports crossing
+        /// into a row, so without looking nothing would notice the pointer leaving the triangle or
+        /// stopping inside it.
+        var pointerSampling: Duration = .milliseconds(8)
     }
 
     var timing = Timing()
@@ -84,7 +90,7 @@ extension MenuFlyoutController {
         // is what stops the pointer from resting here and never being noticed.
         if isProtectingFlyout(against: depth) {
             suppressedHover = (node, depth)
-            scheduleSafeTriangleExpiry()
+            watchSuppressedHover()
 
             return
         }
@@ -102,15 +108,10 @@ extension MenuFlyoutController {
             return
         }
 
-        if node.onEnter != nil {
-            // Leaving the row before the delay runs out cancels it (see `hoverEnded`).
-            pendingTask = schedule(after: timing.openWithSideEffect) { [weak self] in
-                self?.openFlyout?(node, depth)
-            }
-
-            return
-        }
-
+        // A submenu whose opening starts work (``MenuNode/onEnter``) opens just as promptly. That work
+        // runs in the background and only once — the cleanup scan is skipped after it has loaded — so
+        // the pointer crossing its row costs a scan at most once, where a wait cost every opening.
+        //
         // Swapping the flyout at this depth reuses its window rather than tearing one down and
         // building another, so sweeping the pointer down a list of submenus costs a re-render each,
         // not a window each.
@@ -293,25 +294,53 @@ private extension MenuFlyoutController {
         return safeTriangle.contains(pointerLocation())
     }
 
-    /// Re-applies a hover that the triangle swallowed, once the protection runs out.
+    /// Re-applies a hover that the triangle swallowed as soon as the pointer is no longer heading into
+    /// the flyout: it left the triangle, it stopped closing in on the flyout, or the protection ran
+    /// out.
     ///
     /// Without this, a pointer that stops inside the triangle would leave the wrong flyout open with
-    /// no further hover events to correct it.
-    func scheduleSafeTriangleExpiry() {
-        guard let safeTriangleDeadline else {
+    /// no further hover events to correct it. Waiting for the protection to run out instead made a
+    /// row the pointer settled on beside an open flyout open its submenu up to half a second late.
+    func watchSuppressedHover() {
+        guard let safeTriangle, let safeTriangleDeadline else {
             return
         }
 
         pendingTask?.cancel()
-        pendingTask = schedule(after: max(.zero, ContinuousClock.now.duration(to: safeTriangleDeadline))) { [weak self] in
-            guard let self, let hover = suppressedHover else {
-                return
-            }
+        pendingTask = Task { @MainActor [weak self] in
+            var approach = MenuFlyoutApproach(towardsEdgeAt: safeTriangle.baseTop.x)
 
-            disarmSafeTriangle()
-            suppressedHover = nil
-            hoverBegan(on: hover.node, depth: hover.depth)
+            while !Task.isCancelled {
+                guard let self else {
+                    return
+                }
+
+                let now = ContinuousClock.now
+                let pointer = pointerLocation()
+
+                approach.record(pointer, at: now)
+
+                if now >= safeTriangleDeadline
+                    || !safeTriangle.contains(pointer)
+                    || approach.hasStalled(at: now, after: timing.safeTriangleStall) {
+                    applySuppressedHover()
+
+                    return
+                }
+
+                try? await Task.sleep(for: timing.pointerSampling)
+            }
         }
+    }
+
+    func applySuppressedHover() {
+        guard let hover = suppressedHover else {
+            return
+        }
+
+        disarmSafeTriangle()
+        suppressedHover = nil
+        hoverBegan(on: hover.node, depth: hover.depth)
     }
 
     func disarmSafeTriangle() {

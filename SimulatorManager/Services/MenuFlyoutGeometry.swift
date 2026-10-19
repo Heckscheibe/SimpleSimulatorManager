@@ -127,3 +127,45 @@ struct MenuFlyoutSafeTriangle {
         (point.x - end.x) * (start.y - end.y) - (start.x - end.x) * (point.y - end.y)
     }
 }
+
+// MARK: - Approach
+
+/// Whether the pointer is still travelling into a flyout, as opposed to having stopped short of it.
+///
+/// Being inside the safe triangle is not enough on its own: a pointer that comes to rest there, or
+/// slides down the panel inside it, has chosen the row it is on. What distinguishes a pointer on its
+/// way into the flyout is that it keeps getting closer to the flyout's facing edge.
+struct MenuFlyoutApproach {
+    /// Movement smaller than this does not count as getting closer — a hand resting on a mouse or
+    /// trackpad still jitters the pointer by a fraction of a point.
+    static let minimumProgress: CGFloat = 0.5
+
+    private let edgeX: CGFloat
+    private var closestDistance: CGFloat = .infinity
+    private var lastProgress: ContinuousClock.Instant?
+
+    /// - Parameter edgeX: The x coordinate of the flyout's edge facing the pointer, in screen space.
+    init(towardsEdgeAt edgeX: CGFloat) {
+        self.edgeX = edgeX
+    }
+
+    mutating func record(_ pointer: CGPoint, at instant: ContinuousClock.Instant) {
+        let distance = abs(edgeX - pointer.x)
+
+        guard distance < closestDistance - Self.minimumProgress else {
+            return
+        }
+
+        closestDistance = distance
+        lastProgress = instant
+    }
+
+    /// Whether the pointer has gone `duration` without getting any closer.
+    func hasStalled(at instant: ContinuousClock.Instant, after duration: Duration) -> Bool {
+        guard let lastProgress else {
+            return false
+        }
+
+        return lastProgress.duration(to: instant) >= duration
+    }
+}

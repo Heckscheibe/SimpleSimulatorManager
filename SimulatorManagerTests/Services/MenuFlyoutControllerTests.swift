@@ -30,30 +30,17 @@ struct MenuFlyoutControllerTests {
         #expect(recorder.opened == [ChainRecorder.Opened(identifier: "device-type", depth: 0)])
     }
 
-    @Test("A submenu whose opening starts work waits, so passing over its row does not pay for it")
-    func submenuWithSideEffectWaits() async {
+    @Test("A submenu whose opening starts work opens just as promptly")
+    func submenuWithSideEffectOpensImmediately() {
         let controller = Self.makeController(presenter: MockMenuFlyoutPresenter())
         let recorder = ChainRecorder(controller: controller)
         let node = Self.submenu(id: "cleanup", onEnter: {})
 
         controller.hoverBegan(on: node, depth: 0)
-        #expect(recorder.opened.isEmpty)
 
-        await waitUntil { !recorder.opened.isEmpty }
+        // The cleanup scan runs in the background and only once, so it is no reason to make every
+        // opening of its submenu wait.
         #expect(recorder.opened == [ChainRecorder.Opened(identifier: "cleanup", depth: 0)])
-    }
-
-    @Test("Leaving a submenu that starts work before the delay is up opens nothing")
-    func leavingBeforeTheDelayOpensNothing() async throws {
-        let controller = Self.makeController(presenter: MockMenuFlyoutPresenter())
-        let recorder = ChainRecorder(controller: controller)
-        let node = Self.submenu(id: "cleanup", onEnter: {})
-
-        controller.hoverBegan(on: node, depth: 0)
-        controller.hoverEnded(on: node, depth: 0)
-        try await Task.sleep(for: .milliseconds(120))
-
-        #expect(recorder.opened.isEmpty)
     }
 
     @Test("Moving between submenus swaps the flyout each time")
@@ -118,9 +105,10 @@ struct MenuFlyoutControllerTests {
         // The pointer leaves the row that opened the flyout, heading for it.
         controller.hoverEnded(on: Self.submenu(id: "device-type"), depth: 0)
 
-        // On its way it crosses a sibling. Without the triangle this row's own submenu would open
-        // and take the destination off the screen before the pointer reached it.
-        controller.pointerLocation = { CGPoint(x: 1020, y: 480) }
+        // On its way it crosses a sibling — still moving, still getting closer. Without the triangle
+        // this row's own submenu would open and take the destination off the screen before the
+        // pointer reached it.
+        controller.pointerLocation = Self.pointerHeadingIntoTheFlyout()
         controller.hoverBegan(on: Self.submenu(id: "other-device-type"), depth: 0)
         try? await Task.sleep(for: .milliseconds(120))
 
@@ -128,22 +116,68 @@ struct MenuFlyoutControllerTests {
         #expect(recorder.closed.isEmpty)
     }
 
-    @Test("A row the pointer settles on is taken up once the protection expires")
+    @Test("A row the pointer stops on is taken up without waiting out the protection")
+    func aSuppressedHoverIsAppliedWhenThePointerStops() async {
+        let presenter = MockMenuFlyoutPresenter()
+        let controller = Self.makeController(presenter: presenter)
+        let recorder = ChainRecorder(controller: controller)
+
+        // Far longer than the test waits, so only the pointer stopping can explain the row being
+        // taken up.
+        controller.timing.safeTriangleGrace = .seconds(30)
+        presenter.flyoutFrames = [Self.openFlyout]
+        controller.pointerLocation = { CGPoint(x: 1000, y: 500) }
+        controller.hoverEnded(on: Self.submenu(id: "device-type"), depth: 0)
+
+        // The pointer stops inside the triangle rather than travelling through it: the user has
+        // picked this row, and nothing else will arrive to say so.
+        controller.pointerLocation = { CGPoint(x: 1020, y: 480) }
+        controller.hoverBegan(on: Self.submenu(id: "other-device-type"), depth: 0)
+
+        await waitUntil(timeout: .seconds(2)) { !recorder.opened.isEmpty }
+
+        #expect(recorder.opened == [ChainRecorder.Opened(identifier: "other-device-type", depth: 0)])
+    }
+
+    @Test("A row is taken up the moment the pointer leaves the triangle")
+    func aSuppressedHoverIsAppliedWhenThePointerLeavesTheTriangle() async {
+        let presenter = MockMenuFlyoutPresenter()
+        let controller = Self.makeController(presenter: presenter)
+        let recorder = ChainRecorder(controller: controller)
+
+        controller.timing.safeTriangleGrace = .seconds(30)
+        controller.timing.safeTriangleStall = .seconds(30)
+        presenter.flyoutFrames = [Self.openFlyout]
+        controller.pointerLocation = { CGPoint(x: 1000, y: 500) }
+        controller.hoverEnded(on: Self.submenu(id: "device-type"), depth: 0)
+
+        controller.pointerLocation = { CGPoint(x: 1020, y: 480) }
+        controller.hoverBegan(on: Self.submenu(id: "other-device-type"), depth: 0)
+        #expect(recorder.opened.isEmpty)
+
+        // Down the panel and away from the flyout: no longer heading into it.
+        controller.pointerLocation = { CGPoint(x: 1005, y: 440) }
+
+        await waitUntil(timeout: .seconds(2)) { !recorder.opened.isEmpty }
+
+        #expect(recorder.opened == [ChainRecorder.Opened(identifier: "other-device-type", depth: 0)])
+    }
+
+    @Test("A row is taken up once the protection expires, even while the pointer keeps closing in")
     func aSuppressedHoverIsAppliedWhenTheProtectionRunsOut() async {
         let presenter = MockMenuFlyoutPresenter()
         let controller = Self.makeController(presenter: presenter)
         let recorder = ChainRecorder(controller: controller)
 
+        controller.timing.safeTriangleStall = .seconds(30)
         presenter.flyoutFrames = [Self.openFlyout]
         controller.pointerLocation = { CGPoint(x: 1000, y: 500) }
         controller.hoverEnded(on: Self.submenu(id: "device-type"), depth: 0)
 
-        // The pointer stops inside the triangle rather than travelling through it. Nothing else will
-        // arrive to correct the chain, so the protection has to give way on its own.
-        controller.pointerLocation = { CGPoint(x: 1020, y: 480) }
+        controller.pointerLocation = Self.pointerHeadingIntoTheFlyout()
         controller.hoverBegan(on: Self.submenu(id: "other-device-type"), depth: 0)
 
-        await waitUntil { !recorder.opened.isEmpty }
+        await waitUntil(timeout: .seconds(2)) { !recorder.opened.isEmpty }
 
         #expect(recorder.opened == [ChainRecorder.Opened(identifier: "other-device-type", depth: 0)])
     }
@@ -300,8 +334,9 @@ private extension MenuFlyoutControllerTests {
 
         // Short enough to keep the suite quick, long enough that "not yet" is still observable.
         controller.timing = MenuFlyoutController.Timing(close: .milliseconds(40),
-                                                        openWithSideEffect: .milliseconds(40),
-                                                        safeTriangleGrace: .milliseconds(80))
+                                                        safeTriangleGrace: .milliseconds(80),
+                                                        safeTriangleStall: .milliseconds(40),
+                                                        pointerSampling: .milliseconds(2))
         controller.pointerLocation = { .zero }
 
         return controller
@@ -318,6 +353,20 @@ private extension MenuFlyoutControllerTests {
     static func levels(count: Int) -> [MenuPanelLevel] {
         (0 ..< count).map { depth in
             MenuPanelLevel(title: depth == 0 ? nil : "Level \(depth)", nodes: [], depth: depth)
+        }
+    }
+
+    /// A pointer travelling diagonally into ``openFlyout`` at a steady 100 points a second, inside the
+    /// triangle from (1000, 500) all the way. Driven by the clock rather than by how often it is
+    /// read, so it keeps closing in for the whole of any wait in these tests.
+    static func pointerHeadingIntoTheFlyout() -> () -> CGPoint {
+        let start = ContinuousClock.now
+
+        return {
+            let elapsed = start.duration(to: .now)
+            let seconds = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
+
+            return CGPoint(x: min(1010 + 100 * seconds, openFlyout.minX - 1), y: 480)
         }
     }
 }

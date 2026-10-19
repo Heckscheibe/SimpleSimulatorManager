@@ -252,14 +252,13 @@ extension MenuPanelViewModel {
     /// Mouse hover and keyboard selection are the same state, so the highlight follows the pointer
     /// rather than appearing alongside a second one.
     func select(_ node: MenuNode) {
-        guard node.isSelectable else {
+        // Writing the same value still notifies every view that reads the selection, and the pointer
+        // re-entering the row that is already selected is common.
+        guard node.isSelectable, node.id != selectedIdentifier else {
             return
         }
 
-        if node.id != selectedIdentifier {
-            cancelPendingConfirmation()
-        }
-
+        cancelPendingConfirmation()
         selectedIdentifier = node.id
     }
 

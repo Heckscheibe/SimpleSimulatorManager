@@ -19,6 +19,23 @@ struct MenuPanelRowView: View {
     let isAwaitingConfirmation: Bool
     let hoverChanged: (Bool) -> Void
     let activate: () -> Void
+    /// What this row's equality is decided on. See ``==(_:_:)``.
+    private let appearance: Appearance
+
+    init(
+        node: MenuNode,
+        isSelected: Bool,
+        isAwaitingConfirmation: Bool,
+        hoverChanged: @escaping (Bool) -> Void,
+        activate: @escaping () -> Void
+    ) {
+        self.node = node
+        self.isSelected = isSelected
+        self.isAwaitingConfirmation = isAwaitingConfirmation
+        self.hoverChanged = hoverChanged
+        self.activate = activate
+        appearance = Appearance(node: node, isSelected: isSelected, isAwaitingConfirmation: isAwaitingConfirmation)
+    }
 
     var body: some View {
         switch node.kind {
@@ -54,7 +71,64 @@ struct MenuPanelRowView: View {
     }
 }
 
+// MARK: - Equality
+
+/// Moving the pointer one row changes the highlight of two rows, but redraws every row of every open
+/// level: each level reads the selection to work out its highlights, and a row's closures make it
+/// look changed to SwiftUI on every pass, because closures cannot be compared. Comparing what the
+/// row draws instead lets everything but those two rows be skipped.
+///
+/// The closures are deliberately left out. They close over view models by reference and over the
+/// node, whose identity and drawn fields are compared, so one kept from an earlier pass still does the
+/// right thing — the same reasoning the flyout signature in ``MenuFlyoutController`` relies on.
+extension MenuPanelRowView: Equatable {
+    nonisolated static func == (lhs: MenuPanelRowView, rhs: MenuPanelRowView) -> Bool {
+        lhs.appearance == rhs.appearance
+    }
+}
+
 private extension MenuPanelRowView {
+    struct Appearance: Equatable {
+        enum Kind: Equatable {
+            case action
+            case submenu
+            case sectionHeader
+            case informational
+            case divider
+        }
+
+        let id: String
+        let title: String
+        let subtitle: String?
+        let iconName: String?
+        let kind: Kind
+        let isEnabled: Bool
+        let isDestructive: Bool
+        let actionTitles: [String]
+        let isSelected: Bool
+        let isAwaitingConfirmation: Bool
+
+        init(node: MenuNode, isSelected: Bool, isAwaitingConfirmation: Bool) {
+            id = node.id
+            title = node.title
+            subtitle = node.subtitle
+            iconName = node.iconName
+            kind =
+                switch node.kind {
+                case .action: .action
+                case .submenu: .submenu
+                case .sectionHeader: .sectionHeader
+                case .informational: .informational
+                case .divider: .divider
+                }
+            isEnabled = node.isEnabled
+            isDestructive = node.isDestructive
+            actionTitles = node.actions.map(\.title)
+            self.isSelected = isSelected
+            self.isAwaitingConfirmation = isAwaitingConfirmation
+        }
+    }
+
     var isHighlighted: Bool {
         isSelected && node.isEnabled
     }

@@ -62,6 +62,8 @@ struct MenuNodeRowsView: View {
                                  activate: {
                                      handlers.activate(node)
                                  })
+                                 // Only the rows whose highlight changed are redrawn on a hover.
+                                 .equatable()
                                  .id(node.id)
                                  .onGeometryChange(for: CGRect.self) { proxy in
                                      proxy.frame(in: .global)
