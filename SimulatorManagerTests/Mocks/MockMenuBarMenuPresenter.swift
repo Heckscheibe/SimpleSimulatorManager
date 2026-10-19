@@ -5,6 +5,7 @@
 //  Created by Nicolas Hiller on 11.08.26.
 //
 
+import AppKit
 import Foundation
 @testable import SimulatorManager
 
@@ -18,6 +19,7 @@ class MockMenuBarMenuPresenter: MenuBarMenuPresenting {
     /// Controls whether the status item is considered reachable.
     var openMenuResult = true
     var closeMenuResult = true
+    var panelWindowResult: NSWindow?
 
     // MARK: - MenuBarMenuPresenting Implementation
 
@@ -33,5 +35,10 @@ class MockMenuBarMenuPresenter: MenuBarMenuPresenting {
         closeMenuCallCount += 1
 
         return closeMenuResult
+    }
+
+    /// No real panel behind a mock, so nothing can be hung off it.
+    func panelWindow() -> NSWindow? {
+        panelWindowResult
     }
 }

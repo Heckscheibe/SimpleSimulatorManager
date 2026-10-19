@@ -17,6 +17,21 @@ import SwiftUI
 /// `openWindow` behaves correctly.
 enum PreferencesWindow {
     static let identifier = "preferences"
+
+    /// Opens the window from the menu bar panel, and closes the panel.
+    ///
+    /// The order is the point. Activating is only a request on current macOS, and it is granted
+    /// while the user is still interacting with the app — that is, while the panel they clicked in is
+    /// up. Closing the panel first gave that up: the window was created, but behind whatever app was
+    /// in front, so clicking Settings… appeared to do nothing until a later click happened to win.
+    /// Once the window is in front and key the panel would close itself anyway; dismissing it
+    /// afterwards only covers the case where it did not.
+    @MainActor
+    static func openFromPanel(activate: () -> Void, openWindow: () -> Void, dismissPanel: () -> Void) {
+        activate()
+        openWindow()
+        dismissPanel()
+    }
 }
 
 /// Contents of the settings window.
