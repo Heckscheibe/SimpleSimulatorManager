@@ -455,9 +455,9 @@ private extension MenuPanelView {
     /// The app is an agent, so it is not brought to the front on its own and the settings window
     /// would otherwise open behind whatever the user was working in.
     func openPreferences() {
-        dismiss()
-        openWindow(id: PreferencesWindow.identifier)
-        NSApp.activate()
+        PreferencesWindow.openFromPanel(activate: { NSApp.activate() },
+                                        openWindow: { openWindow(id: PreferencesWindow.identifier) },
+                                        dismissPanel: dismiss)
     }
 
     /// ⌘Q and ⌘, came free from `Button.keyboardShortcut` inside an `NSMenu`. The rows are plain
