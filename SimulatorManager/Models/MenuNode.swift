@@ -60,6 +60,16 @@ struct MenuNode: Identifiable {
 
 // MARK: - Convenience
 
+extension MenuNode.Kind {
+    var isSectionHeader: Bool {
+        if case .sectionHeader = self {
+            return true
+        }
+
+        return false
+    }
+}
+
 extension MenuNode {
     var primaryAction: MenuActionItem? {
         actions.first
@@ -99,6 +109,41 @@ extension MenuNode {
         }
 
         return false
+    }
+}
+
+// MARK: - Accessibility
+
+extension MenuNode {
+    /// `NSMenu` announced its items for free. A panel row is a stack of `Text`s, so the label is
+    /// assembled explicitly — and an app hit has to name its device, because "Documents Folder" is
+    /// useless when the same app is installed on eight simulators.
+    var accessibilityLabel: String {
+        var components = [title]
+
+        if let subtitle {
+            components.append(subtitle)
+        }
+
+        if isDestructive {
+            components.append("destructive")
+        }
+
+        if !isEnabled {
+            components.append("dimmed")
+        }
+
+        return components.joined(separator: ", ")
+    }
+
+    /// A confirmation the user cannot perceive is not a confirmation, so the pending state is
+    /// announced rather than only tinted.
+    func accessibilityHint(isAwaitingConfirmation: Bool) -> String {
+        if isAwaitingConfirmation {
+            return "Press Return again to confirm"
+        }
+
+        return isSubmenu ? "Opens a submenu" : ""
     }
 }
 
