@@ -16,6 +16,15 @@ enum MenuPanelStyle {
     /// The list scrolls inside the panel rather than growing past the screen. A machine with
     /// several Xcode versions can easily have dozens of simulators.
     static let maximumListHeight: CGFloat = 460
+    /// Headroom for everything above the list — the search field and its separator. Generous enough
+    /// to survive a larger system font.
+    static let maximumChromeHeight: CGFloat = 60
+
+    /// The tallest the whole panel gets. Capping the list alone would not keep the panel on screen,
+    /// because the search field sits above it.
+    static var maximumHeight: CGFloat {
+        maximumListHeight + maximumChromeHeight
+    }
 
     static let rowMinimumHeight: CGFloat = 22
     static let rowHorizontalPadding: CGFloat = 9

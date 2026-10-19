@@ -74,7 +74,7 @@ struct MenuBarMenuPresenterTests {
         // that does not measure its own rows collapses to the height of its padding alone.
         #expect(contentView.bounds.height > MenuPanelStyle.rowMinimumHeight * 4,
                 "The panel collapsed to \(contentView.bounds.height) points, so its rows are not being measured")
-        #expect(contentView.bounds.height <= MenuPanelStyle.maximumListHeight,
+        #expect(contentView.bounds.height <= MenuPanelStyle.maximumHeight,
                 "The panel grew past its cap, so a machine with many simulators would get a panel taller than the screen")
     }
 

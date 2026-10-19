@@ -26,16 +26,25 @@ struct MenuPanelView: View {
     /// Closing the panel is the same status-item operation as opening it, so it goes through the
     /// abstraction that already isolates that from the rest of the app.
     let menuPresenter: any MenuBarMenuPresenting
+    @Bindable var searchViewModel: MenuSearchViewModel
 
     @Environment(\.openWindow) private var openWindow
     @State private var viewModel = MenuPanelViewModel()
     @State private var listHeight: CGFloat = MenuPanelStyle.rowMinimumHeight
-    @FocusState private var isFocused: Bool
 
     var body: some View {
-        let level = viewModel.level(in: makeNodes())
+        let level = currentLevel()
 
         VStack(alignment: .leading, spacing: 0) {
+            MenuPanelSearchField(query: $searchViewModel.query,
+                                 placeholder: "Search simulators and apps") { command in
+                perform(command, in: currentLevel())
+            }
+            .padding(.horizontal, MenuPanelStyle.horizontalInset + 3)
+            .padding(.vertical, MenuPanelStyle.listVerticalPadding + 2)
+
+            Divider()
+
             if let title = level.title {
                 MenuPanelHeaderView(title: title) {
                     viewModel.leave(from: level)
@@ -48,22 +57,14 @@ struct MenuPanelView: View {
         }
         .frame(width: MenuPanelStyle.width)
         .background(shortcuts)
-        .focusable()
-        .focusEffectDisabled()
-        .focused($isFocused)
-        .onAppear {
-            isFocused = true
+        .onChange(of: searchViewModel.query) { _, _ in
+            queryChanged()
         }
         .onDisappear {
-            // Reopening starts at the top level with nothing selected, the way reopening a menu
-            // does.
+            // Reopening starts at the top level, with nothing selected and an empty query — the way
+            // reopening a menu does.
             viewModel.reset()
-        }
-        // One handler rather than a stack of `onKeyPress(.upArrow)`-style modifiers: every key the
-        // panel cares about is dispatched in one place, and anything it does not handle is passed
-        // on untouched after cancelling a pending destructive confirmation.
-        .onKeyPress(phases: .down) { keyPress in
-            handle(keyPress, in: level)
+            searchViewModel.clear()
         }
         .task {
             githubService.startPeriodicUpdateCheck()
@@ -74,7 +75,22 @@ struct MenuPanelView: View {
 // MARK: - Rows
 
 private extension MenuPanelView {
+    /// The rows on screen: the ranked hits while there is a query, and the browsable menu when
+    /// there is not. Both go through the same drill-down resolution, so one renderer, one selection
+    /// model and one activation path serve both modes.
+    func currentLevel() -> MenuPanelLevel {
+        viewModel.level(in: searchViewModel.hasQuery ? searchResultNodes() : makeNodes())
+    }
+
+    func searchResultNodes() -> [MenuNode] {
+        makeBuilder().searchResultNodes(for: searchViewModel.results)
+    }
+
     func makeNodes() -> [MenuNode] {
+        makeBuilder().makeNodes()
+    }
+
+    func makeBuilder() -> MenuTreeBuilder {
         MenuTreeBuilder(simulatorManagerViewModel: simulatorManagerViewModel,
                         settingsViewModel: settingsViewModel,
                         cleanupViewModel: cleanupViewModel,
@@ -83,7 +99,6 @@ private extension MenuPanelView {
                         githubService: githubService,
                         openPreferences: openPreferences,
                         quit: quit)
-            .makeNodes()
     }
 
     func rowList(for level: MenuPanelLevel) -> some View {
@@ -147,69 +162,50 @@ private extension MenuPanelView {
 // MARK: - Keyboard
 
 private extension MenuPanelView {
-    func handle(_ keyPress: KeyPress, in level: MenuPanelLevel) -> KeyPress.Result {
-        // Command- and option-key equivalents belong to the responder chain — ⌘Q and ⌘, among them
-        // — so nothing but Return is claimed while a modifier is held.
-        guard keyPress.modifiers.isEmpty || keyPress.key == .return else {
-            viewModel.cancelPendingConfirmation()
-
-            return .ignored
-        }
-
-        switch keyPress.key {
-        case .upArrow:
+    /// Keys the search field handed over because the list wants them more than the caret does.
+    func perform(_ command: MenuPanelSearchField.Command, in level: MenuPanelLevel) -> Bool {
+        switch command {
+        case .moveUp:
             viewModel.moveSelection(.up, in: level)
-        case .downArrow:
+        case .moveDown:
             viewModel.moveSelection(.down, in: level)
-        case .rightArrow:
+        case .moveRight:
             guard let node = viewModel.selectedNode(in: level), node.isSubmenu else {
-                return .handled
+                return true
             }
 
             viewModel.enter(node)
-        case .leftArrow:
+        case .moveLeft:
             // At the top level this does nothing rather than dismissing: closing the panel is what
             // escape is for.
             guard level.depth > 0 else {
-                return .handled
+                return true
             }
 
             viewModel.leave(from: level)
-        case .return:
-            return handleReturn(keyPress, in: level)
-        case .escape:
-            dismiss()
-        default:
-            // Any other key cancels a pending destructive confirmation, then goes on its way.
-            viewModel.cancelPendingConfirmation()
+        case let .activate(kind):
+            guard let node = viewModel.selectedNode(in: level) else {
+                return true
+            }
 
-            return .ignored
+            handleOutcome(viewModel.activateFromKeyboard(node, kind: kind))
+        case .cancel:
+            cancel()
         }
 
-        return .handled
+        return true
     }
 
-    func handleReturn(_ keyPress: KeyPress, in level: MenuPanelLevel) -> KeyPress.Result {
-        guard let node = viewModel.selectedNode(in: level) else {
-            return .handled
+    func cancel() {
+        guard searchViewModel.cancel() == .shouldDismiss else {
+            return
         }
 
-        handleOutcome(viewModel.activateFromKeyboard(node, kind: Self.actionKind(for: keyPress)))
-
-        return .handled
+        dismiss()
     }
 
-    /// ⌘↩ and ⌥↩ reach a row's secondary actions — an app's App Package and User Defaults — without
-    /// having to drill into it first.
-    static func actionKind(for keyPress: KeyPress) -> MenuPanelActionKind {
-        if keyPress.modifiers.contains(.command) {
-            return .secondary(index: 0)
-        }
-        if keyPress.modifiers.contains(.option) {
-            return .secondary(index: 1)
-        }
-
-        return .primary
+    func queryChanged() {
+        viewModel.applyQueryChange(isSearching: searchViewModel.hasQuery, resultLevel: currentLevel())
     }
 }
 
@@ -223,6 +219,7 @@ private extension MenuPanelView {
             return
         }
 
+        searchViewModel.clear()
         dismiss()
     }
 
