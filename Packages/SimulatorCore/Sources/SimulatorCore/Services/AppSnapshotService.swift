@@ -40,6 +40,11 @@ protocol AppSnapshotting: AnyObject, Sendable {
 
     func diff(_ snapshot: AppSnapshot, against other: AppSnapshot) async throws -> AppSnapshotDiff
     func diff(_ snapshot: AppSnapshot, againstLiveContainersOf target: AppSnapshotTarget) async throws -> AppSnapshotDiff
+
+    /// Moves a snapshot out of the store into `directoryURL`, as `folderName` or, when that is
+    /// taken, the first free variant of it (see ``SnapshotExportNaming/uniqueDestinationURL(in:folderName:fileExists:)``).
+    /// - Returns: Where the snapshot now is.
+    func moveSnapshot(_ snapshot: AppSnapshot, into directoryURL: URL, folderName: String) async throws -> URL
 }
 
 extension AppSnapshotting {
@@ -105,6 +110,26 @@ final class AppSnapshotService: AppSnapshotting {
 
         try await Self.workQueue.perform { try store.delete(snapshot) }
         os_log("Deleted snapshot %{public}@ of %{public}@", snapshot.id, snapshot.manifest.bundleIdentifier)
+    }
+
+    // MARK: - Moving
+
+    func moveSnapshot(_ snapshot: AppSnapshot, into directoryURL: URL, folderName: String) async throws -> URL {
+        let store = store
+
+        let destinationURL = try await onWorkQueue {
+            let destinationURL = SnapshotExportNaming.uniqueDestinationURL(in: directoryURL, folderName: folderName)
+
+            try store.move(snapshot, to: destinationURL)
+
+            return destinationURL
+        }
+        os_log("Moved snapshot %{public}@ of %{public}@ to %{public}@",
+               snapshot.id,
+               snapshot.manifest.bundleIdentifier,
+               destinationURL.path)
+
+        return destinationURL
     }
 
     // MARK: - Capture

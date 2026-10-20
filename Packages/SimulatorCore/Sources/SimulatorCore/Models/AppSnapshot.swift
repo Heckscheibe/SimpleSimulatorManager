@@ -119,7 +119,10 @@ struct AppGroupContainer: Sendable, Equatable {
 ///
 /// A value type rather than the `Device` and `SimulatorApp` reference types, because the service
 /// does its work off the main actor and both of those are main-queue-mutated shared state.
-struct AppSnapshotTarget: Sendable, Equatable {
+///
+/// Public so the app can resolve one on the main actor and hand it to ``AppSnapshotSaving``; its
+/// contents stay internal.
+public struct AppSnapshotTarget: Sendable, Equatable {
     let bundleIdentifier: String
     let appDisplayName: String
     let appShortVersion: String?
@@ -138,7 +141,7 @@ extension AppSnapshotTarget {
     /// Returns `nil` when the app has no data container, which is the one thing a snapshot cannot
     /// do without. `appDocumentsFolderURL` is the container *root* despite its name — see
     /// ``AppContainerShortcut``, which appends `Library/Preferences` to the same URL.
-    init?(app: any SimulatorApp, device: Device) {
+    public init?(app: any SimulatorApp, device: Device) {
         guard let dataContainerURL = app.appDocumentsFolderURL else {
             return nil
         }

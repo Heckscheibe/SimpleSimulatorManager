@@ -24,6 +24,9 @@ protocol AppSnapshotStoring: Sendable {
     func readManifest(at directoryURL: URL) throws -> AppSnapshotManifest
     /// Removes a directory a failed capture left behind.
     func discardSnapshotDirectory(at directoryURL: URL)
+    /// Moves a snapshot out of the store to `destinationURL`, which must not exist yet. Afterwards
+    /// the snapshot is no longer listed.
+    func move(_ snapshot: AppSnapshot, to destinationURL: URL) throws
 }
 
 /// Snapshots under `~/Library/Application Support/SimulatorManager/Snapshots/<bundle id>/<id>/`.
@@ -73,15 +76,27 @@ struct AppSnapshotStore: AppSnapshotStoring {
 
     func delete(_ snapshot: AppSnapshot) throws {
         try FileManager.default.removeItem(at: snapshot.directoryURL)
+        removeBundleDirectoryIfEmpty(containing: snapshot)
+    }
 
-        // A bundle directory with no snapshots left is litter, and an empty one would keep showing
-        // an app in any listing built from the directory names.
-        let bundleDirectoryURL = snapshot.directoryURL.deletingLastPathComponent()
-        let remaining = (try? FileManager.default.contentsOfDirectory(atPath: bundleDirectoryURL.path)) ?? []
-
-        if remaining.isEmpty {
-            try? FileManager.default.removeItem(at: bundleDirectoryURL)
+    func move(_ snapshot: AppSnapshot, to destinationURL: URL) throws {
+        // Checked up front so that the cleanup below can only ever remove what this move wrote.
+        guard !FileManager.default.fileExists(atPath: destinationURL.path) else {
+            throw CocoaError(.fileWriteFileExists, userInfo: [NSFilePathErrorKey: destinationURL.path])
         }
+
+        do {
+            try FileManager.default.moveItem(at: snapshot.directoryURL, to: destinationURL)
+        } catch {
+            // Within a volume this is a rename and either happens or does not. Across volumes it is
+            // a copy followed by a delete, and a copy that fails part-way leaves a folder that looks
+            // like a snapshot and is not one.
+            try? FileManager.default.removeItem(at: destinationURL)
+
+            throw error
+        }
+
+        removeBundleDirectoryIfEmpty(containing: snapshot)
     }
 
     func makeSnapshotDirectory(bundleIdentifier: String, id: String) throws -> URL {
@@ -141,6 +156,17 @@ struct AppSnapshotStore: AppSnapshotStoring {
 }
 
 private extension AppSnapshotStore {
+    /// A bundle directory with no snapshots left is litter, and an empty one would keep showing an
+    /// app in any listing built from the directory names.
+    func removeBundleDirectoryIfEmpty(containing snapshot: AppSnapshot) {
+        let bundleDirectoryURL = snapshot.directoryURL.deletingLastPathComponent()
+        let remaining = (try? FileManager.default.contentsOfDirectory(atPath: bundleDirectoryURL.path)) ?? []
+
+        if remaining.isEmpty {
+            try? FileManager.default.removeItem(at: bundleDirectoryURL)
+        }
+    }
+
     /// Bundle identifiers are dotted reverse-DNS and contain nothing a path separator would split,
     /// so they are used as directory names as-is. Anything that would escape the root is refused
     /// rather than sanitised, because a sanitised name cannot be mapped back to its app.
