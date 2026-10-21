@@ -93,6 +93,24 @@ struct AppSnapshotCaptureTests {
         #expect(reloaded == manifest)
     }
 
+    @Test("Skips a named pipe instead of failing the whole snapshot")
+    func skipsNamedPipes() async throws {
+        let environment = try SnapshotTestEnvironment()
+
+        defer {
+            environment.remove()
+        }
+
+        try environment.container.makeNamedPipe(at: "Documents/store.realm.note")
+
+        let snapshot = try await environment.service.captureSnapshot(of: environment.target,
+                                                                     label: "Baseline",
+                                                                     includeCaches: false)
+
+        #expect(!Self.payloadContains("Documents/store.realm.note", in: snapshot))
+        #expect(Self.payloadContains("Documents/note.txt", in: snapshot))
+    }
+
     @Test("Reports an app whose container is gone rather than writing an empty snapshot")
     func refusesToCaptureNothing() async throws {
         let environment = try SnapshotTestEnvironment(includeAppGroup: false)

@@ -51,6 +51,25 @@ struct ContainerFixtureDirectory {
         try data.write(to: url.appendingPathComponent(MetaDataPlist.fileName))
     }
 
+    /// A named pipe like the `.realm.note` Realm keeps beside its database, which `FileManager`
+    /// cannot copy.
+    func makeNamedPipe(at relativePath: String) throws {
+        let pipeURL = url.appendingPathComponent(relativePath)
+        try FileManager.default.createDirectory(at: pipeURL.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+
+        guard mkfifo(pipeURL.path, 0o644) == 0 else {
+            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        }
+    }
+
+    /// Whether `relativePath` is a named pipe, which `exists` cannot tell from a regular file.
+    func isNamedPipe(at relativePath: String) -> Bool {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: url.appendingPathComponent(relativePath).path)
+
+        return attributes?[.type] as? FileAttributeType == .typeUnknown
+    }
+
     func exists(_ relativePath: String) -> Bool {
         FileManager.default.fileExists(atPath: url.appendingPathComponent(relativePath).path)
     }

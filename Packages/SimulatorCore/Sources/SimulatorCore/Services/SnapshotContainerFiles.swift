@@ -222,12 +222,15 @@ extension SnapshotContainerFiles {
     /// Errors from individual directories are logged and the walk continues: a booted simulator
     /// rewrites its own container while this runs, and one vanished cache folder is not a reason to
     /// abandon a snapshot.
+    ///
+    /// Special files are skipped here, so capture, restore and diff all agree that they do not
+    /// exist — see ``isSpecialFile(_:)``.
     static func enumerateContainer(
         at containerURL: URL,
         includeCaches: Bool,
         body: (URL, String, ContainerEntry) -> Void
     ) {
-        let resourceKeys: Set<URLResourceKey> = [.isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey]
+        let resourceKeys = entryResourceKeys.union([.fileSizeKey])
         var pending: [(url: URL, relativePrefix: String)] = [(containerURL, "")]
 
         while let directory = pending.popLast() {
@@ -256,6 +259,14 @@ extension SnapshotContainerFiles {
                 }
 
                 let values = try? url.resourceValues(forKeys: resourceKeys)
+
+                guard !isSpecialFile(values) else {
+                    os_log("Snapshot skipped %{public}@; it is not a regular file, directory or symlink",
+                           relativePath)
+
+                    continue
+                }
+
                 let isSymbolicLink = values?.isSymbolicLink == true
                 let isDirectory = values?.isDirectory == true && !isSymbolicLink
 
@@ -270,8 +281,31 @@ extension SnapshotContainerFiles {
         }
     }
 
-    /// Deletes everything under `directoryURL` except the preserved paths, descending only into
-    /// directories that still contain one.
+    private static let entryResourceKeys: Set<URLResourceKey> = [
+        .isDirectoryKey,
+        .isSymbolicLinkKey,
+        .isRegularFileKey
+    ]
+
+    /// A named pipe, socket or device node: not app state, and `FileManager.copyItem` refuses to
+    /// copy one, which would otherwise fail the whole snapshot. Realm keeps a `.realm.note` pipe
+    /// beside its database, and it outlives the app, so this is routine rather than exotic.
+    ///
+    /// An entry whose values could not be read is not called special; it is left to the copy,
+    /// which already tells a file that vanished mid-walk from a real failure.
+    private static func isSpecialFile(_ values: URLResourceValues?) -> Bool {
+        guard let values else {
+            return false
+        }
+
+        return values.isRegularFile != true && values.isDirectory != true && values.isSymbolicLink != true
+    }
+
+    /// Deletes everything under `directoryURL` except the preserved paths and special files.
+    ///
+    /// Descends into every directory rather than removing it whole, and removes it only once it is
+    /// empty: a pipe a running app is listening on may sit anywhere below it, and deleting one
+    /// breaks that app without restoring anything, since a snapshot never holds one.
     private static func removeContents(
         of directoryURL: URL,
         relativePrefix: String,
@@ -279,7 +313,7 @@ extension SnapshotContainerFiles {
     ) throws {
         let contents = try FileManager.default.contentsOfDirectory(
             at: directoryURL,
-            includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
+            includingPropertiesForKeys: Array(entryResourceKeys),
             options: []
         )
 
@@ -290,15 +324,24 @@ extension SnapshotContainerFiles {
                 continue
             }
 
-            let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
-            let isDirectory = values?.isDirectory == true && values?.isSymbolicLink != true
-            let holdsPreservedDescendant = preservedRelativePaths.contains { $0.hasPrefix(relativePath + "/") }
+            let values = try? url.resourceValues(forKeys: entryResourceKeys)
 
-            if isDirectory, holdsPreservedDescendant {
-                try removeContents(of: url,
-                                   relativePrefix: relativePath + "/",
-                                   preservedRelativePaths: preservedRelativePaths)
-            } else {
+            if isSpecialFile(values) {
+                continue
+            }
+
+            guard values?.isDirectory == true, values?.isSymbolicLink != true else {
+                try FileManager.default.removeItem(at: url)
+
+                continue
+            }
+
+            try removeContents(of: url,
+                               relativePrefix: relativePath + "/",
+                               preservedRelativePaths: preservedRelativePaths)
+
+            // Whatever is left is preserved or special, and keeps its directory.
+            if try FileManager.default.contentsOfDirectory(atPath: url.path).isEmpty {
                 try FileManager.default.removeItem(at: url)
             }
         }

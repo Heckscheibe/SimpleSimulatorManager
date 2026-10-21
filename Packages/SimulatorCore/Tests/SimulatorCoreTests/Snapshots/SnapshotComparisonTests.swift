@@ -37,6 +37,23 @@ struct SnapshotComparisonTests {
         #expect(removed.oldByteSize == 5)
     }
 
+    @Test("Does not report a named pipe that appeared since the snapshot")
+    func ignoresNamedPipes() async throws {
+        let environment = try SnapshotTestEnvironment(includeAppGroup: false)
+
+        defer {
+            environment.remove()
+        }
+
+        let snapshot = try await environment.service.captureSnapshot(of: environment.target,
+                                                                     label: "Baseline",
+                                                                     includeCaches: false)
+        try environment.container.makeNamedPipe(at: "Documents/store.realm.note")
+
+        let diff = try await environment.service.diff(snapshot, againstLiveContainersOf: environment.target)
+        #expect(!diff.hasChanges)
+    }
+
     @Test("Treats a same-size file with different content as modified")
     func detectsSameSizeContentChange() async throws {
         let environment = try SnapshotTestEnvironment(includeAppGroup: false)

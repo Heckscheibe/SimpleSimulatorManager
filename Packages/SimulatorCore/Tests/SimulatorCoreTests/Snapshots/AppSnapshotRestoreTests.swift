@@ -48,6 +48,30 @@ struct AppSnapshotRestoreTests {
         #expect(!environment.container.exists("Documents/added-later.txt"))
     }
 
+    @Test("Leaves a live named pipe in place, even in a directory with nothing else left")
+    func preservesNamedPipes() async throws {
+        let environment = try SnapshotTestEnvironment()
+
+        defer {
+            environment.remove()
+        }
+
+        let snapshot = try await environment.service.captureSnapshot(of: environment.target,
+                                                                     label: "Baseline",
+                                                                     includeCaches: false)
+        try environment.container.makeNamedPipe(at: "Documents/store.realm.note")
+        try environment.container.makeNamedPipe(at: "Realm/default.realm.note")
+        try environment.container.write("new", at: "Realm/default.realm")
+
+        let plan = try await environment.service.prepareRestore(of: snapshot, to: environment.target)
+        _ = try await environment.service.restore(plan)
+
+        #expect(environment.container.isNamedPipe(at: "Documents/store.realm.note"))
+        #expect(environment.container.isNamedPipe(at: "Realm/default.realm.note"))
+        #expect(!environment.container.exists("Realm/default.realm"))
+        #expect(environment.container.contents(at: "Documents/note.txt") == "hello")
+    }
+
     @Test("Leaves the container metadata plist and the uncaptured caches alone")
     func preservesUncapturedPaths() async throws {
         let environment = try SnapshotTestEnvironment()
