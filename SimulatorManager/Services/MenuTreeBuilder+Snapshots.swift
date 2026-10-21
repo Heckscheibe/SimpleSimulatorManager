@@ -63,11 +63,11 @@ enum SnapshotSaveOption: String, CaseIterable {
         case .everything:
             "Everything"
         case .databasesAndUserDefaults:
-            "Databases and UserDefaults"
+            "Database and UserDefaults"
         case .databases:
-            "Databases Only"
+            "Database"
         case .userDefaults:
-            "UserDefaults Only"
+            "UserDefaults"
         }
     }
 

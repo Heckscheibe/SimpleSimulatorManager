@@ -56,11 +56,11 @@ struct MenuTreeBuilderSnapshotTests {
             "\(Self.prefix).saveSnapshot.userDefaults"
         ])
         #expect(save.children.map(\.title) == [
-            "Everything", "Databases and UserDefaults", "Databases Only", "UserDefaults Only"
+            "Everything", "Database and UserDefaults", "Database", "UserDefaults"
         ])
         #expect(save.children.allSatisfy { $0.isSelectable && !$0.isSubmenu && !$0.isDestructive })
         #expect(save.children.map(\.accessibilityLabel) == [
-            "Everything", "Databases and UserDefaults", "Databases Only", "UserDefaults Only"
+            "Everything", "Database and UserDefaults", "Database", "UserDefaults"
         ])
     }
 
@@ -116,7 +116,7 @@ struct MenuTreeBuilderSnapshotTests {
 
         #expect(reached == level.nodes.map(\.id))
 
-        // Wraps back round to Databases Only, the third row.
+        // Wraps back round to Database, the third row.
         for _ in 0 ..< 3 {
             panel.moveSelection(.down, in: level)
         }
