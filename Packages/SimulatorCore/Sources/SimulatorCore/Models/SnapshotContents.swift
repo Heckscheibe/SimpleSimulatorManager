@@ -22,7 +22,7 @@ public enum SnapshotContentKind: String, Codable, Sendable, Hashable, CaseIterab
     var displayName: String {
         switch self {
         case .databases:
-            "databases"
+            "database"
         case .userDefaults:
             "UserDefaults"
         }
@@ -79,7 +79,7 @@ public enum SnapshotContents: Sendable, Hashable {
         }
     }
 
-    /// "databases", "databases and UserDefaults", "everything" — for a diff's header.
+    /// "database", "database and UserDefaults", "everything" — for a diff's header.
     var displayName: String {
         switch self {
         case .everything:

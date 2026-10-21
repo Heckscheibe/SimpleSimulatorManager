@@ -229,7 +229,7 @@ struct SnapshotContentsRestoreTests {
 
         #expect(diff.comparedContents == .databasesAndUserDefaults)
         #expect(diff.containerDiffs.flatMap(\.fileChanges).map(\.relativePath) == [Self.storePath])
-        #expect(diff.renderedText.contains("Compared: databases and UserDefaults"))
+        #expect(diff.renderedText.contains("Compared: database and UserDefaults"))
 
         let databasesOnly = try await Self.capture(environment, contents: .databases)
         let disjoint = try await environment.service.diff(databasesOnly, against: userDefaults)

@@ -221,7 +221,7 @@ struct SnapshotContentsCaptureTests {
         }
 
         #expect(AppSnapshotError.nothingInContents(.databases).errorDescription
-            == "This app has no database files to snapshot.")
+            == "This app has no database to snapshot.")
         #expect(await environment.service.snapshots(forBundleIdentifier: SnapshotTestEnvironment.bundleIdentifier).isEmpty)
         #expect(try FileManager.default.contentsOfDirectory(atPath: environment.storeFixture.url.path).isEmpty)
     }

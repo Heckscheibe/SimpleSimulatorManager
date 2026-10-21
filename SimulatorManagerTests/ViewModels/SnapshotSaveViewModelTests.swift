@@ -144,7 +144,7 @@ struct SnapshotSaveViewModelTests {
         environment.viewModel.saveSnapshot(of: environment.app, on: environment.device, contents: .databases)
         await environment.viewModel.waitForPendingSaves()
 
-        #expect(environment.errorReporter.reports.map(\.message) == ["This app has no database files to snapshot."])
+        #expect(environment.errorReporter.reports.map(\.message) == ["This app has no database to snapshot."])
         #expect(environment.revealed.isEmpty)
     }
 

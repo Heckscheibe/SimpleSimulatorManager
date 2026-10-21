@@ -285,9 +285,9 @@ enum AppSnapshotError: LocalizedError, Equatable {
     private static func describe(_ contents: SnapshotContents) -> String {
         switch (contents.includes(.databases), contents.includes(.userDefaults)) {
         case (true, true):
-            "database files or UserDefaults"
+            "database or UserDefaults"
         case (true, false):
-            "database files"
+            "database"
         case (false, _):
             "UserDefaults"
         }
