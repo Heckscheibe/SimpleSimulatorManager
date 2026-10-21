@@ -60,10 +60,7 @@ struct MenuTreeBuilderSnapshotTests {
         ])
         #expect(save.children.allSatisfy { $0.isSelectable && !$0.isSubmenu && !$0.isDestructive })
         #expect(save.children.map(\.accessibilityLabel) == [
-            "Everything",
-            "Databases and UserDefaults",
-            "Databases Only, SQLite and Realm. A synced Realm restores local state only.",
-            "UserDefaults Only"
+            "Everything", "Databases and UserDefaults", "Databases Only", "UserDefaults Only"
         ])
     }
 

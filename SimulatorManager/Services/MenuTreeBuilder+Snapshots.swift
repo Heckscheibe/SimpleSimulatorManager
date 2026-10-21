@@ -37,7 +37,6 @@ extension MenuTreeBuilder {
 
             return MenuNode.action(id: "\(identifier).\(option.rawValue)",
                                    title: option.title,
-                                   subtitle: option.subtitle,
                                    actions: [save])
         }
 
@@ -69,17 +68,6 @@ enum SnapshotSaveOption: String, CaseIterable {
             "Databases Only"
         case .userDefaults:
             "UserDefaults Only"
-        }
-    }
-
-    /// Restoring a synced Realm puts back only the local copy, which is easy to mistake for
-    /// rolling back the server, so the row says so where it is picked.
-    var subtitle: String? {
-        switch self {
-        case .databases:
-            "SQLite and Realm. A synced Realm restores local state only."
-        case .everything, .databasesAndUserDefaults, .userDefaults:
-            nil
         }
     }
 
