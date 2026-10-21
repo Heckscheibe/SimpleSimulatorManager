@@ -27,6 +27,17 @@ public enum SnapshotContentKind: String, Codable, Sendable, Hashable, CaseIterab
             "UserDefaults"
         }
     }
+
+    /// The wording of the panel's Save Snapshot to Folder rows, which a saved snapshot's label
+    /// repeats.
+    var labelName: String {
+        switch self {
+        case .databases:
+            "Database"
+        case .userDefaults:
+            "UserDefaults"
+        }
+    }
 }
 
 /// What a snapshot holds: the whole container, or only some kinds of file in it.
@@ -80,16 +91,15 @@ public enum SnapshotContents: Sendable, Hashable {
         }
     }
 
-    /// Appended to a snapshot's label so the label says what the snapshot holds. Empty for
-    /// ``everything``, whose label stays what it always was.
+    /// Appended to a snapshot's label so the label says what the snapshot holds, in the words of
+    /// the row it was saved from — "(Database and UserDefaults)". Empty for ``everything``, whose
+    /// label stays what it always was.
     var labelSuffix: String {
         switch self {
         case .everything:
             ""
-        case let .only(kinds) where kinds.count == 1:
-            " (\(displayName) only)"
-        case .only:
-            " (\(displayName))"
+        case let .only(kinds):
+            " (\(kinds.sorted().map(\.labelName).joined(separator: " and ")))"
         }
     }
 }

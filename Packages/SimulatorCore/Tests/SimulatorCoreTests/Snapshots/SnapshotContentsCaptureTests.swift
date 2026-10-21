@@ -293,7 +293,7 @@ struct SnapshotContentsCaptureTests {
         ) as? [String: Any]
 
         #expect(savedURL.lastPathComponent == AppSnapshotSaveServiceTests.expectedName)
-        #expect(manifest.label == "\(AppSnapshotSaveServiceTests.expectedName) (databases only)")
+        #expect(manifest.label == "\(AppSnapshotSaveServiceTests.expectedName) (Database)")
         #expect(manifest.contents == .databases)
         #expect(json?["contents"] as? [String] == ["databases"])
     }
@@ -301,9 +301,9 @@ struct SnapshotContentsCaptureTests {
     @Test("Labels for each set of contents")
     func labelSuffixes() {
         #expect(SnapshotContents.everything.labelSuffix.isEmpty)
-        #expect(SnapshotContents.databases.labelSuffix == " (databases only)")
-        #expect(SnapshotContents.userDefaults.labelSuffix == " (UserDefaults only)")
-        #expect(SnapshotContents.databasesAndUserDefaults.labelSuffix == " (databases and UserDefaults)")
+        #expect(SnapshotContents.databases.labelSuffix == " (Database)")
+        #expect(SnapshotContents.userDefaults.labelSuffix == " (UserDefaults)")
+        #expect(SnapshotContents.databasesAndUserDefaults.labelSuffix == " (Database and UserDefaults)")
     }
 }
 
