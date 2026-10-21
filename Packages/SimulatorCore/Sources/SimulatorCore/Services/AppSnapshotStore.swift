@@ -76,7 +76,7 @@ struct AppSnapshotStore: AppSnapshotStoring {
 
     func delete(_ snapshot: AppSnapshot) throws {
         try FileManager.default.removeItem(at: snapshot.directoryURL)
-        removeBundleDirectoryIfEmpty(containing: snapshot)
+        removeBundleDirectoryIfEmpty(containing: snapshot.directoryURL)
     }
 
     func move(_ snapshot: AppSnapshot, to destinationURL: URL) throws {
@@ -96,7 +96,7 @@ struct AppSnapshotStore: AppSnapshotStoring {
             throw error
         }
 
-        removeBundleDirectoryIfEmpty(containing: snapshot)
+        removeBundleDirectoryIfEmpty(containing: snapshot.directoryURL)
     }
 
     func makeSnapshotDirectory(bundleIdentifier: String, id: String) throws -> URL {
@@ -152,14 +152,16 @@ struct AppSnapshotStore: AppSnapshotStoring {
 
     func discardSnapshotDirectory(at directoryURL: URL) {
         try? FileManager.default.removeItem(at: directoryURL)
+        // A failed capture of an app with no other snapshots must leave nothing at all behind.
+        removeBundleDirectoryIfEmpty(containing: directoryURL)
     }
 }
 
 private extension AppSnapshotStore {
     /// A bundle directory with no snapshots left is litter, and an empty one would keep showing an
     /// app in any listing built from the directory names.
-    func removeBundleDirectoryIfEmpty(containing snapshot: AppSnapshot) {
-        let bundleDirectoryURL = snapshot.directoryURL.deletingLastPathComponent()
+    func removeBundleDirectoryIfEmpty(containing snapshotDirectoryURL: URL) {
+        let bundleDirectoryURL = snapshotDirectoryURL.deletingLastPathComponent()
         let remaining = (try? FileManager.default.contentsOfDirectory(atPath: bundleDirectoryURL.path)) ?? []
 
         if remaining.isEmpty {

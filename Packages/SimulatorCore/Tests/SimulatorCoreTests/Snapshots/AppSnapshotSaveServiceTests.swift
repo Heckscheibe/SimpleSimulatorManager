@@ -17,7 +17,7 @@ struct AppSnapshotSaveServiceTests {
         }
 
         let savedURL = try await Self.makeService(environment)
-            .saveSnapshot(of: environment.target, into: destination.url, includeCaches: false, progress: nil)
+            .saveSnapshot(of: environment.target, into: destination.url, contents: .everything, includeCaches: false, progress: nil)
 
         #expect(savedURL.lastPathComponent == Self.expectedName)
         #expect(savedURL.deletingLastPathComponent().standardizedFileURL == destination.url.standardizedFileURL)
@@ -40,7 +40,7 @@ struct AppSnapshotSaveServiceTests {
         }
 
         _ = try await Self.makeService(environment)
-            .saveSnapshot(of: environment.target, into: destination.url, includeCaches: false, progress: nil)
+            .saveSnapshot(of: environment.target, into: destination.url, contents: .everything, includeCaches: false, progress: nil)
 
         #expect(environment.store.allSnapshots().isEmpty)
         #expect(!FileManager.default.fileExists(atPath: environment.storeFixture
@@ -59,7 +59,7 @@ struct AppSnapshotSaveServiceTests {
         }
 
         let savedURL = try await Self.makeService(environment)
-            .saveSnapshot(of: environment.target, into: destination.url, includeCaches: true, progress: nil)
+            .saveSnapshot(of: environment.target, into: destination.url, contents: .everything, includeCaches: true, progress: nil)
 
         let cachedFile = savedURL.appendingPathComponent("containers/app-data/\(SimulatorPaths.cachesPath)/blob.bin")
         #expect(FileManager.default.fileExists(atPath: cachedFile.path))
@@ -77,7 +77,7 @@ struct AppSnapshotSaveServiceTests {
         try destination.write("keep me", at: "\(Self.expectedName)/existing.txt")
 
         let savedURL = try await Self.makeService(environment)
-            .saveSnapshot(of: environment.target, into: destination.url, includeCaches: false, progress: nil)
+            .saveSnapshot(of: environment.target, into: destination.url, contents: .everything, includeCaches: false, progress: nil)
 
         #expect(savedURL.lastPathComponent == "\(Self.expectedName) 2")
         #expect(destination.contents(at: "\(Self.expectedName)/existing.txt") == "keep me")
@@ -96,7 +96,7 @@ struct AppSnapshotSaveServiceTests {
 
         await #expect(throws: AppSnapshotSaveError.destinationMissing(path: destination.url.path)) {
             try await Self.makeService(environment)
-                .saveSnapshot(of: environment.target, into: destination.url, includeCaches: false, progress: nil)
+                .saveSnapshot(of: environment.target, into: destination.url, contents: .everything, includeCaches: false, progress: nil)
         }
         #expect(environment.store.allSnapshots().isEmpty)
     }
@@ -115,7 +115,7 @@ struct AppSnapshotSaveServiceTests {
 
         await #expect(throws: AppSnapshotSaveError.destinationNotWritable(path: destination.url.path)) {
             try await Self.makeService(environment)
-                .saveSnapshot(of: environment.target, into: destination.url, includeCaches: false, progress: nil)
+                .saveSnapshot(of: environment.target, into: destination.url, contents: .everything, includeCaches: false, progress: nil)
         }
         #expect(environment.store.allSnapshots().isEmpty)
     }
@@ -132,7 +132,7 @@ struct AppSnapshotSaveServiceTests {
         let fractions = Mutex<[Double]>([])
 
         _ = try await Self.makeService(environment)
-            .saveSnapshot(of: environment.target, into: destination.url, includeCaches: false) { fraction in
+            .saveSnapshot(of: environment.target, into: destination.url, contents: .everything, includeCaches: false) { fraction in
                 fractions.withLock { $0.append(fraction) }
             }
 

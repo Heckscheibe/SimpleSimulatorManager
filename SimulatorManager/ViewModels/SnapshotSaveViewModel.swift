@@ -57,7 +57,9 @@ final class SnapshotSaveViewModel {
         progressByKey[Self.key(for: app, on: device)]
     }
 
-    func saveSnapshot(of app: any SimulatorApp, on device: Device) {
+    /// - Parameter contents: What the snapshot holds. One save per app and device runs at a time,
+    ///   whatever its contents, since the row's progress stands in for all four choices.
+    func saveSnapshot(of app: any SimulatorApp, on device: Device, contents: SnapshotContents = .everything) {
         let key = Self.key(for: app, on: device)
 
         guard progressByKey[key] == nil else {
@@ -79,7 +81,7 @@ final class SnapshotSaveViewModel {
 
         progressByKey[key] = 0
         tasks[key] = Task { [weak self] in
-            await self?.save(target, appName: app.displayName, into: configuredFolder, key: key)
+            await self?.save(target, contents: contents, appName: app.displayName, into: configuredFolder, key: key)
             self?.finish(key)
         }
     }
@@ -97,7 +99,13 @@ final class SnapshotSaveViewModel {
 }
 
 private extension SnapshotSaveViewModel {
-    func save(_ target: AppSnapshotTarget, appName: String, into configuredFolder: URL?, key: String) async {
+    func save(
+        _ target: AppSnapshotTarget,
+        contents: SnapshotContents,
+        appName: String,
+        into configuredFolder: URL?,
+        key: String
+    ) async {
         var folder = configuredFolder
         var pickerMessage: String?
 
@@ -117,6 +125,7 @@ private extension SnapshotSaveViewModel {
             do {
                 let savedURL = try await saver.saveSnapshot(of: target,
                                                             into: destination,
+                                                            contents: contents,
                                                             includeCaches: settings.includeCachesInSnapshots) { [weak self] fraction in
                     Task { @MainActor [weak self] in
                         self?.updateProgress(fraction, key: key)

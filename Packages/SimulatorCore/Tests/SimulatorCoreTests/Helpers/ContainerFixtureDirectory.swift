@@ -24,6 +24,35 @@ struct ContainerFixtureDirectory {
         return fileURL
     }
 
+    @discardableResult
+    func write(_ data: Data, at relativePath: String) throws -> URL {
+        let fileURL = url.appendingPathComponent(relativePath)
+        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+        try data.write(to: fileURL)
+
+        return fileURL
+    }
+
+    /// A file that starts with SQLite's header, which is all detection reads. `rows` stands in for
+    /// the pages after it, so two versions of one database can be told apart.
+    @discardableResult
+    func writeSQLiteDatabase(at relativePath: String, rows: String = "rows") throws -> URL {
+        try write(Data("SQLite format 3\0".utf8) + Data(rows.utf8), at: relativePath)
+    }
+
+    /// An unencrypted Realm file: Realm's `T-DB` marker at bytes 16–19 of its header.
+    @discardableResult
+    func writeRealmDatabase(at relativePath: String, objects: String = "objects") throws -> URL {
+        try write(Data(count: 16) + Data("T-DB".utf8) + Data(objects.utf8), at: relativePath)
+    }
+
+    /// An encrypted Realm, which has no readable header — only its extension says what it is.
+    @discardableResult
+    func writeEncryptedRealmDatabase(at relativePath: String) throws -> URL {
+        try write(Data((0 ..< 64).map { UInt8(($0 * 37 + 11) % 256) }), at: relativePath)
+    }
+
     /// Writes a defaults domain the way `UserDefaults` does: `<domain>.plist` in
     /// `Library/Preferences`.
     @discardableResult
@@ -104,7 +133,7 @@ struct ContainerFixtureDirectory {
     func relativeFilePaths() -> Set<String> {
         var paths: Set<String> = []
 
-        SnapshotContainerFiles.enumerateContainer(at: url, includeCaches: true) { _, relativePath, entry in
+        SnapshotContainerFiles.enumerateContainer(at: url, scope: .everything(includeCaches: true)) { _, relativePath, entry in
             if entry.isFile {
                 paths.insert(relativePath)
             }
