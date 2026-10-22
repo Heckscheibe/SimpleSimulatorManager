@@ -45,6 +45,13 @@ struct AgentIntegrationSection: View {
                         .foregroundStyle(.secondary)
                 }
 
+                VStack(alignment: .leading, spacing: 2) {
+                    Toggle("Allow app snapshots", isOn: $viewModel.allowSnapshots)
+                    Text("Capturing copies an app's data and may terminate the app; restoring overwrites its containers.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Picker("Agent", selection: $viewModel.selectedClient) {
                     ForEach(MCPClient.allCases) { client in
                         Text(client.title).tag(client)

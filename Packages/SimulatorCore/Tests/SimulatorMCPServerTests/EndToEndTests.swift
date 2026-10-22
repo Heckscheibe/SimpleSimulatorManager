@@ -19,7 +19,11 @@ struct EndToEndTests {
         cleanupService: MockSimulatorCleanupService = MockSimulatorCleanupService(),
         _ body: (Client) async throws -> T
     ) async throws -> T {
-        let server = await SimulatorMCPServer.makeServer(registry: simulators.registry(options, cleanupService: cleanupService))
+        try await withClient(registry: simulators.registry(options, cleanupService: cleanupService), body)
+    }
+
+    private func withClient<T>(registry: ToolRegistry, _ body: (Client) async throws -> T) async throws -> T {
+        let server = await SimulatorMCPServer.makeServer(registry: registry)
         let client = Client(name: "test-client", version: "1.0")
         let (clientTransport, serverTransport) = await InMemoryTransport.createConnectedPair()
 
@@ -53,19 +57,49 @@ struct EndToEndTests {
             try await client.listTools().tools.map(\.name)
         }
 
-        #expect(names.count == 8)
+        #expect(names.count == 9)
         #expect(names.contains("shutdown_all_simulators"))
     }
 
-    @Test("Both flags list twelve tools over the wire")
-    func listsAllToolsWithBothFlags() async throws {
+    @Test("All flags list seventeen tools over the wire")
+    func listsAllToolsWithAllFlags() async throws {
         defer { simulators.remove() }
 
         let count = try await withClient(.allFlags) { client in
             try await client.listTools().tools.count
         }
 
-        #expect(count == 12)
+        #expect(count == 17)
+    }
+
+    @Test("The migration loop over the wire: capture, change, diff, restore, diff again")
+    func snapshotLoop() async throws {
+        let fixture = try SnapshotToolFixture()
+
+        defer {
+            simulators.remove()
+            fixture.remove()
+        }
+
+        try await withClient(registry: fixture.registry()) { client in
+            let capture = try await callTool(client, "capture_snapshot", [
+                "bundle_id": .string(Sample.appBundleId), "udid": .string(Sample.iPhoneUdid), "contents": "databases"
+            ])
+            let id = try #require((capture["snapshot"] as? [String: Any])?["id"] as? String)
+
+            try fixture.write(Data("SQLite format 3\0".utf8) + Data("migrated".utf8), at: "Library/Application Support/Model.sqlite")
+            try fixture.write("new wal", at: "Library/Application Support/Model.sqlite-wal")
+
+            let changed = try await callTool(client, "diff_snapshot", ["snapshot_id": .string(id), "against_live": true])
+            #expect(changed["hasChanges"] as? Bool == true)
+
+            let restore = try await callTool(client, "restore_snapshot", ["snapshot_id": .string(id)])
+            #expect(restore["restored"] as? Bool == true)
+
+            let unchanged = try await callTool(client, "diff_snapshot", ["snapshot_id": .string(id), "against_live": true])
+            #expect(unchanged["hasChanges"] as? Bool == false)
+            #expect(fixture.contents(at: "Library/Application Support/Model.sqlite-wal") == "wal")
+        }
     }
 
     @Test("list_devices returns every simulator and filters by platform and state")

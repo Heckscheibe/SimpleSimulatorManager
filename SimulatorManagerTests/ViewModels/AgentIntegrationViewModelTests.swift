@@ -27,8 +27,9 @@ struct AgentIntegrationViewModelTests {
 
         viewModel.allowUserDefaults = true
         viewModel.allowDestructive = true
+        viewModel.allowSnapshots = true
 
-        #expect(viewModel.configuration.arguments == ["--allow-user-defaults", "--allow-destructive"])
+        #expect(viewModel.configuration.arguments == ["--allow-user-defaults", "--allow-destructive", "--allow-snapshots"])
         #expect(viewModel.configuration.executablePath == pathBefore)
     }
 
