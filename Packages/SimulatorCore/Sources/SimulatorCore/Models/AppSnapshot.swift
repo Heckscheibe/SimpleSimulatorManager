@@ -8,11 +8,11 @@
 import Foundation
 
 /// Which of an app's containers a snapshot payload was captured from.
-enum SnapshotContainerKind: Codable, Sendable, Hashable {
+public enum SnapshotContainerKind: Codable, Sendable, Hashable {
     case appData
     case appGroup(identifier: String)
 
-    var displayName: String {
+    public var displayName: String {
         switch self {
         case .appData:
             "App Container"
@@ -23,17 +23,17 @@ enum SnapshotContainerKind: Codable, Sendable, Hashable {
 }
 
 /// One container inside a snapshot, and where its payload sits.
-struct CapturedContainer: Codable, Sendable, Equatable, Identifiable {
-    let kind: SnapshotContainerKind
+public struct CapturedContainer: Codable, Sendable, Equatable, Identifiable {
+    public let kind: SnapshotContainerKind
     /// Directory name under the snapshot's `containers` directory.
     ///
     /// Recorded rather than derived from the container's identity: an app group identifier is not
     /// a safe directory name, and a scheme that mangles one into a name has to be reversible for
     /// restore to find the payload again. A recorded name never has to be reversed.
-    let payloadDirectoryName: String
-    let byteSize: Int64
+    public let payloadDirectoryName: String
+    public let byteSize: Int64
 
-    var id: String {
+    public var id: String {
         payloadDirectoryName
     }
 }
@@ -43,38 +43,38 @@ struct CapturedContainer: Codable, Sendable, Equatable, Identifiable {
 /// Written as JSON beside the payload. It is the only thing that survives every other part of the
 /// system: the app can be uninstalled and the device erased, and the manifest still says what the
 /// payload is and what it may safely be restored onto.
-struct AppSnapshotManifest: Codable, Sendable, Equatable {
+public struct AppSnapshotManifest: Codable, Sendable, Equatable {
     static let fileName = "manifest.json"
     static let containersDirectoryName = "containers"
     static let appDataPayloadDirectoryName = "app-data"
 
-    let id: String
-    let label: String
-    let bundleIdentifier: String
-    let appDisplayName: String
-    let appShortVersion: String?
-    let appBuildVersion: String?
-    let deviceUDID: String
-    let deviceName: String
-    let osVersion: String
-    let createdAt: Date
+    public let id: String
+    public let label: String
+    public let bundleIdentifier: String
+    public let appDisplayName: String
+    public let appShortVersion: String?
+    public let appBuildVersion: String?
+    public let deviceUDID: String
+    public let deviceName: String
+    public let osVersion: String
+    public let createdAt: Date
     /// Whether `Library/Caches` and `tmp` are part of the payload. Restore needs this to know
     /// which parts of the live container it must leave alone.
-    let includesCaches: Bool
+    public let includesCaches: Bool
     /// What the payload holds. Restore and a live diff touch only these files, so a narrower
     /// snapshot never wipes or reports the rest of the container.
-    let contents: SnapshotContents
-    let totalByteSize: Int64
-    let containers: [CapturedContainer]
+    public let contents: SnapshotContents
+    public let totalByteSize: Int64
+    public let containers: [CapturedContainer]
     /// Set on the snapshot a restore takes of the live container before overwriting it, so the
     /// list can tell an undo point apart from one the user deliberately created.
-    let isSafetySnapshot: Bool
+    public let isSafetySnapshot: Bool
 }
 
 extension AppSnapshotManifest {
     /// A manifest written before snapshots had contents holds the whole container, and decodes as
     /// ``SnapshotContents/everything`` so it restores and diffs exactly as it always did.
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         id = try container.decode(String.self, forKey: .id)
@@ -121,11 +121,11 @@ extension AppSnapshotManifest {
 }
 
 /// A snapshot on disk: its manifest, and the directory holding both.
-struct AppSnapshot: Sendable, Equatable, Identifiable {
-    let manifest: AppSnapshotManifest
-    let directoryURL: URL
+public struct AppSnapshot: Sendable, Equatable, Identifiable {
+    public let manifest: AppSnapshotManifest
+    public let directoryURL: URL
 
-    var id: String {
+    public var id: String {
         manifest.id
     }
 
@@ -153,13 +153,13 @@ struct AppGroupContainer: Sendable, Equatable {
 /// Public so the app can resolve one on the main actor and hand it to ``AppSnapshotSaving``; its
 /// contents stay internal.
 public struct AppSnapshotTarget: Sendable, Equatable {
-    let bundleIdentifier: String
-    let appDisplayName: String
+    public let bundleIdentifier: String
+    public let appDisplayName: String
     let appShortVersion: String?
     let appBuildVersion: String?
-    let deviceUDID: String
-    let deviceName: String
-    let osVersion: String
+    public let deviceUDID: String
+    public let deviceName: String
+    public let osVersion: String
     /// The app's data container root — the directory holding `Documents`, `Library` and `tmp`.
     let dataContainerURL: URL
     let appGroupContainers: [AppGroupContainer]
@@ -193,11 +193,27 @@ extension AppSnapshotTarget {
     }
 }
 
+/// What a capture did about the running app before copying.
+public enum AppTermination: Sendable, Equatable {
+    /// The caller asked to leave the app running.
+    case notRequested
+    case terminated
+    case notRunning
+    /// Reported rather than fatal, as for restore; the capture went ahead regardless.
+    case failed(message: String)
+}
+
+/// A finished capture, and whether the app was stopped for it.
+public struct SnapshotCapture: Sendable, Equatable {
+    public let snapshot: AppSnapshot
+    public let termination: AppTermination
+}
+
 /// A difference between a snapshot and the app it is about to be restored onto.
 ///
 /// Reported rather than acted on: the service has no business deciding whether a mismatch is
 /// acceptable, and the confirmation the user sees already exists in the app's `DestructiveActionConfirming`.
-enum SnapshotRestoreWarning: Sendable, Equatable {
+public enum SnapshotRestoreWarning: Sendable, Equatable {
     case appShortVersionMismatch(snapshot: String?, target: String?)
     case appBuildVersionMismatch(snapshot: String?, target: String?)
     case osVersionMismatch(snapshot: String, target: String)
@@ -208,7 +224,7 @@ enum SnapshotRestoreWarning: Sendable, Equatable {
     /// The restore leaves it as it is, so the app starts from a mix of old and current data.
     case containerNotInSnapshot(SnapshotContainerKind)
 
-    var message: String {
+    public var message: String {
         switch self {
         case let .appShortVersionMismatch(snapshot, target):
             "App version differs: the snapshot was taken from \(Self.describe(snapshot)), the installed app is \(Self.describe(target))."
@@ -236,23 +252,23 @@ enum SnapshotRestoreWarning: Sendable, Equatable {
 ///
 /// Producing it is the only place a restore can be refused, so nothing is overwritten by a call
 /// that was never going to be legal.
-struct SnapshotRestorePlan: Sendable, Equatable {
-    let snapshot: AppSnapshot
-    let target: AppSnapshotTarget
-    let warnings: [SnapshotRestoreWarning]
+public struct SnapshotRestorePlan: Sendable, Equatable {
+    public let snapshot: AppSnapshot
+    public let target: AppSnapshotTarget
+    public let warnings: [SnapshotRestoreWarning]
 
-    var hasWarnings: Bool {
+    public var hasWarnings: Bool {
         !warnings.isEmpty
     }
 }
 
 /// How far a capture or restore has got, for a caller driving an indicator.
-struct SnapshotProgress: Sendable, Equatable {
-    let copiedByteCount: Int64
-    let totalByteCount: Int64
-    let currentRelativePath: String
+public struct SnapshotProgress: Sendable, Equatable {
+    public let copiedByteCount: Int64
+    public let totalByteCount: Int64
+    public let currentRelativePath: String
 
-    var fractionCompleted: Double {
+    public var fractionCompleted: Double {
         guard totalByteCount > 0 else {
             return 0
         }
@@ -261,7 +277,7 @@ struct SnapshotProgress: Sendable, Equatable {
     }
 }
 
-enum AppSnapshotError: LocalizedError, Equatable {
+public enum AppSnapshotError: LocalizedError, Equatable {
     case storageUnavailable
     case bundleIdentifierMismatch(snapshot: String, target: String)
     case missingPayload(containerName: String)
@@ -275,7 +291,7 @@ enum AppSnapshotError: LocalizedError, Equatable {
     /// them would compare nothing and report no differences.
     case nothingToCompare(SnapshotContents, SnapshotContents)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .storageUnavailable:
             "The snapshot folder in Application Support could not be created."

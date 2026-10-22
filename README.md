@@ -123,15 +123,19 @@ The app lives in the menu bar — there is no main window.
 `simple-simulator-mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that
 gives coding agents such as Claude Code, VS Code Copilot, Codex or Cursor the same knowledge the
 menu has: simulators, installed apps, their data, bundle and app-group containers, recent installs
-and cleanup candidates. It runs over stdio as a subprocess of the agent, works whether or not the
+and cleanup candidates — and it can snapshot, diff and restore an app's data, which is what testing
+a database migration over and over needs. It runs over stdio as a subprocess of the agent, works whether or not the
 menu bar app is running, and opens no network port. Tools take UDIDs, bundle identifiers and other
 identifiers — never file paths.
 
-It is read-only by default, plus `shutdown_all_simulators`, which loses no data. Two launch flags,
-set per agent in its MCP config, opt into more:
+It is read-only by default, plus `shutdown_all_simulators`, which loses no data. Three launch
+flags, set per agent in its MCP config, opt into more:
 
-- `--allow-user-defaults` enables `read_user_defaults` (UserDefaults can hold tokens or personal data)
+- `--allow-user-defaults` enables `read_user_defaults` (UserDefaults can hold tokens or personal
+  data), and adds UserDefaults values to `diff_snapshot`
 - `--allow-destructive` enables `erase_device`, `erase_all_simulators` and `delete_cleanup_candidate`
+- `--allow-snapshots` enables `capture_snapshot`, `diff_snapshot`, `restore_snapshot` and
+  `delete_snapshot`, without unlocking the destructive tools
 
 | Tool | Available |
 |---|---|
@@ -139,10 +143,30 @@ set per agent in its MCP config, opt into more:
 | `shutdown_all_simulators` | always |
 | `read_user_defaults` | with `--allow-user-defaults` |
 | `erase_device`, `erase_all_simulators`, `delete_cleanup_candidate` | with `--allow-destructive` |
+| `list_snapshots` | always (read-only) |
+| `capture_snapshot`, `diff_snapshot`, `restore_snapshot`, `delete_snapshot` | with `--allow-snapshots` |
 
 > **Privacy:** `read_user_defaults` hands an app's preferences to the agent, and from there possibly
 > to a model provider. UserDefaults often hold tokens, user identifiers or other personal data, so
-> enable it only for agents you trust with that data.
+> enable it only for agents you trust with that data. Snapshots copy whatever the app stored,
+> unencrypted, to `~/Library/Application Support/SimulatorManager/Snapshots`; the agent only sees
+> file names and sizes, and defaults values only with `--allow-user-defaults`.
+
+### Testing a migration
+
+With `--allow-snapshots`, an agent can freeze the data an old build left behind and run the new
+build against exactly that data as often as it takes:
+
+```
+find_app → capture_snapshot (old build, contents: "databases")
+  → build and install the new build, launch it (xcodebuild / simctl — not this server)
+  → diff_snapshot against_live → restore_snapshot (accept_warnings: true) → repeat
+```
+
+`capture_snapshot` terminates the app first so the database and its `-wal` are copied in a
+consistent state. `restore_snapshot` terminates it too, takes a safety snapshot whose id it returns,
+and with `contents: "databases"` or `"userDefaults"` replaces only those files. Snapshots take disk
+space: `list_snapshots` reports `byteSize`, `delete_snapshot` removes one.
 
 ### Setup
 
@@ -196,8 +220,8 @@ args = []
 }
 ```
 
-Put `--allow-user-defaults` and/or `--allow-destructive` into `args` (or after the path, for
-Claude Code) to opt in.
+Put `--allow-user-defaults`, `--allow-destructive` and/or `--allow-snapshots` into `args` (or after
+the path, for Claude Code) to opt in.
 
 To run it from a checkout instead, build it with SwiftPM:
 

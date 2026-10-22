@@ -23,6 +23,8 @@ public enum SimulatorQueryError: LocalizedError, Equatable {
     case unknownUserDefaultsDomain(domain: String, available: [String])
     case noUserDefaults(subject: String)
     case unknownCleanupCandidate(id: String)
+    case unknownSnapshot(id: String)
+    case appHasNoDataContainer(bundleIdentifier: String, udid: String)
 
     public var errorDescription: String? {
         switch self {
@@ -42,6 +44,10 @@ public enum SimulatorQueryError: LocalizedError, Equatable {
             "\(subject) has not written any UserDefaults yet."
         case let .unknownCleanupCandidate(id):
             "No cleanup candidate with id \(id) exists. Call list_cleanup_candidates for current ids."
+        case let .unknownSnapshot(id):
+            "No snapshot with id \(id) exists. Call list_snapshots for current ids."
+        case let .appHasNoDataContainer(bundleIdentifier, udid):
+            "\(bundleIdentifier) on simulator \(udid) has no data container to snapshot. Launch it once so the simulator creates one."
         }
     }
 }
@@ -61,6 +67,12 @@ public protocol SimulatorQuerying: Sendable {
     func eraseDevice(withUdid udid: String) async throws
     func eraseAllSimulators() async throws
     func deleteCleanupCandidate(withId id: String) async throws -> CleanupCandidateDTO
+
+    func snapshots(ofBundleIdentifier bundleIdentifier: String?) async throws -> [SnapshotDTO]
+    func captureSnapshot(_ request: SnapshotCaptureRequest) async throws -> SnapshotCaptureDTO
+    func diffSnapshot(_ request: SnapshotDiffRequest) async throws -> SnapshotDiffDTO
+    func restoreSnapshot(withId id: String, ontoDeviceWithUdid udid: String?, acceptingWarnings: Bool) async throws -> SnapshotRestoreDTO
+    func deleteSnapshot(withId id: String) async throws -> SnapshotDTO
 }
 
 /// Answers tool calls from the same services the menu bar app uses, so both always agree.
@@ -73,6 +85,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     private let userDefaultsExporter: any UserDefaultsExporting
     private let resetService: any SimulatorResetServing
     private let cleanupService: any SimulatorCleanupServing
+    let snapshotService: any AppSnapshotting
 
     /// Disk scans block for as long as the simulators take to enumerate, so — as in
     /// `SimulatorCleanupService.workQueue` — they run here rather than on a cooperative thread.
@@ -87,13 +100,15 @@ public struct SimulatorQueryService: SimulatorQuerying {
         appDiscoveryService: AppDiscoveryService = AppDiscoveryService(),
         userDefaultsExporter: any UserDefaultsExporting = UserDefaultsExportService(),
         resetService: any SimulatorResetServing = SimulatorResetService(),
-        cleanupService: any SimulatorCleanupServing = SimulatorCleanupService()
+        cleanupService: any SimulatorCleanupServing = SimulatorCleanupService(),
+        snapshotService: any AppSnapshotting = AppSnapshotService()
     ) {
         self.deviceLoader = deviceLoader
         self.appDiscoveryService = appDiscoveryService
         self.userDefaultsExporter = userDefaultsExporter
         self.resetService = resetService
         self.cleanupService = cleanupService
+        self.snapshotService = snapshotService
     }
 
     // MARK: - Reading
@@ -257,7 +272,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
 
 // MARK: - Helpers
 
-private extension SimulatorQueryService {
+extension SimulatorQueryService {
     static func appOrder(_ lhs: any SimulatorApp, _ rhs: any SimulatorApp) -> Bool {
         (lhs.displayName.localizedLowercase, lhs.bundleIdentifier) < (rhs.displayName.localizedLowercase, rhs.bundleIdentifier)
     }
