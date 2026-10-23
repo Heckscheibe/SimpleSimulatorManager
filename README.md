@@ -52,6 +52,15 @@ Simple Simulator Manager puts it two clicks from the menu bar.
 - Updates live as you build and install — no manual refresh
 - Can be hidden if you don't want it
 
+**Snapshots for database migration testing**
+- **Save Snapshot to Folder** copies an app's data — everything, only its database (SQLite, Core
+  Data, SwiftData, GRDB, Realm), only its UserDefaults, or both — so you keep exactly what an older
+  build left behind
+- Built for testing migrations: save the old build's database before installing the new build, and
+  the migrated one before trying a downgrade
+- With the [MCP server](#use-with-ai-agents-mcp), an agent captures, restores and diffs the data
+  itself, so it can run a migration, a relaunch or a downgrade again and again from the same data
+
 **Cleanup**
 - Detects unavailable, orphaned and otherwise invalid simulators
 - Shows the deletion reason, disk usage and last boot time before you remove anything
@@ -123,10 +132,11 @@ The app lives in the menu bar — there is no main window.
 `simple-simulator-mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that
 gives coding agents such as Claude Code, VS Code Copilot, Codex or Cursor the same knowledge the
 menu has: simulators, installed apps, their data, bundle and app-group containers, recent installs
-and cleanup candidates — and it can snapshot, diff and restore an app's data, which is what testing
-a database migration over and over needs. It runs over stdio as a subprocess of the agent, works whether or not the
-menu bar app is running, and opens no network port. Tools take UDIDs, bundle identifiers and other
-identifiers — never file paths.
+and cleanup candidates. Its main job beyond that is **database migration testing**: it snapshots,
+diffs and restores an app's data, so an agent can run a migration again and again from exactly the
+same old-build data (see [Testing a migration](#testing-a-migration)). It runs over stdio as a
+subprocess of the agent, works whether or not the menu bar app is running, and opens no network
+port. Tools take UDIDs, bundle identifiers and other identifiers — never file paths.
 
 It is read-only by default, plus `shutdown_all_simulators`, which loses no data. Three launch
 flags, set per agent in its MCP config, opt into more:
@@ -154,19 +164,32 @@ flags, set per agent in its MCP config, opt into more:
 
 ### Testing a migration
 
-With `--allow-snapshots`, an agent can freeze the data an old build left behind and run the new
-build against exactly that data as often as it takes:
+This is what the snapshot tools are for. With `--allow-snapshots`, an agent can freeze the database
+an old build left behind and run the new build against exactly that data as often as it takes:
 
 ```
 find_app → capture_snapshot (old build, contents: "databases")
   → build and install the new build, launch it (xcodebuild / simctl — not this server)
-  → diff_snapshot against_live → restore_snapshot (accept_warnings: true) → repeat
+  → diff_snapshot against_live (what did the migration change?)
+  → restore_snapshot (accept_warnings: true) → diff_snapshot against_live (old data back?) → repeat
 ```
+
+The same tools cover the rest of an upgrade and downgrade check:
+
+| Scenario | How |
+|---|---|
+| Migrate the old data with the new build, repeatedly | restore the old-build snapshot, launch the new build, read the result, repeat |
+| Relaunch the new build on data it already migrated | launch it again without restoring; `diff_snapshot` against a snapshot of the migrated data |
+| Downgrade: the old build on migrated data | capture the migrated data, reinstall the old build and launch it; `diff_snapshot` shows whether it touched the database |
+| Back to the new build after a downgrade | reinstall the new build and launch it; restore the migrated snapshot to start over |
 
 `capture_snapshot` terminates the app first so the database and its `-wal` are copied in a
 consistent state. `restore_snapshot` terminates it too, takes a safety snapshot whose id it returns,
-and with `contents: "databases"` or `"userDefaults"` replaces only those files. Snapshots take disk
-space: `list_snapshots` reports `byteSize`, `delete_snapshot` removes one.
+and with `contents: "databases"` or `"userDefaults"` replaces only those files, so logs and other
+files in the container keep what every launch wrote. A restore onto another app or OS version
+returns warnings and writes nothing until `accept_warnings: true` — expected when testing a
+migration. Snapshots take disk space: `list_snapshots` reports `byteSize`, `delete_snapshot` removes
+one.
 
 ### Setup
 

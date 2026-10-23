@@ -73,6 +73,20 @@ struct SnapshotToolTests {
         #expect(terminateApp?["description"]?.stringValue?.contains("Terminate the app") == true)
     }
 
+    @Test("The server instructions and the snapshot tools say they are for migration testing")
+    func descriptionsNameMigrationTesting() {
+        let tools = fixture.registry().tools.filter { ["capture_snapshot", "diff_snapshot", "restore_snapshot"].contains($0.name) }
+
+        defer { fixture.remove() }
+
+        #expect(SimulatorMCPServer.instructions.contains("database migration"))
+        #expect(SimulatorMCPServer.instructions.contains("downgrade"))
+        #expect(tools.count == 3)
+        for tool in tools {
+            #expect(tool.description?.contains("migration") == true, "\(tool.name)")
+        }
+    }
+
     // MARK: - Listing and deleting
 
     @Test("list_snapshots lists newest first and filters by app; delete_snapshot removes one")
