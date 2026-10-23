@@ -61,6 +61,9 @@ struct AppSnapshotManifest: Codable, Sendable, Equatable {
     /// Whether `Library/Caches` and `tmp` are part of the payload. Restore needs this to know
     /// which parts of the live container it must leave alone.
     let includesCaches: Bool
+    /// What the payload holds. Restore and a live diff touch only these files, so a narrower
+    /// snapshot never wipes or reports the rest of the container.
+    let contents: SnapshotContents
     let totalByteSize: Int64
     let containers: [CapturedContainer]
     /// Set on the snapshot a restore takes of the live container before overwriting it, so the
@@ -69,6 +72,33 @@ struct AppSnapshotManifest: Codable, Sendable, Equatable {
 }
 
 extension AppSnapshotManifest {
+    /// A manifest written before snapshots had contents holds the whole container, and decodes as
+    /// ``SnapshotContents/everything`` so it restores and diffs exactly as it always did.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(String.self, forKey: .id)
+        label = try container.decode(String.self, forKey: .label)
+        bundleIdentifier = try container.decode(String.self, forKey: .bundleIdentifier)
+        appDisplayName = try container.decode(String.self, forKey: .appDisplayName)
+        appShortVersion = try container.decodeIfPresent(String.self, forKey: .appShortVersion)
+        appBuildVersion = try container.decodeIfPresent(String.self, forKey: .appBuildVersion)
+        deviceUDID = try container.decode(String.self, forKey: .deviceUDID)
+        deviceName = try container.decode(String.self, forKey: .deviceName)
+        osVersion = try container.decode(String.self, forKey: .osVersion)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        includesCaches = try container.decode(Bool.self, forKey: .includesCaches)
+        contents = try container.decodeIfPresent(SnapshotContents.self, forKey: .contents) ?? .everything
+        totalByteSize = try container.decode(Int64.self, forKey: .totalByteSize)
+        containers = try container.decode([CapturedContainer].self, forKey: .containers)
+        isSafetySnapshot = try container.decode(Bool.self, forKey: .isSafetySnapshot)
+    }
+
+    /// The scope a restore or a live diff of this snapshot works on.
+    var scope: SnapshotScope {
+        SnapshotScope(contents: contents, includeCaches: includesCaches)
+    }
+
     /// Timestamps are kept in JSON as ISO 8601 with milliseconds, which is readable and orders
     /// correctly in a plain listing but is not the full resolution of a `Date`.
     ///
@@ -232,6 +262,8 @@ enum AppSnapshotError: LocalizedError, Equatable {
     case missingPayload(containerName: String)
     case unreadableManifest(snapshotID: String)
     case nothingToCapture
+    /// A narrower snapshot found none of the files it is limited to.
+    case nothingInContents(SnapshotContents)
 
     var errorDescription: String? {
         switch self {
@@ -245,6 +277,19 @@ enum AppSnapshotError: LocalizedError, Equatable {
             "Snapshot \(snapshotID) could not be read."
         case .nothingToCapture:
             "This app has no container to snapshot."
+        case let .nothingInContents(contents):
+            "This app has no \(Self.describe(contents)) to snapshot."
+        }
+    }
+
+    private static func describe(_ contents: SnapshotContents) -> String {
+        switch (contents.includes(.databases), contents.includes(.userDefaults)) {
+        case (true, true):
+            "database or UserDefaults"
+        case (true, false):
+            "database"
+        case (false, _):
+            "UserDefaults"
         }
     }
 }

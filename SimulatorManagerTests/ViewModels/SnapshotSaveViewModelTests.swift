@@ -118,6 +118,36 @@ struct SnapshotSaveViewModelTests {
         #expect(environment.viewModel.progress(for: environment.app, on: environment.device) == nil)
     }
 
+    @Test("The contents picked are what is saved")
+    func passesContentsThrough() async {
+        let environment = Environment()
+        defer { environment.tearDown() }
+
+        environment.settings.snapshotExportFolder = Self.configuredFolder
+
+        environment.viewModel.saveSnapshot(of: environment.app, on: environment.device, contents: .userDefaults)
+        await environment.viewModel.waitForPendingSaves()
+
+        let expected = MockAppSnapshotSaver.Call(directoryURL: Self.configuredFolder,
+                                                 includeCaches: false,
+                                                 contents: .userDefaults)
+        #expect(environment.saver.calls == [expected])
+    }
+
+    @Test("An option that finds nothing is reported as such")
+    func nothingInContentsIsReported() async {
+        let environment = Environment(results: [.failure(AppSnapshotError.nothingInContents(.databases))])
+        defer { environment.tearDown() }
+
+        environment.settings.snapshotExportFolder = Self.configuredFolder
+
+        environment.viewModel.saveSnapshot(of: environment.app, on: environment.device, contents: .databases)
+        await environment.viewModel.waitForPendingSaves()
+
+        #expect(environment.errorReporter.reports.map(\.message) == ["This app has no database to snapshot."])
+        #expect(environment.revealed.isEmpty)
+    }
+
     @Test("An app without a data container is refused before anything starts")
     func appWithoutContainer() async {
         let environment = Environment()

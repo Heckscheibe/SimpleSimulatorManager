@@ -57,6 +57,9 @@ struct AppSnapshotDiff: Sendable, Equatable {
     /// What was compared, for the exported header — "Snapshot A" against "the live container".
     let oldDescription: String
     let newDescription: String
+    /// What both sides hold, and so what was compared. Anything else was left out on purpose — a
+    /// databases-only snapshot says nothing about the documents beside them.
+    let comparedContents: SnapshotContents
     let containerDiffs: [SnapshotContainerDiff]
 
     var hasChanges: Bool {
@@ -67,7 +70,13 @@ struct AppSnapshotDiff: Sendable, Equatable {
 extension AppSnapshotDiff {
     /// The diff as plain text, which is what gets exported.
     var renderedText: String {
-        var lines = ["\(oldDescription) → \(newDescription)", ""]
+        var lines = ["\(oldDescription) → \(newDescription)"]
+
+        if comparedContents != .everything {
+            lines.append("Compared: \(comparedContents.displayName)")
+        }
+
+        lines.append("")
 
         guard hasChanges else {
             lines.append("No differences.")
