@@ -52,6 +52,15 @@ Simple Simulator Manager puts it two clicks from the menu bar.
 - Updates live as you build and install — no manual refresh
 - Can be hidden if you don't want it
 
+**Snapshots for database migration testing**
+- **Save Snapshot to Folder** copies an app's data — everything, only its database (SQLite, Core
+  Data, SwiftData, GRDB, Realm), only its UserDefaults, or both — so you keep exactly what an older
+  build left behind
+- Built for testing migrations: save the old build's database before installing the new build, and
+  the migrated one before trying a downgrade
+- With the [MCP server](#use-with-ai-agents-mcp), an agent captures, restores and diffs the data
+  itself, so it can run a migration, a relaunch or a downgrade again and again from the same data
+
 **Cleanup**
 - Detects unavailable, orphaned and otherwise invalid simulators
 - Shows the deletion reason, disk usage and last boot time before you remove anything
@@ -123,15 +132,20 @@ The app lives in the menu bar — there is no main window.
 `simple-simulator-mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server that
 gives coding agents such as Claude Code, VS Code Copilot, Codex or Cursor the same knowledge the
 menu has: simulators, installed apps, their data, bundle and app-group containers, recent installs
-and cleanup candidates. It runs over stdio as a subprocess of the agent, works whether or not the
-menu bar app is running, and opens no network port. Tools take UDIDs, bundle identifiers and other
-identifiers — never file paths.
+and cleanup candidates. Its main job beyond that is **database migration testing**: it snapshots,
+diffs and restores an app's data, so an agent can run a migration again and again from exactly the
+same old-build data (see [Testing a migration](#testing-a-migration)). It runs over stdio as a
+subprocess of the agent, works whether or not the menu bar app is running, and opens no network
+port. Tools take UDIDs, bundle identifiers and other identifiers — never file paths.
 
-It is read-only by default, plus `shutdown_all_simulators`, which loses no data. Two launch flags,
-set per agent in its MCP config, opt into more:
+It is read-only by default, plus `shutdown_all_simulators`, which loses no data. Three launch
+flags, set per agent in its MCP config, opt into more:
 
-- `--allow-user-defaults` enables `read_user_defaults` (UserDefaults can hold tokens or personal data)
+- `--allow-user-defaults` enables `read_user_defaults` (UserDefaults can hold tokens or personal
+  data), and adds UserDefaults values to `diff_snapshot`
 - `--allow-destructive` enables `erase_device`, `erase_all_simulators` and `delete_cleanup_candidate`
+- `--allow-snapshots` enables `capture_snapshot`, `diff_snapshot`, `restore_snapshot` and
+  `delete_snapshot`, without unlocking the destructive tools
 
 | Tool | Available |
 |---|---|
@@ -139,10 +153,43 @@ set per agent in its MCP config, opt into more:
 | `shutdown_all_simulators` | always |
 | `read_user_defaults` | with `--allow-user-defaults` |
 | `erase_device`, `erase_all_simulators`, `delete_cleanup_candidate` | with `--allow-destructive` |
+| `list_snapshots` | always (read-only) |
+| `capture_snapshot`, `diff_snapshot`, `restore_snapshot`, `delete_snapshot` | with `--allow-snapshots` |
 
 > **Privacy:** `read_user_defaults` hands an app's preferences to the agent, and from there possibly
 > to a model provider. UserDefaults often hold tokens, user identifiers or other personal data, so
-> enable it only for agents you trust with that data.
+> enable it only for agents you trust with that data. Snapshots copy whatever the app stored,
+> unencrypted, to `~/Library/Application Support/SimulatorManager/Snapshots`; the agent only sees
+> file names and sizes, and defaults values only with `--allow-user-defaults`.
+
+### Testing a migration
+
+This is what the snapshot tools are for. With `--allow-snapshots`, an agent can freeze the database
+an old build left behind and run the new build against exactly that data as often as it takes:
+
+```
+find_app → capture_snapshot (old build, contents: "databases")
+  → build and install the new build, launch it (xcodebuild / simctl — not this server)
+  → diff_snapshot against_live (what did the migration change?)
+  → restore_snapshot (accept_warnings: true) → diff_snapshot against_live (old data back?) → repeat
+```
+
+The same tools cover the rest of an upgrade and downgrade check:
+
+| Scenario | How |
+|---|---|
+| Migrate the old data with the new build, repeatedly | restore the old-build snapshot, launch the new build, read the result, repeat |
+| Relaunch the new build on data it already migrated | launch it again without restoring; `diff_snapshot` against a snapshot of the migrated data |
+| Downgrade: the old build on migrated data | capture the migrated data, reinstall the old build and launch it; `diff_snapshot` shows whether it touched the database |
+| Back to the new build after a downgrade | reinstall the new build and launch it; restore the migrated snapshot to start over |
+
+`capture_snapshot` terminates the app first so the database and its `-wal` are copied in a
+consistent state. `restore_snapshot` terminates it too, takes a safety snapshot whose id it returns,
+and with `contents: "databases"` or `"userDefaults"` replaces only those files, so logs and other
+files in the container keep what every launch wrote. A restore onto another app or OS version
+returns warnings and writes nothing until `accept_warnings: true` — expected when testing a
+migration. Snapshots take disk space: `list_snapshots` reports `byteSize`, `delete_snapshot` removes
+one.
 
 ### Setup
 
@@ -196,8 +243,8 @@ args = []
 }
 ```
 
-Put `--allow-user-defaults` and/or `--allow-destructive` into `args` (or after the path, for
-Claude Code) to opt in.
+Put `--allow-user-defaults`, `--allow-destructive` and/or `--allow-snapshots` into `args` (or after
+the path, for Claude Code) to opt in.
 
 To run it from a checkout instead, build it with SwiftPM:
 

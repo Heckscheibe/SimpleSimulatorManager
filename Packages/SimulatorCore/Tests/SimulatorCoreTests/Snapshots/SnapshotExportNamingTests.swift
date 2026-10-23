@@ -113,7 +113,7 @@ struct SnapshotExportNamingTests {
     @Test("Appends a number rather than reusing a name that exists")
     func uniqueName() {
         let directory = URL(fileURLWithPath: "/tmp/snapshots", isDirectory: true)
-        let taken: Set<String> = ["name", "name 2"]
+        let taken: Set = ["name", "name 2"]
 
         let url = SnapshotExportNaming.uniqueDestinationURL(in: directory, folderName: "name") { url in
             taken.contains(url.lastPathComponent)

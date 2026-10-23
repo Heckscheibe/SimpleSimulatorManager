@@ -1,5 +1,6 @@
 import Foundation
 @testable import SimulatorCore
+import SimulatorCoreTestSupport
 
 /// A snapshot service wired entirely to throwaway directories: its own store root, an app data
 /// container and one app group container, all under the temporary directory.
