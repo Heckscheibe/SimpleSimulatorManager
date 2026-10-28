@@ -41,7 +41,7 @@ final class SimulatorAppActionService: SimulatorAppActionServing, Sendable {
 
     func terminateApp(bundleIdentifier: String, deviceUdid: String) async throws {
         do {
-            let output = try await onWorkQueue {
+            let output = try await Self.workQueue.perform {
                 try Process.execute(command: "/usr/bin/xcrun",
                                     arguments: ["simctl", "terminate", deviceUdid, bundleIdentifier])
             }
@@ -60,13 +60,5 @@ final class SimulatorAppActionService: SimulatorAppActionServing, Sendable {
         let message = error.localizedDescription.lowercased()
 
         return benignFailureFragments.contains { message.contains($0) }
-    }
-
-    private func onWorkQueue<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
-        try await withCheckedThrowingContinuation { continuation in
-            Self.workQueue.async {
-                continuation.resume(with: Result { try work() })
-            }
-        }
     }
 }

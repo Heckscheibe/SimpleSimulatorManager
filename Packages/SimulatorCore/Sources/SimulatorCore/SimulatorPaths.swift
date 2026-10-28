@@ -10,11 +10,11 @@ public enum SimulatorPaths {
 
     /// Container subtrees that hold regenerable data. Snapshots leave them out by default: both
     /// are rebuilt by the app on demand and are frequently the bulk of a container's size.
-    public static let cachesPath = "Library/Caches"
-    public static let temporaryPath = "tmp"
+    static let cachesPath = "Library/Caches"
+    static let temporaryPath = "tmp"
 
-    public static let applicationSupportFolderName = "SimulatorManager"
-    public static let snapshotsFolderName = "Snapshots"
+    static let applicationSupportFolderName = "SimulatorManager"
+    static let snapshotsFolderName = "Snapshots"
 
     public static func coreSimulatorDevicesDirectoryURL(fileManager: FileManager = .default) -> URL? {
         fileManager
@@ -29,7 +29,7 @@ public enum SimulatorPaths {
     ///
     /// Deliberately outside the simulator: a snapshot has to outlive the app being uninstalled and
     /// the device being erased, which is much of the point of taking one.
-    public static func snapshotsRootURL(fileManager: FileManager = .default) -> URL? {
+    static func snapshotsRootURL(fileManager: FileManager = .default) -> URL? {
         fileManager
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)
             .first?
