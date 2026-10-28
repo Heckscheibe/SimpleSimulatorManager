@@ -171,6 +171,9 @@ enum SnapshotRestoreWarning: Sendable, Equatable {
     /// A container the snapshot captured no longer exists on the target — an app group that was
     /// removed since. It is skipped rather than recreated.
     case containerMissingOnTarget(SnapshotContainerKind)
+    /// A container the target has but the snapshot did not capture — an app group adopted since.
+    /// The restore leaves it as it is, so the app starts from a mix of old and current data.
+    case containerNotInSnapshot(SnapshotContainerKind)
 
     var message: String {
         switch self {
@@ -182,6 +185,8 @@ enum SnapshotRestoreWarning: Sendable, Equatable {
             "OS version differs: the snapshot was taken on \(snapshot), the target simulator runs \(target)."
         case let .containerMissingOnTarget(kind):
             "\(kind.displayName) is in the snapshot but not on the target, and will be skipped."
+        case let .containerNotInSnapshot(kind):
+            "\(kind.displayName) is on the target but not in the snapshot, and will keep its current data."
         }
     }
 
@@ -229,6 +234,8 @@ enum AppSnapshotError: LocalizedError, Equatable {
     case missingPayload(containerName: String)
     case unreadableManifest(snapshotID: String)
     case nothingToCapture
+    /// A restore failed partway. `rolledBack` says whether the safety snapshot was put back.
+    case restoreFailed(reason: String, safetySnapshotID: String, rolledBack: Bool)
 
     var errorDescription: String? {
         switch self {
@@ -242,6 +249,11 @@ enum AppSnapshotError: LocalizedError, Equatable {
             "Snapshot \(snapshotID) could not be read."
         case .nothingToCapture:
             "This app has no container to snapshot."
+        case let .restoreFailed(reason, safetySnapshotID, rolledBack):
+            rolledBack
+                ? "The restore failed and the app's previous data was put back: \(reason)"
+                : "The restore failed and the app's previous data could not be put back: \(reason) "
+                + "Restore the safety snapshot \(safetySnapshotID) to undo it."
         }
     }
 }

@@ -99,7 +99,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     // MARK: - Reading
 
     public func devices() async throws -> [DeviceDTO] {
-        try await onWorkQueue { [deviceLoader] in
+        try await Self.workQueue.perform { [deviceLoader] in
             try Self.deviceList(from: deviceLoader)
                 .sorted { ($0.name, $0.osVersion, $0.udid) < ($1.name, $1.osVersion, $1.udid) }
                 .map(DeviceDTO.init(device:))
@@ -107,7 +107,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func apps(onDeviceWithUdid udid: String) async throws -> [AppDTO] {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             try loadDevice(withUdid: udid, includingAppGroups: false)
                 .apps
                 .sorted(by: Self.appOrder)
@@ -116,7 +116,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func installations(ofBundleIdentifier bundleIdentifier: String) async throws -> [AppInstallationDTO] {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             let installations = try loadAllDevicesWithoutAppGroups()
                 .devices
                 .sorted { ($0.name, $0.udid) < ($1.name, $1.udid) }
@@ -135,7 +135,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func containers(ofBundleIdentifier bundleIdentifier: String, onDeviceWithUdid udid: String) async throws -> AppContainersDTO {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             let device = try loadDevice(withUdid: udid)
             let app = try Self.app(withBundleIdentifier: bundleIdentifier, on: device)
             let appGroups = device.appGroups
@@ -147,7 +147,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func appGroups(onDeviceWithUdid udid: String) async throws -> [AppGroupDTO] {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             try loadDevice(withUdid: udid)
                 .appGroups
                 .sorted { $0.identifier < $1.identifier }
@@ -156,7 +156,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func recentApps(limit: Int) async throws -> [RecentAppDTO] {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             // The menu's list first, then its head, so a limit never reorders or re-dedupes it.
             try RecentApps.initial(from: loadAllDevicesWithoutAppGroups().initialAppChanges)
                 .prefix(limit)
@@ -169,7 +169,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func userDefaultsJSON(of subject: UserDefaultsSubject, onDeviceWithUdid udid: String, domain: String?) async throws -> String {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             let isAppGroup =
                 if case .appGroup = subject {
                     true
@@ -224,7 +224,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
 
     public func eraseDevice(withUdid udid: String) async throws {
         // Validated against the device list first, so simctl never sees an arbitrary string.
-        let knownUdids = try await onWorkQueue { [deviceLoader] in
+        let knownUdids = try await Self.workQueue.perform { [deviceLoader] in
             try Self.deviceList(from: deviceLoader).map(\.udid)
         }
 
@@ -311,13 +311,5 @@ private extension SimulatorQueryService {
 
     static func isSinglePathComponent(_ name: String) -> Bool {
         !name.isEmpty && name != "." && name != ".." && !name.contains("/")
-    }
-
-    func onWorkQueue<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
-        try await withCheckedThrowingContinuation { continuation in
-            Self.workQueue.async {
-                continuation.resume(with: Result { try work() })
-            }
-        }
     }
 }
