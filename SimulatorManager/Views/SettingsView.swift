@@ -60,5 +60,13 @@ struct SettingsView: View {
                 Text(viewModel.showIPhoneText)
             })
         }
+
+        if viewModel.hasTestRunnerApps {
+            Button(action: {
+                viewModel.toggleTestRunnersVisibility()
+            }, label: {
+                Text(viewModel.showTestRunnersText)
+            })
+        }
     }
 }

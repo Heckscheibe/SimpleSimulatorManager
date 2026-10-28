@@ -63,13 +63,45 @@ struct RecentAppsTests {
         #expect(RecentApps.initial(from: changes, limit: 2).map(\.app.bundleIdentifier) == ["com.example.app", "com.example.other"])
     }
 
-    private func change(_ bundleIdentifier: String, on device: Device, secondsAgo: TimeInterval) -> AppChange {
+    @Test("Hiding test runners drops them before the cap, so they take no slots")
+    func hidingTestRunnersHappensBeforeCap() {
+        let runners = (0 ..< 5).map { change("com.example.Tests\($0).xctrunner", on: iPhone, secondsAgo: TimeInterval($0), isTestRunner: true) }
+        let regular = (0 ..< 4).map { change("com.example.app\($0)", on: iPhone, secondsAgo: TimeInterval(10 + $0)) }
+
+        let hidden = RecentApps.initial(from: runners + regular, limit: 4, hidingTestRunners: true)
+        let shown = RecentApps.initial(from: runners + regular, limit: 4)
+
+        #expect(hidden.map(\.app.bundleIdentifier) == regular.map(\.app.bundleIdentifier))
+        #expect(shown.allSatisfy { $0.app.isTestRunner })
+    }
+
+    @Test("Retained entries keep the newest of each kind, so either visibility can be rebuilt")
+    func retainedKeepsBothKinds() {
+        let runners = (0 ..< 25).map { change("com.example.Tests\($0).xctrunner", on: iPhone, secondsAgo: TimeInterval($0), isTestRunner: true) }
+        let regular = (0 ..< 25).map { change("com.example.app\($0)", on: iPhone, secondsAgo: TimeInterval(100 + $0)) }
+        let sorted = (runners + regular).sorted { $0.timestamp > $1.timestamp }
+
+        let retained = RecentApps.retained(from: sorted)
+
+        #expect(retained.count == 2 * RecentApps.maxCount)
+        #expect(RecentApps.visible(from: retained, hidingTestRunners: true).map(\.app.bundleIdentifier)
+            == regular.prefix(RecentApps.maxCount).map(\.app.bundleIdentifier))
+        #expect(RecentApps.visible(from: retained, hidingTestRunners: false).allSatisfy { $0.app.isTestRunner })
+    }
+
+    private func change(
+        _ bundleIdentifier: String,
+        on device: Device,
+        secondsAgo: TimeInterval,
+        isTestRunner: Bool = false
+    ) -> AppChange {
         let app = SimulatoriOSApp(displayName: bundleIdentifier,
                                   bundleIdentifier: bundleIdentifier,
                                   appDocumentsFolderURL: nil,
                                   appPackageURL: nil,
                                   hasWatchApp: false,
-                                  userDefaultsDomains: [])
+                                  userDefaultsDomains: [],
+                                  isTestRunner: isTestRunner)
         return AppChange(app: app, device: device, changeType: .installed, timestamp: now.addingTimeInterval(-secondsAgo))
     }
 }

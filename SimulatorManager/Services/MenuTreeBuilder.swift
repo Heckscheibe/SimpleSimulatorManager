@@ -206,7 +206,7 @@ extension MenuTreeBuilder {
         // has *no* apps installed. That cannot happen, because the header is reached only from
         // inside the apps submenu, which is itself conditional on apps existing — so the header
         // never appears today. Kept as-is so the tree matches the menu rather than changing it.
-        if !viewModel.device.hasAppsInstalled {
+        if !viewModel.hasAppsInstalled {
             nodes.append(.sectionHeader(id: "\(prefix).apps.header", title: "Apps"))
         }
 
@@ -286,6 +286,12 @@ extension MenuTreeBuilder {
         if settingsViewModel.hasIPhoneDevices {
             nodes.append(toggleNode(identifier: "settings.iOS", title: settingsViewModel.showIPhoneText) {
                 settingsViewModel.toggleIOSVisibility()
+            })
+        }
+
+        if settingsViewModel.hasTestRunnerApps {
+            nodes.append(toggleNode(identifier: "settings.testRunners", title: settingsViewModel.showTestRunnersText) {
+                settingsViewModel.toggleTestRunnersVisibility()
             })
         }
 
