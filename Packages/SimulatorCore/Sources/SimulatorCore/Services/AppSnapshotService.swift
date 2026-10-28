@@ -13,21 +13,28 @@ import os
 /// The missing primitive this fills is resetting *one* app: `simctl erase` wipes the whole device
 /// and forces every app to be reinstalled, which is far too blunt for putting a single app back the
 /// way it was ten minutes ago.
-protocol AppSnapshotting: AnyObject, Sendable {
+public protocol AppSnapshotting: AnyObject, Sendable {
     func snapshots(forBundleIdentifier bundleIdentifier: String) async -> [AppSnapshot]
     func allSnapshots() async -> [AppSnapshot]
+    /// Looks a snapshot up by its id alone, so a caller holding only the id — an agent, say —
+    /// does not also have to know which app it belongs to.
+    func snapshot(withID id: String) async -> AppSnapshot?
     func totalSnapshotByteSize() async -> Int64
     func deleteSnapshot(_ snapshot: AppSnapshot) async throws
 
     /// - Parameter contents: What to capture. A narrower set that finds nothing throws
     ///   ``AppSnapshotError/nothingInContents(_:)`` rather than producing an empty snapshot.
+    /// - Parameter terminatingApp: Stops the app before copying. Apps on SQLite keep recent writes
+    ///   in the `-wal` until a checkpoint, and a copy taken while the app writes can pair a store
+    ///   with a log that does not match it. A failed terminate is reported, not fatal.
     func captureSnapshot(
         of target: AppSnapshotTarget,
         label: String,
         contents: SnapshotContents,
         includeCaches: Bool,
+        terminatingApp: Bool,
         progress: (@Sendable (SnapshotProgress) -> Void)?
-    ) async throws -> AppSnapshot
+    ) async throws -> SnapshotCapture
 
     /// Validates a restore without performing it, so a restore that was never going to be legal
     /// fails before anything is overwritten.
@@ -38,11 +45,12 @@ protocol AppSnapshotting: AnyObject, Sendable {
     /// Touches only the files in the snapshot's contents, so a databases-only restore puts the
     /// databases back and leaves the documents beside them alone.
     /// - Returns: The safety snapshot taken of the live container before it was overwritten, with the
-    ///   same contents, which is all it takes to undo the restore.
+    ///   same contents, which is all it takes to undo the restore — and whether the app was stopped
+    ///   first, since a restore under a running app can be overwritten by it.
     func restore(
         _ plan: SnapshotRestorePlan,
         progress: (@Sendable (SnapshotProgress) -> Void)?
-    ) async throws -> AppSnapshot
+    ) async throws -> SnapshotRestore
 
     func diff(_ snapshot: AppSnapshot, against other: AppSnapshot) async throws -> AppSnapshotDiff
     func diff(_ snapshot: AppSnapshot, againstLiveContainersOf target: AppSnapshotTarget) async throws -> AppSnapshotDiff
@@ -54,6 +62,22 @@ protocol AppSnapshotting: AnyObject, Sendable {
 }
 
 extension AppSnapshotting {
+    /// A capture that leaves the app running.
+    func captureSnapshot(
+        of target: AppSnapshotTarget,
+        label: String,
+        contents: SnapshotContents,
+        includeCaches: Bool,
+        progress: (@Sendable (SnapshotProgress) -> Void)?
+    ) async throws -> AppSnapshot {
+        try await captureSnapshot(of: target,
+                                  label: label,
+                                  contents: contents,
+                                  includeCaches: includeCaches,
+                                  terminatingApp: false,
+                                  progress: progress).snapshot
+    }
+
     func captureSnapshot(
         of target: AppSnapshotTarget,
         label: String,
@@ -63,12 +87,13 @@ extension AppSnapshotting {
         try await captureSnapshot(of: target, label: label, contents: contents, includeCaches: includeCaches, progress: nil)
     }
 
+    /// - Returns: The safety snapshot.
     func restore(_ plan: SnapshotRestorePlan) async throws -> AppSnapshot {
-        try await restore(plan, progress: nil)
+        try await restore(plan, progress: nil).safetySnapshot
     }
 }
 
-final class AppSnapshotService: AppSnapshotting {
+public final class AppSnapshotService: AppSnapshotting {
     static let safetySnapshotLabelPrefix = "Before restoring"
     /// How many safety snapshots of one app are kept. Every restore takes one, so a migration test
     /// that restores in a loop would otherwise fill the disk with undo points nobody goes back to.
@@ -88,35 +113,41 @@ final class AppSnapshotService: AppSnapshotting {
     private let store: AppSnapshotStoring
     private let appActionService: SimulatorAppActionServing
 
-    init(
-        store: AppSnapshotStoring = AppSnapshotStore(),
-        appActionService: SimulatorAppActionServing = SimulatorAppActionService()
-    ) {
+    /// Snapshots in Application Support, apps stopped through `simctl`.
+    public convenience init() {
+        self.init(store: AppSnapshotStore(), appActionService: SimulatorAppActionService())
+    }
+
+    init(store: AppSnapshotStoring, appActionService: SimulatorAppActionServing) {
         self.store = store
         self.appActionService = appActionService
     }
 
     // MARK: - Listing
 
-    func snapshots(forBundleIdentifier bundleIdentifier: String) async -> [AppSnapshot] {
+    public func snapshots(forBundleIdentifier bundleIdentifier: String) async -> [AppSnapshot] {
         let store = store
 
         return (try? await Self.workQueue.perform { store.snapshots(forBundleIdentifier: bundleIdentifier) }) ?? []
     }
 
-    func allSnapshots() async -> [AppSnapshot] {
+    public func allSnapshots() async -> [AppSnapshot] {
         let store = store
 
         return (try? await Self.workQueue.perform { store.allSnapshots() }) ?? []
     }
 
-    func totalSnapshotByteSize() async -> Int64 {
+    public func snapshot(withID id: String) async -> AppSnapshot? {
+        await allSnapshots().first { $0.id == id }
+    }
+
+    public func totalSnapshotByteSize() async -> Int64 {
         let store = store
 
         return (try? await Self.workQueue.perform { store.totalByteSize() }) ?? 0
     }
 
-    func deleteSnapshot(_ snapshot: AppSnapshot) async throws {
+    public func deleteSnapshot(_ snapshot: AppSnapshot) async throws {
         let store = store
 
         try await Self.workQueue.perform { try store.delete(snapshot) }
@@ -125,7 +156,7 @@ final class AppSnapshotService: AppSnapshotting {
 
     // MARK: - Moving
 
-    func moveSnapshot(_ snapshot: AppSnapshot, into directoryURL: URL, folderName: String) async throws -> URL {
+    public func moveSnapshot(_ snapshot: AppSnapshot, into directoryURL: URL, folderName: String) async throws -> URL {
         let store = store
 
         let destinationURL = try await Self.workQueue.perform {
@@ -141,23 +172,35 @@ final class AppSnapshotService: AppSnapshotting {
 
     // MARK: - Capture
 
-    func captureSnapshot(
+    public func captureSnapshot(
         of target: AppSnapshotTarget,
         label: String,
         contents: SnapshotContents,
         includeCaches: Bool,
+        terminatingApp: Bool,
         progress: (@Sendable (SnapshotProgress) -> Void)?
-    ) async throws -> AppSnapshot {
-        try await capture(target,
-                          label: label,
-                          scope: SnapshotScope(contents: contents, includeCaches: includeCaches),
-                          isSafetySnapshot: false,
-                          progress: progress)
+    ) async throws -> SnapshotCapture {
+        let scope = SnapshotScope(contents: contents, includeCaches: includeCaches)
+
+        // Checked before the app is stopped, so a capture that was going to find nothing does not
+        // kill the user's running session on the way to failing.
+        if terminatingApp {
+            try await Self.workQueue.perform { try Self.checkCapturable(target, scope: scope) }
+        }
+
+        let termination = terminatingApp ? await terminate(target) : .notRequested
+        let snapshot = try await capture(target,
+                                         label: label,
+                                         scope: scope,
+                                         isSafetySnapshot: false,
+                                         progress: progress)
+
+        return SnapshotCapture(snapshot: snapshot, termination: termination)
     }
 
     // MARK: - Restore
 
-    func prepareRestore(of snapshot: AppSnapshot, to target: AppSnapshotTarget) async throws -> SnapshotRestorePlan {
+    public func prepareRestore(of snapshot: AppSnapshot, to target: AppSnapshotTarget) async throws -> SnapshotRestorePlan {
         let manifest = snapshot.manifest
 
         // Restoring across bundle identifiers is not a mismatch to warn about; the containers hold
@@ -182,25 +225,16 @@ final class AppSnapshotService: AppSnapshotting {
                                    warnings: Self.warnings(restoring: manifest, onto: target))
     }
 
-    func restore(
+    public func restore(
         _ plan: SnapshotRestorePlan,
         progress: (@Sendable (SnapshotProgress) -> Void)?
-    ) async throws -> AppSnapshot {
+    ) async throws -> SnapshotRestore {
         let target = plan.target
         let manifest = plan.snapshot.manifest
 
         // Restoring underneath a running app leaves it holding stale, possibly WAL-inconsistent
         // state, and it may write its in-memory copy back over the restored files on exit.
-        do {
-            try await appActionService.terminateApp(bundleIdentifier: target.bundleIdentifier,
-                                                    deviceUdid: target.deviceUDID)
-        } catch {
-            // Reported rather than fatal: refusing to restore because the app could not be stopped
-            // would block the common case where the device is not even booted.
-            os_log("Could not terminate %{public}@ before restoring: %{public}@",
-                   target.bundleIdentifier,
-                   error.localizedDescription)
-        }
+        let termination = await terminate(target)
 
         // Taken after the terminate, so the undo point is the same settled state the restore
         // overwrites rather than one captured from under a live app.
@@ -261,12 +295,12 @@ final class AppSnapshotService: AppSnapshotting {
 
         await pruneSafetySnapshots(of: target.bundleIdentifier, keeping: [safetySnapshot.id, plan.snapshot.id])
 
-        return safetySnapshot
+        return SnapshotRestore(safetySnapshot: safetySnapshot, termination: termination)
     }
 
     // MARK: - Diff
 
-    func diff(_ snapshot: AppSnapshot, against other: AppSnapshot) async throws -> AppSnapshotDiff {
+    public func diff(_ snapshot: AppSnapshot, against other: AppSnapshot) async throws -> AppSnapshotDiff {
         let oldContainers = Self.payloadURLsByKind(of: snapshot)
         let newContainers = Self.payloadURLsByKind(of: other)
         // A payload only ever holds what its snapshot captured, so only what both hold is compared:
@@ -290,7 +324,7 @@ final class AppSnapshotService: AppSnapshotting {
                                containerDiffs: diffs)
     }
 
-    func diff(_ snapshot: AppSnapshot, againstLiveContainersOf target: AppSnapshotTarget) async throws -> AppSnapshotDiff {
+    public func diff(_ snapshot: AppSnapshot, againstLiveContainersOf target: AppSnapshotTarget) async throws -> AppSnapshotDiff {
         let oldContainers = Self.payloadURLsByKind(of: snapshot)
         let newContainers = Self.destinationURLsByKind(for: target)
         // The live container still holds whatever the snapshot left out, so the same scope is
@@ -310,6 +344,24 @@ final class AppSnapshotService: AppSnapshotting {
 // MARK: - Capture
 
 private extension AppSnapshotService {
+    /// Reported rather than fatal: refusing to capture or restore because the app could not be
+    /// stopped would block the common case where the device is not even booted.
+    func terminate(_ target: AppSnapshotTarget) async -> AppTermination {
+        do {
+            switch try await appActionService.terminateApp(bundleIdentifier: target.bundleIdentifier,
+                                                           deviceUdid: target.deviceUDID) {
+            case .terminated:
+                return .terminated
+            case .notRunning:
+                return .notRunning
+            }
+        } catch {
+            os_log("Could not terminate %{public}@: %{public}@", target.bundleIdentifier, error.localizedDescription)
+
+            return .failed(message: error.localizedDescription)
+        }
+    }
+
     func capture(
         _ target: AppSnapshotTarget,
         label: String,
@@ -373,6 +425,22 @@ private extension AppSnapshotService {
             _ = try? await Self.workQueue.perform { store.discardSnapshotDirectory(at: directoryURL) }
 
             throw error
+        }
+    }
+
+    /// What ``capture(_:label:scope:isSafetySnapshot:progress:)`` would refuse, found without copying:
+    /// no container at all, or a narrower scope with nothing in it.
+    static func checkCapturable(_ target: AppSnapshotTarget, scope: SnapshotScope) throws {
+        let containerURLs = ([target.dataContainerURL] + target.appGroupContainers.map(\.url))
+            .filter { FileManager.default.directoryExistsAtURL($0) }
+
+        guard !containerURLs.isEmpty else {
+            throw AppSnapshotError.nothingToCapture
+        }
+
+        if scope.contents != .everything,
+           containerURLs.allSatisfy({ SnapshotContainerFiles.fileSizesByRelativePath(in: $0, scope: scope).isEmpty }) {
+            throw AppSnapshotError.nothingInContents(scope.contents)
         }
     }
 

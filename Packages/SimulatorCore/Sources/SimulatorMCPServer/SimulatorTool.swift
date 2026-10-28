@@ -12,6 +12,7 @@ public enum ToolGate: Sendable, Equatable {
     case alwaysAvailable
     case userDefaults
     case destructive
+    case snapshots
 
     public var flag: String? {
         switch self {
@@ -21,6 +22,8 @@ public enum ToolGate: Sendable, Equatable {
             ServerOptions.allowUserDefaultsFlag
         case .destructive:
             ServerOptions.allowDestructiveFlag
+        case .snapshots:
+            ServerOptions.allowSnapshotsFlag
         }
     }
 
@@ -32,6 +35,8 @@ public enum ToolGate: Sendable, Equatable {
             options.allowUserDefaults
         case .destructive:
             options.allowDestructive
+        case .snapshots:
+            options.allowSnapshots
         }
     }
 }
@@ -51,6 +56,11 @@ public enum SimulatorTool: String, CaseIterable, Sendable {
     case eraseDevice = "erase_device"
     case eraseAllSimulators = "erase_all_simulators"
     case deleteCleanupCandidate = "delete_cleanup_candidate"
+    case listSnapshots = "list_snapshots"
+    case captureSnapshot = "capture_snapshot"
+    case diffSnapshot = "diff_snapshot"
+    case restoreSnapshot = "restore_snapshot"
+    case deleteSnapshot = "delete_snapshot"
 
     enum Argument {
         static let platform = "platform"
@@ -61,17 +71,30 @@ public enum SimulatorTool: String, CaseIterable, Sendable {
         static let domain = "domain"
         static let limit = "limit"
         static let id = "id"
+        static let snapshotId = "snapshot_id"
+        static let label = "label"
+        static let contents = "contents"
+        static let includeCaches = "include_caches"
+        static let terminateApp = "terminate_app"
+        static let againstSnapshotId = "against_snapshot_id"
+        static let againstLive = "against_live"
+        static let acceptWarnings = "accept_warnings"
     }
+
+    /// The most file changes `diff_snapshot` lists unless told otherwise.
+    static let defaultDiffLimit = 500
 
     public var gate: ToolGate {
         switch self {
         case .listDevices, .listApps, .findApp, .getAppContainers, .listAppGroups, .listRecentApps,
-             .listCleanupCandidates, .shutdownAllSimulators:
+             .listCleanupCandidates, .shutdownAllSimulators, .listSnapshots:
             .alwaysAvailable
         case .readUserDefaults:
             .userDefaults
         case .eraseDevice, .eraseAllSimulators, .deleteCleanupCandidate:
             .destructive
+        case .captureSnapshot, .diffSnapshot, .restoreSnapshot, .deleteSnapshot:
+            .snapshots
         }
     }
 
@@ -118,10 +141,18 @@ private extension SimulatorTool {
             "Shuts down every simulator and erases all their content and settings. Cannot be undone."
         case .deleteCleanupCandidate:
             "Deletes one cleanup candidate by the id list_cleanup_candidates returned: simulators are deleted with simctl, leftover folders are moved to the Trash. Only candidates that still qualify are deleted."
+        case .listSnapshots:
+            "Lists app snapshots, newest first: id, app, device, label, what they hold, byteSize and whether a restore took it as an undo point. Metadata only, never their contents. Snapshots use disk space until deleted with delete_snapshot."
+        case .captureSnapshot:
+            "Captures an app's data container and app group containers on one simulator, so the state can be diffed against or restored later. Built for database migration testing: capture the data an old build left behind (contents \"databases\"), install and launch the new build, then restore_snapshot to run the migration again from the same old data — or capture the migrated data to test a downgrade or a relaunch of the new build. Terminates the app on the device before copying, so open databases are captured consistently. Pass terminate_app: false to keep it running, at the risk of capturing a database mid-write. contents limits it to databases (SQLite, Core Data, SwiftData, GRDB, Realm) and/or UserDefaults. The copy holds whatever the app stored, tokens and personal data included, unencrypted in Application Support; remove it with delete_snapshot."
+        case .diffSnapshot:
+            "Compares a snapshot with another snapshot (against_snapshot_id) or with the app as installed now (against_live). Lists added, removed and modified files by path and size, and changed UserDefaults keys; file contents are never returned, and UserDefaults values only when the server runs with --allow-user-defaults. Only what both sides hold is compared, and containers lists only the containers that changed, so no differences is an empty list with zero counts. Database files show up as modified files. Use it after launching a build to see what its migration changed, and right after a restore to confirm the old data is back."
+        case .restoreSnapshot:
+            "Puts a snapshot back: terminates the app first, then replaces the files the snapshot holds — the whole containers for an everything snapshot, only the databases and/or UserDefaults for a narrower one. Files the snapshot does not cover are left alone. A safety snapshot is taken first; its id is returned so the restore can be undone. If the snapshot was taken from another app or OS version, or an app group exists on only one side, nothing is written and the warnings are returned; pass accept_warnings: true to restore anyway, as migration testing usually needs: restoring an old build's data under a new build is how a migration is run again from the same starting point."
+        case .deleteSnapshot:
+            "Deletes one snapshot from disk by id. Cannot be undone."
         }
     }
-
-    // swiftlint:enable line_length
 
     var inputSchema: Value {
         switch self {
@@ -165,8 +196,48 @@ private extension SimulatorTool {
             Self.schema([Argument.udid: Self.udidProperty], required: [Argument.udid])
         case .deleteCleanupCandidate:
             Self.schema([Argument.id: Self.stringProperty("A cleanup candidate id from list_cleanup_candidates.")], required: [Argument.id])
+        case .listSnapshots:
+            Self.schema([Argument.bundleId: Self.stringProperty("Only snapshots of the app with this bundle identifier.")])
+        case .captureSnapshot:
+            Self.schema([
+                Argument.bundleId: Self.bundleIdProperty,
+                Argument.udid: Self.udidProperty,
+                Argument.label: Self.stringProperty("A name for the snapshot. Defaults to device, OS, app and time."),
+                Argument.contents: Self.stringProperty(
+                    "What to capture. everything (default) is the whole containers; databases is SQLite and Realm files with their -wal, -shm and Core Data external storage; userDefaults is the preference plists.",
+                    choices: SnapshotContents.identifiers
+                ),
+                Argument.includeCaches: Self.booleanProperty("Also capture Library/Caches and tmp. Defaults to false."),
+                Argument.terminateApp: Self.booleanProperty(
+                    "Terminate the app on the device before copying, so open databases are captured consistently. Defaults to true; false keeps it running, at the risk of capturing a database mid-write."
+                )
+            ], required: [Argument.bundleId, Argument.udid])
+        case .diffSnapshot:
+            Self.schema([
+                Argument.snapshotId: Self.snapshotIdProperty,
+                Argument.againstSnapshotId: Self.stringProperty("Compare with this snapshot. Mutually exclusive with against_live."),
+                Argument.againstLive: Self.booleanProperty("Compare with the app as installed now. Mutually exclusive with against_snapshot_id."),
+                Argument.udid: Self.stringProperty("With against_live, the simulator to compare with. Defaults to the snapshot's own."),
+                Argument.limit: .object([
+                    "type": "integer",
+                    "minimum": .int(1),
+                    "description": .string("Most file changes to list, in path order. Defaults to \(Self.defaultDiffLimit). The summary counts all of them.")
+                ])
+            ], required: [Argument.snapshotId])
+        case .restoreSnapshot:
+            Self.schema([
+                Argument.snapshotId: Self.snapshotIdProperty,
+                Argument.udid: Self.stringProperty("Simulator to restore onto; the same app must be installed there. Defaults to the snapshot's own."),
+                Argument.acceptWarnings: Self.booleanProperty(
+                    "Restore even though the snapshot differs from the installed app: another app or OS version, or an app group only one side has. Defaults to false, which returns the warnings and writes nothing."
+                )
+            ], required: [Argument.snapshotId])
+        case .deleteSnapshot:
+            Self.schema([Argument.snapshotId: Self.snapshotIdProperty], required: [Argument.snapshotId])
         }
     }
+
+    // swiftlint:enable line_length
 
     var annotations: Tool.Annotations {
         switch self {
@@ -198,6 +269,19 @@ private extension SimulatorTool {
         case .deleteCleanupCandidate:
             Tool.Annotations(title: "Delete Cleanup Candidate", readOnlyHint: false, destructiveHint: true,
                              idempotentHint: false, openWorldHint: false)
+        case .listSnapshots:
+            Self.readOnly("List Snapshots")
+        case .captureSnapshot:
+            Tool.Annotations(title: "Capture Snapshot", readOnlyHint: false, destructiveHint: false,
+                             idempotentHint: false, openWorldHint: false)
+        case .diffSnapshot:
+            Self.readOnly("Diff Snapshot")
+        case .restoreSnapshot:
+            Tool.Annotations(title: "Restore Snapshot", readOnlyHint: false, destructiveHint: true,
+                             idempotentHint: false, openWorldHint: false)
+        case .deleteSnapshot:
+            Tool.Annotations(title: "Delete Snapshot", readOnlyHint: false, destructiveHint: true,
+                             idempotentHint: false, openWorldHint: false)
         }
     }
 
@@ -207,6 +291,11 @@ private extension SimulatorTool {
 
     static let udidProperty = stringProperty("Simulator UDID, as returned by list_devices.")
     static let bundleIdProperty = stringProperty("App bundle identifier, e.g. com.example.app.")
+    static let snapshotIdProperty = stringProperty("A snapshot id, as returned by capture_snapshot or list_snapshots.")
+
+    static func booleanProperty(_ description: String) -> Value {
+        .object(["type": "boolean", "description": .string(description)])
+    }
 
     static func stringProperty(_ description: String, choices: [String]? = nil) -> Value {
         var property: [String: Value] = ["type": "string", "description": .string(description)]

@@ -8,18 +8,18 @@
 import Foundation
 
 /// A file that differs between two container states.
-struct SnapshotFileChange: Sendable, Equatable {
-    enum Kind: String, Sendable, Equatable {
+public struct SnapshotFileChange: Sendable, Equatable {
+    public enum Kind: String, Sendable, Equatable {
         case added
         case removed
         case modified
     }
 
-    let kind: Kind
+    public let kind: Kind
     /// Path relative to the container root, so the same file compares equal across devices.
-    let relativePath: String
-    let oldByteSize: Int64?
-    let newByteSize: Int64?
+    public let relativePath: String
+    public let oldByteSize: Int64?
+    public let newByteSize: Int64?
 }
 
 /// A single defaults key that differs.
@@ -27,42 +27,42 @@ struct SnapshotFileChange: Sendable, Equatable {
 /// Reported per key rather than as one modified plist: "`Library/Preferences/com.acme.app.plist`
 /// changed" answers nothing, and reading the plist by hand to find out which key moved is exactly
 /// the trip to Terminal this feature exists to remove.
-struct SnapshotDefaultsChange: Sendable, Equatable {
-    enum Kind: String, Sendable, Equatable {
+public struct SnapshotDefaultsChange: Sendable, Equatable {
+    public enum Kind: String, Sendable, Equatable {
         case added
         case removed
         case changed
     }
 
-    let kind: Kind
-    let domain: String
-    let key: String
-    let oldValue: String?
-    let newValue: String?
+    public let kind: Kind
+    public let domain: String
+    public let key: String
+    public let oldValue: String?
+    public let newValue: String?
 }
 
 /// The differences found in one container.
-struct SnapshotContainerDiff: Sendable, Equatable {
-    let kind: SnapshotContainerKind
-    let fileChanges: [SnapshotFileChange]
-    let defaultsChanges: [SnapshotDefaultsChange]
+public struct SnapshotContainerDiff: Sendable, Equatable {
+    public let kind: SnapshotContainerKind
+    public let fileChanges: [SnapshotFileChange]
+    public let defaultsChanges: [SnapshotDefaultsChange]
 
-    var hasChanges: Bool {
+    public var hasChanges: Bool {
         !fileChanges.isEmpty || !defaultsChanges.isEmpty
     }
 }
 
 /// The result of comparing two container states, container by container.
-struct AppSnapshotDiff: Sendable, Equatable {
+public struct AppSnapshotDiff: Sendable, Equatable {
     /// What was compared, for the exported header — "Snapshot A" against "the live container".
     let oldDescription: String
     let newDescription: String
     /// What both sides hold, and so what was compared. Anything else was left out on purpose — a
     /// databases-only snapshot says nothing about the documents beside them.
-    let comparedContents: SnapshotContents
-    let containerDiffs: [SnapshotContainerDiff]
+    public let comparedContents: SnapshotContents
+    public let containerDiffs: [SnapshotContainerDiff]
 
-    var hasChanges: Bool {
+    public var hasChanges: Bool {
         containerDiffs.contains { $0.hasChanges }
     }
 }

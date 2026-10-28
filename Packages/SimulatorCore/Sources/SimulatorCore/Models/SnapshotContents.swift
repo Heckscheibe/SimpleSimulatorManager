@@ -58,7 +58,7 @@ public enum SnapshotContents: Sendable, Hashable {
     public static let userDefaults = SnapshotContents.only([.userDefaults])
     public static let databasesAndUserDefaults = SnapshotContents.only([.databases, .userDefaults])
 
-    func includes(_ kind: SnapshotContentKind) -> Bool {
+    package func includes(_ kind: SnapshotContentKind) -> Bool {
         switch self {
         case .everything:
             true
@@ -85,7 +85,7 @@ public enum SnapshotContents: Sendable, Hashable {
     }
 
     /// "database", "database and UserDefaults", "everything" — for a diff's header.
-    var displayName: String {
+    public var displayName: String {
         switch self {
         case .everything:
             "everything"
@@ -99,7 +99,7 @@ public enum SnapshotContents: Sendable, Hashable {
     /// Appended to a snapshot's label so the label says what the snapshot holds, in the words of
     /// the row it was saved from — "(Database and UserDefaults)". Empty for ``everything``, whose
     /// label stays what it always was.
-    var labelSuffix: String {
+    public var labelSuffix: String {
         switch self {
         case .everything:
             ""

@@ -17,12 +17,16 @@ public enum MCPServerLaunch {
     public static let allowUserDefaultsFlag = "--allow-user-defaults"
     /// Enables erasing simulators and deleting cleanup candidates.
     public static let allowDestructiveFlag = "--allow-destructive"
+    /// Enables capturing, diffing, restoring and deleting app snapshots.
+    public static let allowSnapshotsFlag = "--allow-snapshots"
 
     /// The embedded executable, relative to the app bundle.
     public static let bundleRelativePath = "Contents/Helpers/\(executableName)"
 
     /// The launch arguments for the given opt-ins, in a stable order.
-    public static func arguments(allowUserDefaults: Bool, allowDestructive: Bool) -> [String] {
-        (allowUserDefaults ? [allowUserDefaultsFlag] : []) + (allowDestructive ? [allowDestructiveFlag] : [])
+    public static func arguments(allowUserDefaults: Bool, allowDestructive: Bool, allowSnapshots: Bool = false) -> [String] {
+        (allowUserDefaults ? [allowUserDefaultsFlag] : [])
+            + (allowDestructive ? [allowDestructiveFlag] : [])
+            + (allowSnapshots ? [allowSnapshotsFlag] : [])
     }
 }

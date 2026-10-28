@@ -14,6 +14,10 @@ struct SnapshotPreferencesSection: View {
 
     var body: some View {
         Section("Snapshots") {
+            Text(Self.purposeNote)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
             LabeledContent("Save to") {
                 Text(folderDescription)
                     .lineLimit(1)
@@ -44,6 +48,9 @@ struct SnapshotPreferencesSection: View {
 }
 
 private extension SnapshotPreferencesSection {
+    static let purposeNote = "Save Snapshot to Folder keeps an app's data, or only its database and "
+        + "UserDefaults, so you can test a migration against what an older build left behind."
+
     /// Downloads is commonly synced, shared and uploaded from, which the internal store never was.
     static let privacyNote = "A snapshot is an unencrypted copy of everything the app stored, "
         + "including tokens and personal data. Take care where you save and share it."
