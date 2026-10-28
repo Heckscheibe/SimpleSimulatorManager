@@ -117,12 +117,8 @@ final class AppSnapshotService: AppSnapshotting {
     func moveSnapshot(_ snapshot: AppSnapshot, into directoryURL: URL, folderName: String) async throws -> URL {
         let store = store
 
-        let destinationURL = try await onWorkQueue {
-            let destinationURL = SnapshotExportNaming.uniqueDestinationURL(in: directoryURL, folderName: folderName)
-
-            try store.move(snapshot, to: destinationURL)
-
-            return destinationURL
+        let destinationURL = try await Self.workQueue.perform {
+            try store.moveToUniqueFolder(snapshot, in: directoryURL, named: folderName)
         }
         os_log("Moved snapshot %{public}@ of %{public}@ to %{public}@",
                snapshot.id,

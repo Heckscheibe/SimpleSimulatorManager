@@ -24,15 +24,22 @@ extension MenuTreeBuilder {
         // The save outlives the panel, so reopening it mid-save shows how far along it is — and
         // the row being informational is what stops the same save being started twice.
         if let progress = snapshotSaveViewModel.progress(for: app, on: device) {
-            return [divider, .informational(id: "\(identifier).progress", title: Self.progressTitle(progress))]
+            var progressNode = MenuNode.informational(id: "\(identifier).progress", title: Self.progressTitle(progress))
+            progressNode.accessibilityTitle = "\(Self.progressTitle(progress)) of \(app.displayName) on \(device.name)"
+
+            return [divider, progressNode]
         }
 
-        return [
-            divider,
-            .action(id: identifier, title: Self.saveSnapshotTitle) {
-                snapshotSaveViewModel.saveSnapshot(of: app, on: device)
-            }
-        ]
+        var saveNode = MenuNode.action(id: identifier, title: Self.saveSnapshotTitle) {
+            snapshotSaveViewModel.saveSnapshot(of: app, on: device)
+        }
+        saveNode.accessibilityTitle = Self.saveSnapshotAccessibilityTitle(for: app, on: device)
+
+        return [divider, saveNode]
+    }
+
+    static func saveSnapshotAccessibilityTitle(for app: any SimulatorApp, on device: Device) -> String {
+        "Save snapshot of \(app.displayName) on \(device.name) to folder"
     }
 
     static let saveSnapshotTitle = "Save Snapshot to Folder…"
