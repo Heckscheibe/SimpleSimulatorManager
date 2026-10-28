@@ -17,10 +17,10 @@ enum SnapshotComparison {
         oldContainerURL: URL?,
         newContainerURL: URL?,
         kind: SnapshotContainerKind,
-        includeCaches: Bool
+        scope: SnapshotScope
     ) -> SnapshotContainerDiff {
-        let oldSizes = sizes(of: oldContainerURL, includeCaches: includeCaches)
-        let newSizes = sizes(of: newContainerURL, includeCaches: includeCaches)
+        let oldSizes = sizes(of: oldContainerURL, scope: scope)
+        let newSizes = sizes(of: newContainerURL, scope: scope)
 
         var fileChanges: [SnapshotFileChange] = []
         var defaultsChanges: [SnapshotDefaultsChange] = []
@@ -59,12 +59,12 @@ enum SnapshotComparison {
         return SnapshotContainerDiff(kind: kind, fileChanges: fileChanges, defaultsChanges: defaultsChanges)
     }
 
-    private static func sizes(of containerURL: URL?, includeCaches: Bool) -> [String: Int64] {
+    private static func sizes(of containerURL: URL?, scope: SnapshotScope) -> [String: Int64] {
         guard let containerURL, FileManager.default.directoryExistsAtURL(containerURL) else {
             return [:]
         }
 
-        return SnapshotContainerFiles.fileSizesByRelativePath(in: containerURL, includeCaches: includeCaches)
+        return SnapshotContainerFiles.fileSizesByRelativePath(in: containerURL, scope: scope)
     }
 
     /// Same size is not the same content, and a different modification date is not a change: a

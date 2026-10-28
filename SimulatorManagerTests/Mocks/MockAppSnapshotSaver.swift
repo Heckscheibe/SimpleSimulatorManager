@@ -11,6 +11,7 @@ final class MockAppSnapshotSaver: AppSnapshotSaving, @unchecked Sendable {
     struct Call: Equatable {
         let directoryURL: URL
         let includeCaches: Bool
+        var contents: SnapshotContents = .everything
     }
 
     private let lock = NSLock()
@@ -29,11 +30,12 @@ final class MockAppSnapshotSaver: AppSnapshotSaving, @unchecked Sendable {
     func saveSnapshot(
         of target: AppSnapshotTarget,
         into directoryURL: URL,
+        contents: SnapshotContents,
         includeCaches: Bool,
         progress: (@Sendable (Double) -> Void)?
     ) async throws -> URL {
         let result: Result<URL, any Error> = lock.withLock {
-            recordedCalls.append(Call(directoryURL: directoryURL, includeCaches: includeCaches))
+            recordedCalls.append(Call(directoryURL: directoryURL, includeCaches: includeCaches, contents: contents))
 
             return results.isEmpty
                 ? .success(directoryURL.appendingPathComponent("saved", isDirectory: true))

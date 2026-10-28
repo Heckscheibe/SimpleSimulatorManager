@@ -30,6 +30,8 @@ public enum AppSnapshotSaveError: LocalizedError, Equatable {
 public protocol AppSnapshotSaving: AnyObject, Sendable {
     /// Captures `target` and moves the result into `directoryURL`, named by
     /// ``SnapshotExportNaming``.
+    /// - Parameter contents: What to capture. The folder name is the same for every choice; the
+    ///   label in the manifest says which it was.
     /// - Parameter progress: The fraction of the capture completed, from 0 to 1. Called off the
     ///   main actor.
     /// - Returns: The saved snapshot folder.
@@ -38,6 +40,7 @@ public protocol AppSnapshotSaving: AnyObject, Sendable {
     func saveSnapshot(
         of target: AppSnapshotTarget,
         into directoryURL: URL,
+        contents: SnapshotContents,
         includeCaches: Bool,
         progress: (@Sendable (Double) -> Void)?
     ) async throws -> URL
@@ -71,6 +74,7 @@ public final class AppSnapshotSaveService: AppSnapshotSaving {
     public func saveSnapshot(
         of target: AppSnapshotTarget,
         into directoryURL: URL,
+        contents: SnapshotContents,
         includeCaches: Bool,
         progress: (@Sendable (Double) -> Void)?
     ) async throws -> URL {
@@ -79,14 +83,16 @@ public final class AppSnapshotSaveService: AppSnapshotSaving {
         try Self.validateDestination(directoryURL)
 
         // Named for when the user asked, not when the copy finished, and used as the label too, so
-        // the manifest inside the folder says the same thing as the folder's name.
+        // the manifest inside the folder says the same thing as the folder's name — plus what it
+        // holds, which the name deliberately leaves to the manifest.
         let folderName = SnapshotExportNaming.folderName(deviceName: target.deviceName,
                                                          osVersion: target.osVersion,
                                                          appName: target.appDisplayName,
                                                          date: now(),
                                                          timeZone: timeZone)
         let snapshot = try await snapshotService.captureSnapshot(of: target,
-                                                                 label: folderName,
+                                                                 label: folderName + contents.labelSuffix,
+                                                                 contents: contents,
                                                                  includeCaches: includeCaches) { snapshotProgress in
             progress?(snapshotProgress.fractionCompleted)
         }
