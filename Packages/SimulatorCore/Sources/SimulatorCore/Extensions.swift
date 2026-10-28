@@ -15,6 +15,23 @@ extension FileManager {
     }
 }
 
+// MARK: - Blocking Work
+
+extension DispatchQueue {
+    /// Runs blocking work on this queue and bridges it back into async/await.
+    ///
+    /// Filesystem walks and `simctl` calls go through a dedicated queue rather than `Task.detached`,
+    /// which shares the Swift concurrency cooperative pool and would starve unrelated async work.
+    /// `package` so the MCP server's query service bridges the same way.
+    package func perform<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
+        try await withCheckedThrowingContinuation { continuation in
+            async {
+                continuation.resume(with: Result { try work() })
+            }
+        }
+    }
+}
+
 // MARK: - Shell-Safe Paths
 
 extension String {

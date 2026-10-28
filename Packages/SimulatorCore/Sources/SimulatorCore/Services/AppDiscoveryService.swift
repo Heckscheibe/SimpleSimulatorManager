@@ -93,7 +93,9 @@ public final class AppDiscoveryService: Sendable {
                                                    appPackageURL: infoPlist.url,
                                                    userDefaultsDomains: domains,
                                                    companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier,
-                                                   contentModifiedAt: timestamp)
+                                                   contentModifiedAt: timestamp,
+                                                   shortVersion: infoPlist.cfBundleShortVersionString,
+                                                   buildVersion: infoPlist.cfBundleVersion)
             } else {
                 simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
                                                bundleIdentifier: infoPlist.cfBundleIdentifier,
@@ -101,7 +103,9 @@ public final class AppDiscoveryService: Sendable {
                                                appPackageURL: infoPlist.url,
                                                hasWatchApp: infoPlist.hasCompanionWatchApp,
                                                userDefaultsDomains: domains,
-                                               contentModifiedAt: timestamp)
+                                               contentModifiedAt: timestamp,
+                                               shortVersion: infoPlist.cfBundleShortVersionString,
+                                               buildVersion: infoPlist.cfBundleVersion)
             }
 
             // Add to both collections
