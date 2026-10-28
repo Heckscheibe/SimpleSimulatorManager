@@ -78,6 +78,23 @@ struct PreferencesView: View {
                 Toggle("visionOS", isOn: settings.binding(for: \.showVisionOS))
             }
 
+            Section("Install Age") {
+                Toggle("Show install age", isOn: settings.binding(for: \.showInstallAge))
+
+                Stepper(value: settings.staleAfterDaysBinding, in: Settings.staleAfterDaysRange) {
+                    LabeledContent("Mark as stale after") {
+                        Text(settings.staleAfterDays == 1 ? "1 day" : "\(settings.staleAfterDays) days")
+                            .monospacedDigit()
+                    }
+                }
+                .disabled(!settings.showInstallAge)
+
+                Text("App rows show when the app was last installed or updated, taken from its app bundle rather than "
+                    + "from the app running. Installs older than the threshold get a clock icon.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
             AgentIntegrationSection(viewModel: agentIntegrationViewModel)
         }
         .formStyle(.grouped)

@@ -64,6 +64,7 @@ Lightweight MVVM with service-based filesystem logic, split across modules:
 - **`RecentApps`**: the shared recent-apps rule (sort by most recent, cap at 20, dedupe by bundle identifier + device UDID) — reuse it rather than re-deriving the list
 - **`AppDiscoveryService`**: scans simulator folders, reads plist metadata (via `CustomPropertyListDecoder`), constructs app and app-group models
 - **`DeviceAppMonitoringService`**: main-actor service managing per-device `AppFolderMonitor` instances (built on `FolderMonitor`, which uses FSEvents); updates recent apps when simulator app containers change, debounced 3s; an app only counts as updated when its `contentModifiedAt` moved forward
+- **Install age**: `SimulatorApp.bundleModifiedAt` (the `.app` bundle's date) is the "installed" signal; `contentModifiedAt` (newer of bundle and container) stays the change-detection signal and must not be shown as an install date. `AppInstallAgeFormatter` turns it into a `MenuNode.age`, and `MenuTreeBuilder+InstallAge` adds the row age and the dates at the top of an app's submenu. The builder takes `now` so the tree stays pure; `MenuPanelView` advances it once a minute
 - **`Device`**: reference type with mutable `@Published` state for apps/app groups — do not convert to a value type without a clear architectural reason
 - **`SimulatorPaths`**: centralizes CoreSimulator directory path derivation — reuse instead of re-hardcoding paths
 - **`Settings`**: centralizes user preferences via a `UserDefaults` suite; add new prefs here rather than scattering `UserDefaults` access

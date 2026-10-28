@@ -24,6 +24,10 @@ struct MenuTreeBuilder {
     /// Defaults to the running bundle's version, and stays injectable so the version section can
     /// be exercised without depending on whichever bundle the tests happen to run in.
     var appVersion: String? = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    /// The instant ages are measured against. A parameter so the tree stays a pure function of its
+    /// inputs; the panel advances it while open so the ages do not freeze.
+    var now: Date = .init()
+    var ageFormatter: AppInstallAgeFormatter = MenuTreeBuilder.sharedAgeFormatter
     let openPreferences: @MainActor () -> Void
     let quit: @MainActor () -> Void
 
@@ -76,14 +80,17 @@ extension MenuTreeBuilder {
         // plus UDID is not unique in the recent-apps list, so reuse it rather than reintroducing
         // the collision here.
         let identifier = "recentApp.\(appChange.id)"
+        let age = installAge(for: appChange.app, changeType: appChange.changeType)
 
         return .submenu(id: identifier,
                         title: appChange.app.displayName,
                         subtitle: "\(appChange.device.name) \(appChange.device.osVersion)",
                         actions: openActions(for: appChange.app, handler: simulatorManagerViewModel),
+                        age: age,
                         children: shortcutNodes(for: appChange.app,
                                                 handler: simulatorManagerViewModel,
-                                                identifierPrefix: identifier))
+                                                identifierPrefix: identifier)
+                            + ageNodes(for: appChange.app, age: age, identifierPrefix: identifier))
     }
 }
 
@@ -214,13 +221,16 @@ extension MenuTreeBuilder {
             // Keyed by install rather than by bundle identifier: two containers can share one, and
             // duplicate row identifiers make `ForEach` misbehave and highlight both rows at once.
             let identifier = "\(prefix).app.\(app.installIdentifier)"
+            let age = installAge(for: app, changeType: nil)
 
             return .submenu(id: identifier,
                             title: app.displayName,
                             actions: openActions(for: app, handler: viewModel),
+                            age: age,
                             children: shortcutNodes(for: app,
                                                     handler: viewModel,
-                                                    identifierPrefix: identifier))
+                                                    identifierPrefix: identifier)
+                                + ageNodes(for: app, age: age, identifierPrefix: identifier))
         })
 
         return nodes

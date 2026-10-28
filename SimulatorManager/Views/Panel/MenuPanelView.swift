@@ -37,6 +37,9 @@ struct MenuPanelView: View {
     @State private var viewModel = MenuPanelViewModel()
     @State private var flyouts = MenuFlyoutController()
     @State private var listHeight: CGFloat = MenuPanelStyle.rowMinimumHeight
+    /// What install ages are measured against. Advanced while the panel is up so a relative age does
+    /// not freeze at the moment the panel opened.
+    @State private var now = Date()
     /// The tree the last render drew. Not observed, so keeping it costs no render.
     @State private var rootNodesCache = RootNodesCache()
 
@@ -86,6 +89,24 @@ struct MenuPanelView: View {
         }
         .task {
             githubService.startPeriodicUpdateCheck()
+        }
+        .task {
+            await keepAgesCurrent()
+        }
+    }
+}
+
+// MARK: - Install ages
+
+private extension MenuPanelView {
+    /// Re-measures ages when the panel opens and then once a minute, the finest unit a relative age
+    /// shows. Tied to the view's lifetime by `.task`, so it stops when the panel closes.
+    func keepAgesCurrent() async {
+        now = Date()
+
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(60))
+            now = Date()
         }
     }
 }
@@ -158,6 +179,7 @@ private extension MenuPanelView {
                         resetViewModel: resetViewModel,
                         settings: settings,
                         githubService: githubService,
+                        now: now,
                         openPreferences: openPreferences,
                         quit: quit)
     }

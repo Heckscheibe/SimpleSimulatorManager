@@ -55,6 +55,8 @@ struct MenuNode: Identifiable {
     /// Work to start when this submenu is opened. The cleanup scan is expensive and is deliberately
     /// deferred until the user asks for it, exactly as the `.task` on the old cleanup submenu did.
     let onEnter: (@MainActor () -> Void)?
+    /// How long ago the app this row represents was installed, for app rows only.
+    let age: AppInstallAge?
     let kind: Kind
 }
 
@@ -165,6 +167,10 @@ extension MenuNode {
             components.append(subtitle)
         }
 
+        if let age {
+            components.append(age.accessibilityDescription)
+        }
+
         if isDestructive {
             components.append("destructive")
         }
@@ -207,6 +213,7 @@ extension MenuNode {
                  isDestructive: isDestructive,
                  actions: actions,
                  onEnter: nil,
+                 age: nil,
                  kind: Kind.action)
     }
 
@@ -218,6 +225,7 @@ extension MenuNode {
         isEnabled: Bool = true,
         actions: [MenuActionItem] = [],
         onEnter: (@MainActor () -> Void)? = nil,
+        age: AppInstallAge? = nil,
         children: [MenuNode]
     ) -> MenuNode {
         MenuNode(id: id,
@@ -228,6 +236,7 @@ extension MenuNode {
                  isDestructive: false,
                  actions: actions,
                  onEnter: onEnter,
+                 age: age,
                  kind: Kind.submenu(children))
     }
 
@@ -257,6 +266,7 @@ extension MenuNode {
                  isDestructive: false,
                  actions: [],
                  onEnter: nil,
+                 age: nil,
                  kind: Kind.sectionHeader)
     }
 
@@ -269,6 +279,7 @@ extension MenuNode {
                  isDestructive: false,
                  actions: [],
                  onEnter: nil,
+                 age: nil,
                  kind: Kind.informational)
     }
 
@@ -281,6 +292,7 @@ extension MenuNode {
                  isDestructive: false,
                  actions: [],
                  onEnter: nil,
+                 age: nil,
                  kind: Kind.divider)
     }
 
