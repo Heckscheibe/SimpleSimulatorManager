@@ -126,21 +126,38 @@ public extension SimulatorQueryService {
                 udid: target.deviceUDID,
                 warnings: warnings,
                 safetySnapshotId: nil,
-                message: "Nothing was restored. The snapshot differs from the installed app as listed in warnings — "
-                    + "expected when testing a migration from an older build. Call again with accept_warnings: true to restore anyway."
+                message: "Nothing was restored. The snapshot differs from the installed app as listed in warnings. "
+                    + "A different app version is expected when testing a migration from an older build; an app group "
+                    + "only one side has means that group is skipped or keeps its current data. "
+                    + "Call again with accept_warnings: true to restore anyway."
             )
         }
 
-        let safetySnapshot = try await snapshotService.restore(plan)
+        let restore = try await snapshotService.restore(plan, progress: nil)
         os_log("MCP server restored snapshot %{public}@ onto %{public}@", id, target.deviceUDID)
+
+        var restoreWarnings = warnings
+        let message: String
+
+        switch restore.termination {
+        case .terminated:
+            message = "Restored. The app was terminated first. Restore safetySnapshotId to undo."
+        case .notRunning, .notRequested:
+            message = "Restored. The app was not running. Restore safetySnapshotId to undo."
+        case let .failed(reason):
+            message = "Restored, but the app could not be terminated first. Restore safetySnapshotId to undo."
+            restoreWarnings.append("The app could not be terminated (\(reason)). If it is still running it can write its "
+                + "old state back over the restored files; terminate it and restore again.")
+        }
 
         return SnapshotRestoreDTO(
             restored: true,
             snapshot: SnapshotDTO(snapshot: snapshot),
             udid: target.deviceUDID,
-            warnings: warnings,
-            safetySnapshotId: safetySnapshot.id,
-            message: "Restored. The app was terminated first. Restore safetySnapshotId to undo."
+            warnings: restoreWarnings,
+            safetySnapshotId: restore.safetySnapshot.id,
+            appTermination: restore.termination.identifier,
+            message: message
         )
     }
 
@@ -164,7 +181,7 @@ private extension SimulatorQueryService {
     /// Resolved from what discovery found, so no container path is derived a second time and no
     /// caller ever supplies one.
     func target(bundleIdentifier: String, udid: String) async throws -> AppSnapshotTarget {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             let device = try loadDevice(withUdid: udid)
             let app = try Self.app(withBundleIdentifier: bundleIdentifier, on: device)
 

@@ -210,11 +210,29 @@ struct SnapshotToolTests {
         let safetyId = try #require(restore["safetySnapshotId"] as? String)
 
         #expect(restore["restored"] as? Bool == true)
+        #expect(restore["appTermination"] as? String == "terminated")
         #expect(fixture.contents(at: "Documents/note.txt") == "hello")
 
         _ = try await registry.json("restore_snapshot", ["snapshot_id": .string(safetyId)])
 
         #expect(fixture.contents(at: "Documents/note.txt") == "changed")
+    }
+
+    @Test("A restore that could not stop the app says so instead of claiming it did")
+    func restoreReportsFailedTermination() async throws {
+        defer { fixture.remove() }
+
+        let registry = fixture.registry()
+        let id = try await captureId(registry)
+        fixture.appActions.setError(NSError(domain: "ShellCommand", code: 1, userInfo: [NSLocalizedDescriptionKey: "boom"]))
+
+        let restore = try await registry.json("restore_snapshot", ["snapshot_id": .string(id)])
+        let warnings = try #require(restore["warnings"] as? [String])
+
+        #expect(restore["restored"] as? Bool == true)
+        #expect(restore["appTermination"] as? String == "failed")
+        #expect(restore["message"] as? String == "Restored, but the app could not be terminated first. Restore safetySnapshotId to undo.")
+        #expect(warnings.contains { $0.contains("boom") })
     }
 
     @Test("A version mismatch writes nothing without accept_warnings, and restores with it")

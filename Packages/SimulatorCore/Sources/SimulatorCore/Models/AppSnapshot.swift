@@ -12,7 +12,7 @@ public enum SnapshotContainerKind: Codable, Sendable, Hashable {
     case appData
     case appGroup(identifier: String)
 
-    public var displayName: String {
+    var displayName: String {
         switch self {
         case .appData:
             "App Container"
@@ -30,8 +30,8 @@ public struct CapturedContainer: Codable, Sendable, Equatable, Identifiable {
     /// Recorded rather than derived from the container's identity: an app group identifier is not
     /// a safe directory name, and a scheme that mangles one into a name has to be reversible for
     /// restore to find the payload again. A recorded name never has to be reversed.
-    public let payloadDirectoryName: String
-    public let byteSize: Int64
+    let payloadDirectoryName: String
+    let byteSize: Int64
 
     public var id: String {
         payloadDirectoryName
@@ -209,6 +209,12 @@ public struct SnapshotCapture: Sendable, Equatable {
     public let termination: AppTermination
 }
 
+/// A finished restore: the safety snapshot that undoes it, and whether the app was stopped first.
+public struct SnapshotRestore: Sendable, Equatable {
+    public let safetySnapshot: AppSnapshot
+    public let termination: AppTermination
+}
+
 /// A difference between a snapshot and the app it is about to be restored onto.
 ///
 /// Reported rather than acted on: the service has no business deciding whether a mismatch is
@@ -268,7 +274,7 @@ public struct SnapshotProgress: Sendable, Equatable {
     public let totalByteCount: Int64
     public let currentRelativePath: String
 
-    public var fractionCompleted: Double {
+    var fractionCompleted: Double {
         guard totalByteCount > 0 else {
             return 0
         }

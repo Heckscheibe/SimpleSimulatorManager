@@ -148,7 +148,7 @@ private extension SimulatorTool {
         case .diffSnapshot:
             "Compares a snapshot with another snapshot (against_snapshot_id) or with the app as installed now (against_live). Lists added, removed and modified files by path and size, and changed UserDefaults keys; file contents are never returned, and UserDefaults values only when the server runs with --allow-user-defaults. Only what both sides hold is compared, and containers lists only the containers that changed, so no differences is an empty list with zero counts. Database files show up as modified files. Use it after launching a build to see what its migration changed, and right after a restore to confirm the old data is back."
         case .restoreSnapshot:
-            "Puts a snapshot back: terminates the app first, then replaces the files the snapshot holds — the whole containers for an everything snapshot, only the databases and/or UserDefaults for a narrower one. Files the snapshot does not cover are left alone. A safety snapshot is taken first; its id is returned so the restore can be undone. If the snapshot was taken from another app or OS version, nothing is written and the warnings are returned; pass accept_warnings: true to restore anyway, as migration testing usually needs: restoring an old build's data under a new build is how a migration is run again from the same starting point."
+            "Puts a snapshot back: terminates the app first, then replaces the files the snapshot holds — the whole containers for an everything snapshot, only the databases and/or UserDefaults for a narrower one. Files the snapshot does not cover are left alone. A safety snapshot is taken first; its id is returned so the restore can be undone. If the snapshot was taken from another app or OS version, or an app group exists on only one side, nothing is written and the warnings are returned; pass accept_warnings: true to restore anyway, as migration testing usually needs: restoring an old build's data under a new build is how a migration is run again from the same starting point."
         case .deleteSnapshot:
             "Deletes one snapshot from disk by id. Cannot be undone."
         }
@@ -229,7 +229,7 @@ private extension SimulatorTool {
                 Argument.snapshotId: Self.snapshotIdProperty,
                 Argument.udid: Self.stringProperty("Simulator to restore onto; the same app must be installed there. Defaults to the snapshot's own."),
                 Argument.acceptWarnings: Self.booleanProperty(
-                    "Restore even though the snapshot was taken from another app or OS version. Defaults to false, which returns the warnings and writes nothing."
+                    "Restore even though the snapshot differs from the installed app: another app or OS version, or an app group only one side has. Defaults to false, which returns the warnings and writes nothing."
                 )
             ], required: [Argument.snapshotId])
         case .deleteSnapshot:

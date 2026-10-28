@@ -16,7 +16,7 @@ import Foundation
 ///
 /// `_` separates the fields and never appears inside the device, OS or app name, so the first three
 /// components of a split are those names and the rest is the date (which has a `_` of its own).
-enum SnapshotExportNaming {
+package enum SnapshotExportNaming {
     /// In bytes, because the 255 limit on a file name is in bytes, and a name of 40 characters can
     /// be 160 of them. Three fields at this cap plus the date and a collision suffix stay inside it,
     /// and it is still far longer than any real device or app name written in ASCII.
@@ -28,7 +28,7 @@ enum SnapshotExportNaming {
     ///   - date: When the snapshot was captured.
     ///   - timeZone: Injectable so tests do not depend on the machine's zone. The name is for the
     ///     person reading Finder, so it uses their local time.
-    static func folderName(
+    package static func folderName(
         deviceName: String,
         osVersion: String,
         appName: String,

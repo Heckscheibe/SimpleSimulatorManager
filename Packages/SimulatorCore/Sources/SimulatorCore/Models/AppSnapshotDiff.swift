@@ -55,8 +55,8 @@ public struct SnapshotContainerDiff: Sendable, Equatable {
 /// The result of comparing two container states, container by container.
 public struct AppSnapshotDiff: Sendable, Equatable {
     /// What was compared, for the exported header — "Snapshot A" against "the live container".
-    public let oldDescription: String
-    public let newDescription: String
+    let oldDescription: String
+    let newDescription: String
     /// What both sides hold, and so what was compared. Anything else was left out on purpose — a
     /// databases-only snapshot says nothing about the documents beside them.
     public let comparedContents: SnapshotContents
@@ -69,7 +69,7 @@ public struct AppSnapshotDiff: Sendable, Equatable {
 
 extension AppSnapshotDiff {
     /// The diff as plain text, which is what gets exported.
-    public var renderedText: String {
+    var renderedText: String {
         var lines = ["\(oldDescription) → \(newDescription)"]
 
         if comparedContents != .everything {

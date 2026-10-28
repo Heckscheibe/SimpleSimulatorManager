@@ -45,11 +45,12 @@ public protocol AppSnapshotting: AnyObject, Sendable {
     /// Touches only the files in the snapshot's contents, so a databases-only restore puts the
     /// databases back and leaves the documents beside them alone.
     /// - Returns: The safety snapshot taken of the live container before it was overwritten, with the
-    ///   same contents, which is all it takes to undo the restore.
+    ///   same contents, which is all it takes to undo the restore — and whether the app was stopped
+    ///   first, since a restore under a running app can be overwritten by it.
     func restore(
         _ plan: SnapshotRestorePlan,
         progress: (@Sendable (SnapshotProgress) -> Void)?
-    ) async throws -> AppSnapshot
+    ) async throws -> SnapshotRestore
 
     func diff(_ snapshot: AppSnapshot, against other: AppSnapshot) async throws -> AppSnapshotDiff
     func diff(_ snapshot: AppSnapshot, againstLiveContainersOf target: AppSnapshotTarget) async throws -> AppSnapshotDiff
@@ -86,8 +87,9 @@ extension AppSnapshotting {
         try await captureSnapshot(of: target, label: label, contents: contents, includeCaches: includeCaches, progress: nil)
     }
 
-    public func restore(_ plan: SnapshotRestorePlan) async throws -> AppSnapshot {
-        try await restore(plan, progress: nil)
+    /// - Returns: The safety snapshot.
+    func restore(_ plan: SnapshotRestorePlan) async throws -> AppSnapshot {
+        try await restore(plan, progress: nil).safetySnapshot
     }
 }
 
@@ -178,10 +180,18 @@ public final class AppSnapshotService: AppSnapshotting {
         terminatingApp: Bool,
         progress: (@Sendable (SnapshotProgress) -> Void)?
     ) async throws -> SnapshotCapture {
+        let scope = SnapshotScope(contents: contents, includeCaches: includeCaches)
+
+        // Checked before the app is stopped, so a capture that was going to find nothing does not
+        // kill the user's running session on the way to failing.
+        if terminatingApp {
+            try await Self.workQueue.perform { try Self.checkCapturable(target, scope: scope) }
+        }
+
         let termination = terminatingApp ? await terminate(target) : .notRequested
         let snapshot = try await capture(target,
                                          label: label,
-                                         scope: SnapshotScope(contents: contents, includeCaches: includeCaches),
+                                         scope: scope,
                                          isSafetySnapshot: false,
                                          progress: progress)
 
@@ -218,13 +228,13 @@ public final class AppSnapshotService: AppSnapshotting {
     public func restore(
         _ plan: SnapshotRestorePlan,
         progress: (@Sendable (SnapshotProgress) -> Void)?
-    ) async throws -> AppSnapshot {
+    ) async throws -> SnapshotRestore {
         let target = plan.target
         let manifest = plan.snapshot.manifest
 
         // Restoring underneath a running app leaves it holding stale, possibly WAL-inconsistent
         // state, and it may write its in-memory copy back over the restored files on exit.
-        _ = await terminate(target)
+        let termination = await terminate(target)
 
         // Taken after the terminate, so the undo point is the same settled state the restore
         // overwrites rather than one captured from under a live app.
@@ -285,7 +295,7 @@ public final class AppSnapshotService: AppSnapshotting {
 
         await pruneSafetySnapshots(of: target.bundleIdentifier, keeping: [safetySnapshot.id, plan.snapshot.id])
 
-        return safetySnapshot
+        return SnapshotRestore(safetySnapshot: safetySnapshot, termination: termination)
     }
 
     // MARK: - Diff
@@ -415,6 +425,22 @@ private extension AppSnapshotService {
             _ = try? await Self.workQueue.perform { store.discardSnapshotDirectory(at: directoryURL) }
 
             throw error
+        }
+    }
+
+    /// What ``capture(_:label:scope:isSafetySnapshot:progress:)`` would refuse, found without copying:
+    /// no container at all, or a narrower scope with nothing in it.
+    static func checkCapturable(_ target: AppSnapshotTarget, scope: SnapshotScope) throws {
+        let containerURLs = ([target.dataContainerURL] + target.appGroupContainers.map(\.url))
+            .filter { FileManager.default.directoryExistsAtURL($0) }
+
+        guard !containerURLs.isEmpty else {
+            throw AppSnapshotError.nothingToCapture
+        }
+
+        if scope.contents != .everything,
+           containerURLs.allSatisfy({ SnapshotContainerFiles.fileSizesByRelativePath(in: $0, scope: scope).isEmpty }) {
+            throw AppSnapshotError.nothingInContents(scope.contents)
         }
     }
 

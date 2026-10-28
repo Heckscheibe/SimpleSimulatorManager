@@ -184,11 +184,14 @@ The same tools cover the rest of an upgrade and downgrade check:
 | Back to the new build after a downgrade | reinstall the new build and launch it; restore the migrated snapshot to start over |
 
 `capture_snapshot` terminates the app first so the database and its `-wal` are copied in a
-consistent state. `restore_snapshot` terminates it too, takes a safety snapshot whose id it returns,
-and with `contents: "databases"` or `"userDefaults"` replaces only those files, so logs and other
-files in the container keep what every launch wrote. A restore onto another app or OS version
-returns warnings and writes nothing until `accept_warnings: true` — expected when testing a
-migration. Snapshots take disk space: `list_snapshots` reports `byteSize`, `delete_snapshot` removes
+consistent state. `restore_snapshot` terminates it too and reports in `appTermination` whether that
+worked, takes a safety snapshot whose id it returns (the newest five per app are kept), and with
+`contents: "databases"` or `"userDefaults"` replaces only those files, so logs and other files in
+the container keep what every launch wrote. A database snapshot holds the app's own databases only,
+not the ones iOS keeps in the container (URLSession's cookie store, WebKit data, URLCache). A restore onto another app or OS version, or
+with an app group only one side has, returns warnings and writes nothing until
+`accept_warnings: true` — a version difference is expected when testing a migration. A restore that
+fails partway puts the previous data back. Snapshots take disk space: `list_snapshots` reports `byteSize`, `delete_snapshot` removes
 one.
 
 ### Setup

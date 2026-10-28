@@ -89,7 +89,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
 
     /// Disk scans block for as long as the simulators take to enumerate, so — as in
     /// `SimulatorCleanupService.workQueue` — they run here rather than on a cooperative thread.
-    private static let workQueue = DispatchQueue(
+    static let workQueue = DispatchQueue(
         label: "SimulatorQueryService.workQueue",
         qos: .userInitiated,
         attributes: .concurrent

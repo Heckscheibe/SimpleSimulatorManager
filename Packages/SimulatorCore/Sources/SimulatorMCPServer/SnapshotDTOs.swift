@@ -56,20 +56,27 @@ public struct SnapshotCaptureDTO: Codable, Sendable, Equatable {
 
     public init(capture: SnapshotCapture) {
         snapshot = SnapshotDTO(snapshot: capture.snapshot)
+        appTermination = capture.termination.identifier
 
         switch capture.termination {
-        case .terminated:
-            appTermination = "terminated"
-            warnings = []
-        case .notRunning:
-            appTermination = "notRunning"
+        case .terminated, .notRunning:
             warnings = []
         case .notRequested:
-            appTermination = "notRequested"
             warnings = ["The app was left running, so a database it was writing to may have been captured mid-write."]
         case let .failed(message):
-            appTermination = "failed"
             warnings = ["The app could not be terminated (\(message)), so a database it was writing to may have been captured mid-write."]
+        }
+    }
+}
+
+extension AppTermination {
+    /// `terminated`, `notRunning`, `notRequested` or `failed`, as the snapshot tools report it.
+    var identifier: String {
+        switch self {
+        case .terminated: "terminated"
+        case .notRunning: "notRunning"
+        case .notRequested: "notRequested"
+        case .failed: "failed"
         }
     }
 }
@@ -82,14 +89,25 @@ public struct SnapshotRestoreDTO: Codable, Sendable, Equatable {
     public let warnings: [String]
     /// Restore this to undo the restore.
     public let safetySnapshotId: String?
+    /// `terminated`, `notRunning` or `failed`; absent when nothing was restored.
+    public let appTermination: String?
     public let message: String
 
-    public init(restored: Bool, snapshot: SnapshotDTO, udid: String, warnings: [String], safetySnapshotId: String?, message: String) {
+    public init(
+        restored: Bool,
+        snapshot: SnapshotDTO,
+        udid: String,
+        warnings: [String],
+        safetySnapshotId: String?,
+        appTermination: String? = nil,
+        message: String
+    ) {
         self.restored = restored
         self.snapshot = snapshot
         self.udid = udid
         self.warnings = warnings
         self.safetySnapshotId = safetySnapshotId
+        self.appTermination = appTermination
         self.message = message
     }
 }

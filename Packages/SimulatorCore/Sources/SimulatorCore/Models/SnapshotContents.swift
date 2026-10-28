@@ -58,7 +58,7 @@ public enum SnapshotContents: Sendable, Hashable {
     public static let userDefaults = SnapshotContents.only([.userDefaults])
     public static let databasesAndUserDefaults = SnapshotContents.only([.databases, .userDefaults])
 
-    func includes(_ kind: SnapshotContentKind) -> Bool {
+    package func includes(_ kind: SnapshotContentKind) -> Bool {
         switch self {
         case .everything:
             true
