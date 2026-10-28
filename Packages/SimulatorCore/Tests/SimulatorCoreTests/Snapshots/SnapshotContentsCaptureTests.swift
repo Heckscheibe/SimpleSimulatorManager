@@ -226,6 +226,43 @@ struct SnapshotContentsCaptureTests {
         #expect(try FileManager.default.contentsOfDirectory(atPath: environment.storeFixture.url.path).isEmpty)
     }
 
+    @Test("Databases iOS keeps in the container are not the app's, so they are left out")
+    func skipsSystemDatabases() async throws {
+        let environment = try SnapshotTestEnvironment(includeAppGroup: false)
+
+        defer {
+            environment.remove()
+        }
+
+        let container = environment.container
+        try Self.writeSystemDatabases(in: container)
+
+        await #expect(throws: AppSnapshotError.nothingInContents(.databases)) {
+            try await Self.capture(environment, contents: .databases, includeCaches: true)
+        }
+
+        try container.writeSQLiteDatabase(at: "Library/Application Support/Model.sqlite")
+
+        let snapshot = try await Self.capture(environment, contents: .databases, includeCaches: true)
+
+        #expect(Self.payloadFiles(of: snapshot, kind: .appData) == ["Library/Application Support/Model.sqlite"])
+    }
+
+    @Test("An everything snapshot still holds iOS's databases")
+    func everythingKeepsSystemDatabases() async throws {
+        let environment = try SnapshotTestEnvironment(includeAppGroup: false)
+
+        defer {
+            environment.remove()
+        }
+
+        try environment.container.writeSQLiteDatabase(at: "Library/HTTPStorages/com.acme.app/httpstorages.sqlite")
+
+        let snapshot = try await Self.capture(environment, contents: .everything)
+
+        #expect(Self.payloadFiles(of: snapshot, kind: .appData).contains("Library/HTTPStorages/com.acme.app/httpstorages.sqlite"))
+    }
+
     @Test("UserDefaults only on an app without defaults throws too")
     func refusesEmptyUserDefaultsSnapshot() async throws {
         let environment = try SnapshotTestEnvironment(includeAppGroup: false)
@@ -308,7 +345,17 @@ struct SnapshotContentsCaptureTests {
 }
 
 extension SnapshotContentsCaptureTests {
+    /// What URLSession, URLCache, WebKit, Safari view controllers and TipKit write on their own.
     @discardableResult
+    static func writeSystemDatabases(in container: ContainerFixtureDirectory) throws {
+        try container.writeSQLiteDatabase(at: "Library/HTTPStorages/com.acme.app/httpstorages.sqlite")
+        try container.write("wal", at: "Library/HTTPStorages/com.acme.app/httpstorages.sqlite-wal")
+        try container.writeSQLiteDatabase(at: "\(SimulatorPaths.cachesPath)/com.acme.app/Cache.db")
+        try container.writeSQLiteDatabase(at: "Library/WebKit/WebsiteData/Default/salt/IndexedDB/db.sqlite3")
+        try container.writeSQLiteDatabase(at: "Library/Safari/PerSitePreferences.db")
+        try container.writeSQLiteDatabase(at: "Library/Application Support/.tipkit/tips-store.db")
+    }
+
     static func capture(
         _ environment: SnapshotTestEnvironment,
         contents: SnapshotContents,

@@ -32,7 +32,7 @@ struct MenuTreeBuilderSnapshotTests {
         #expect(save.isSubmenu)
         #expect(save.isSelectable)
         #expect(!save.isDestructive)
-        #expect(save.accessibilityLabel == "Save Snapshot to Folder")
+        #expect(save.accessibilityLabel == "Save snapshot of Acme on iPhone 16 to folder")
         #expect(save.accessibilityHint(isAwaitingConfirmation: false) == "Opens a submenu")
         #expect(app.children.dropLast().last?.kind.isDivider == true)
         // Not on a modifier: ⌘↩ and ⌥↩ mean "open a different folder".
@@ -61,7 +61,7 @@ struct MenuTreeBuilderSnapshotTests {
         #expect(save.children.allSatisfy { $0.isSelectable && !$0.isSubmenu && !$0.isDestructive })
         #expect(save.children.map(\.accessibilityLabel) == [
             "Everything", "Database and UserDefaults", "Database", "UserDefaults"
-        ])
+        ].map { "\($0): Save snapshot of Acme on iPhone 16 to folder" })
     }
 
     @Test("Each row saves its own contents", arguments: [
@@ -178,6 +178,7 @@ struct MenuTreeBuilderSnapshotTests {
 
         #expect(progress.id == "\(Self.prefix).saveSnapshot.progress")
         #expect(progress.title == "Saving Snapshot… 0%")
+        #expect(progress.accessibilityLabel == "Saving Snapshot… 0% of Acme on iPhone 16")
         #expect(!progress.isSelectable)
 
         await snapshots.waitForPendingSaves()

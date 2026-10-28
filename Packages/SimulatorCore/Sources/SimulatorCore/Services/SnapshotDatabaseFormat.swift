@@ -31,6 +31,38 @@ struct SnapshotDatabaseFormat: Sendable {
 
     static let all: [SnapshotDatabaseFormat] = [.sqlite, .realm]
 
+    /// Where iOS and its frameworks keep databases of their own in an app's container: URLSession's
+    /// cookie and HSTS store, WebKit's website data, Safari view controller state and the launch
+    /// snapshots. They are not the app's data, so a database snapshot neither captures nor restores
+    /// them — restoring would otherwise delete a cookie store created after the capture.
+    static let systemOwnedPaths: [String] = [
+        "Library/HTTPStorages",
+        "Library/WebKit",
+        "Library/Safari",
+        "Library/Cookies",
+        "Library/SplashBoard",
+        "Library/Application Support/.tipkit"
+    ]
+
+    /// URLCache's store, `Library/Caches/<bundle id>/Cache.db`, which only a snapshot that includes
+    /// caches would otherwise find.
+    static let urlCacheFileName = "Cache.db"
+
+    /// Whether a container-relative path belongs to iOS rather than the app — see
+    /// ``systemOwnedPaths``.
+    static func isSystemOwned(_ relativePath: String) -> Bool {
+        if systemOwnedPaths.contains(where: { relativePath == $0 || relativePath.hasPrefix($0 + "/") }) {
+            return true
+        }
+
+        let components = relativePath.split(separator: "/")
+
+        return components.count == 4
+            && components[0] == "Library"
+            && components[1] == "Caches"
+            && components[3] == urlCacheFileName
+    }
+
     /// The format whose main file this is, if any.
     static func format(ofFileNamed fileName: String, header: Data) -> SnapshotDatabaseFormat? {
         all.first { $0.isMainFile(fileName, header) }

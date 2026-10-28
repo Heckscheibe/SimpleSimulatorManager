@@ -165,6 +165,30 @@ struct AppSnapshotStoreMoveTests {
         #expect(destination.contents(at: "existing.txt") == "keep me")
         #expect(environment.store.allSnapshots().map(\.id) == [snapshot.id])
     }
+
+    @Test("Two saves finishing at once with the same folder name get a folder each")
+    func concurrentMovesPickDistinctFolders() async throws {
+        let environment = try SnapshotTestEnvironment()
+        let destination = try ContainerFixtureDirectory(name: "destination")
+
+        defer {
+            environment.remove()
+            destination.remove()
+        }
+
+        let first = try await environment.service.captureSnapshot(of: environment.target, label: "A", includeCaches: false)
+        let second = try await environment.service.captureSnapshot(of: environment.target, label: "B", includeCaches: false)
+
+        async let firstURL = environment.service.moveSnapshot(first, into: destination.url, folderName: "Acme")
+        async let secondURL = environment.service.moveSnapshot(second, into: destination.url, folderName: "Acme")
+        let urls = try await [firstURL, secondURL]
+
+        #expect(Set(urls.map { $0.lastPathComponent }) == ["Acme", "Acme 2"])
+        for url in urls {
+            #expect(FileManager.default.fileExists(atPath: url.appendingPathComponent(AppSnapshotManifest.fileName).path))
+        }
+        #expect(environment.store.allSnapshots().isEmpty)
+    }
 }
 
 private extension AppSnapshotSaveServiceTests {

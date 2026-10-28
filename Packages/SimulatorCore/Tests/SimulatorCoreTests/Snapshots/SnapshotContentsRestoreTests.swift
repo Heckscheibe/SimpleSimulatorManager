@@ -39,6 +39,25 @@ struct SnapshotContentsRestoreTests {
         #expect(!container.exists("Documents/later.sqlite"))
     }
 
+    @Test("A databases-only restore leaves databases iOS created since alone")
+    func restoreKeepsSystemDatabases() async throws {
+        let environment = try Self.makeEnvironmentWithStore()
+
+        defer {
+            environment.remove()
+        }
+
+        let snapshot = try await Self.capture(environment, contents: .databases)
+        try SnapshotContentsCaptureTests.writeSystemDatabases(in: environment.container)
+
+        _ = try await Self.restore(snapshot, in: environment)
+
+        #expect(environment.container.exists("Library/HTTPStorages/com.acme.app/httpstorages.sqlite"))
+        #expect(environment.container.exists("Library/HTTPStorages/com.acme.app/httpstorages.sqlite-wal"))
+        #expect(environment.container.exists("Library/Safari/PerSitePreferences.db"))
+        #expect(environment.container.exists("Library/Application Support/.tipkit/tips-store.db"))
+    }
+
     @Test("A stale live -wal the snapshot did not capture is removed with its database")
     func removesStaleWriteAheadLog() async throws {
         let environment = try SnapshotTestEnvironment(includeAppGroup: false)
@@ -231,11 +250,11 @@ struct SnapshotContentsRestoreTests {
         #expect(diff.containerDiffs.flatMap(\.fileChanges).map(\.relativePath) == [Self.storePath])
         #expect(diff.renderedText.contains("Compared: database and UserDefaults"))
 
+        // Nothing in common: refused rather than reported as unchanged.
         let databasesOnly = try await Self.capture(environment, contents: .databases)
-        let disjoint = try await environment.service.diff(databasesOnly, against: userDefaults)
-        #expect(disjoint.comparedContents == .only([]))
-        #expect(!disjoint.hasChanges)
-        #expect(disjoint.renderedText.contains("Compared: nothing"))
+        await #expect(throws: AppSnapshotError.nothingToCompare(.databases, .userDefaults)) {
+            try await environment.service.diff(databasesOnly, against: userDefaults)
+        }
     }
 
     @Test("A diff between two full snapshots renders exactly as before")

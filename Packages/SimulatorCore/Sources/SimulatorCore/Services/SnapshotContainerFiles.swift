@@ -333,6 +333,11 @@ extension SnapshotContainerFiles {
                     continue
                 }
 
+                // A narrower snapshot is the app's own data only. Everything is everything.
+                guard directory.isWhollyInScope || !SnapshotDatabaseFormat.isSystemOwned(relativePath) else {
+                    continue
+                }
+
                 let values = try? url.resourceValues(forKeys: resourceKeys)
 
                 guard !isSpecialFile(values) else {

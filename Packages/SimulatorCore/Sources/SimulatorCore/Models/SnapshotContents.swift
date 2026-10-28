@@ -58,13 +58,18 @@ public enum SnapshotContents: Sendable, Hashable {
     public static let userDefaults = SnapshotContents.only([.userDefaults])
     public static let databasesAndUserDefaults = SnapshotContents.only([.databases, .userDefaults])
 
-    public func includes(_ kind: SnapshotContentKind) -> Bool {
+    func includes(_ kind: SnapshotContentKind) -> Bool {
         switch self {
         case .everything:
             true
         case let .only(kinds):
             kinds.contains(kind)
         }
+    }
+
+    /// Whether this asks for nothing at all — two snapshots with no kind in common.
+    var isEmpty: Bool {
+        self == .only([])
     }
 
     /// What two snapshots both hold, which is all a diff between them can honestly compare.
