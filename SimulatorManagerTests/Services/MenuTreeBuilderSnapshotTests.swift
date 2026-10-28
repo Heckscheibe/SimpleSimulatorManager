@@ -31,7 +31,7 @@ struct MenuTreeBuilderSnapshotTests {
         #expect(save.title == "Save Snapshot to Folder…")
         #expect(save.isSelectable)
         #expect(!save.isDestructive)
-        #expect(save.accessibilityLabel == "Save Snapshot to Folder…")
+        #expect(save.accessibilityLabel == "Save snapshot of Acme on iPhone 16 to folder")
         #expect(app.children.dropLast().last?.kind.isDivider == true)
         // Not on a modifier: ⌘↩ and ⌥↩ mean "open a different folder".
         #expect(!app.secondaryActions.map(\.title).contains("Save Snapshot to Folder…"))
@@ -88,6 +88,7 @@ struct MenuTreeBuilderSnapshotTests {
 
         #expect(progress.id == "\(Self.prefix).saveSnapshot.progress")
         #expect(progress.title == "Saving Snapshot… 0%")
+        #expect(progress.accessibilityLabel == "Saving Snapshot… 0% of Acme on iPhone 16")
         #expect(!progress.isSelectable)
 
         await snapshots.waitForPendingSaves()
