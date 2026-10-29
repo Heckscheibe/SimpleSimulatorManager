@@ -50,7 +50,7 @@ private extension MenuTreeBuilder {
             return []
         }
 
-        let size = ByteCountFormatter.string(fromByteCount: viewModel.totalReclaimableBytes, countStyle: .file)
+        let size = SimulatorRuntimeCleanupCandidate.formattedBytes(viewModel.totalReclaimableBytes)
         let title = isDeletingRuntimes ? "Removing All…" : "Remove All Runtimes (\(viewModel.candidates.count), \(size))"
         let deleteAll = MenuNode.action(id: "cleanupRuntimes.deleteAll",
                                         title: title,

@@ -6,7 +6,7 @@ final class MockDestructiveActionConfirmer: DestructiveActionConfirming {
     var shouldConfirm = true
 
     private(set) var confirmedSimulatorCounts: [Int] = []
-    private(set) var confirmedRuntimeRequests: [(runtimeCount: Int, totalBytes: Int64, simulatorCount: Int)] = []
+    private(set) var confirmedRuntimeRequests: [(runtimeCount: Int, totalBytes: Int64, simulatorCount: Int, bootedSimulatorCount: Int)] = []
 
     var wasAsked: Bool {
         !confirmedSimulatorCounts.isEmpty || !confirmedRuntimeRequests.isEmpty
@@ -17,8 +17,8 @@ final class MockDestructiveActionConfirmer: DestructiveActionConfirming {
         return shouldConfirm
     }
 
-    func confirmRuntimeDeletion(runtimeCount: Int, totalBytes: Int64, simulatorCount: Int) -> Bool {
-        confirmedRuntimeRequests.append((runtimeCount, totalBytes, simulatorCount))
+    func confirmRuntimeDeletion(runtimeCount: Int, totalBytes: Int64, simulatorCount: Int, bootedSimulatorCount: Int) -> Bool {
+        confirmedRuntimeRequests.append((runtimeCount, totalBytes, simulatorCount, bootedSimulatorCount))
         return shouldConfirm
     }
 }

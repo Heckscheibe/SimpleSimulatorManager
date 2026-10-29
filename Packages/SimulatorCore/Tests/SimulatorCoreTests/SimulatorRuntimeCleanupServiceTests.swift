@@ -81,6 +81,69 @@ struct SimulatorRuntimeCleanupServiceTests {
         #expect(result.map(\.imageIdentifier) == ["OLD"])
     }
 
+    @Test("a beta build never supersedes the release build of the same version, nor the reverse")
+    func betaAndReleaseBuildsAreNotOrdered() {
+        let result = candidates([
+            image("RELEASE", version: "26.0", build: "23A344"),
+            image("BETA", version: "26.0", build: "23A5330a")
+        ])
+
+        #expect(result.isEmpty)
+    }
+
+    @Test("a patched re-release of a build supersedes the original")
+    func patchedBuildSupersedes() {
+        let result = candidates([
+            image("ORIGINAL", version: "26.4", build: "23E254"),
+            image("PATCHED", version: "26.4", build: "23E254a")
+        ])
+
+        #expect(result.map(\.imageIdentifier) == ["ORIGINAL"])
+    }
+
+    @Test("builds that cannot be parsed are never ordered")
+    func unparseableBuildsAreKept() {
+        let result = candidates([
+            image("A", version: "26.4", build: "weird"),
+            image("B", version: "26.4", build: "weirder")
+        ])
+
+        #expect(result.isEmpty)
+    }
+
+    @Test("build numbers order by major, letter, then minor")
+    func buildOrdering() throws {
+        let older = try #require(SimulatorRuntimeBuild("23E100"))
+
+        #expect(try #require(SimulatorRuntimeBuild("24A1")).isNewer(than: older))
+        #expect(try #require(SimulatorRuntimeBuild("23F1")).isNewer(than: older))
+        #expect(try #require(SimulatorRuntimeBuild("23E101")).isNewer(than: older))
+        #expect(!older.isNewer(than: SimulatorRuntimeBuild("23E101")))
+        #expect(!older.isNewer(than: older))
+        #expect(SimulatorRuntimeBuild("not-a-build") == nil)
+    }
+
+    @Test("an image that is still installing is never offered, even when older or long unused")
+    func installingImageIsKept() {
+        let result = candidates([
+            image("OLD", version: "26.4", build: "1", state: "Verifying", lastUsedDaysAgo: 400),
+            image("NEW", version: "26.5", build: "2")
+        ])
+
+        #expect(result.isEmpty)
+    }
+
+    @Test("the detail text says so when the newer build is listed for removal too")
+    func replacementAlsoListed() {
+        let result = candidates([
+            image("OLD", version: "26.4", build: "1", lastUsedDaysAgo: 200),
+            image("NEW", version: "26.5", build: "2", lastUsedDaysAgo: 200)
+        ])
+
+        let old = result.first { $0.imageIdentifier == "OLD" }
+        #expect(old?.detailMessage?.contains("listed for removal too") == true)
+    }
+
     @Test("versions compare numerically, not as strings")
     func versionsCompareNumerically() {
         let result = candidates([

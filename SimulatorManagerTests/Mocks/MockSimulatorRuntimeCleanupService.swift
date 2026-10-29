@@ -15,6 +15,7 @@ actor MockSimulatorRuntimeCleanupService: SimulatorRuntimeCleanupServing {
     private var checkedRuntimeCount = 0
     private var loadError: Error?
     private var failingCandidateIDs: Set<String> = []
+    private var failLoadsAfterDelete = false
 
     private(set) var deletedCandidateIDs: [String] = []
     private(set) var attemptedCandidateIDs: [String] = []
@@ -28,6 +29,11 @@ actor MockSimulatorRuntimeCleanupService: SimulatorRuntimeCleanupServing {
         loadError = error
     }
 
+    /// Makes every scan after the first successful deletion fail, to exercise the refresh-failed path.
+    func setFailLoadsAfterDelete(_ fail: Bool) {
+        failLoadsAfterDelete = fail
+    }
+
     func setFailingCandidateIDs(_ ids: Set<String>) {
         failingCandidateIDs = ids
     }
@@ -37,6 +43,10 @@ actor MockSimulatorRuntimeCleanupService: SimulatorRuntimeCleanupServing {
 
         if let loadError {
             throw loadError
+        }
+
+        if failLoadsAfterDelete, !deletedCandidateIDs.isEmpty {
+            throw MockError(candidateID: "rescan")
         }
 
         return SimulatorRuntimeCleanupScan(candidates: candidates, checkedRuntimeCount: checkedRuntimeCount)

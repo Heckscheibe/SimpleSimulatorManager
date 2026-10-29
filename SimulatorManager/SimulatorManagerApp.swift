@@ -44,7 +44,7 @@ struct SimulatorManagerApp: App {
             deviceManager: deviceManager,
             // Removing a runtime leaves its simulators unavailable, which the simulator cleanup
             // list should pick up without waiting for a manual refresh.
-            didDeleteRuntimes: { cleanupSimulatorsViewModel.refreshCleanupCandidates() }
+            didDeleteRuntimes: { cleanupSimulatorsViewModel.rescanAfterExternalChange() }
         )
         let resetSimulatorsViewModel = ResetSimulatorsViewModel(deviceManager: deviceManager,
                                                                 simulatorResetService: simulatorResetService)

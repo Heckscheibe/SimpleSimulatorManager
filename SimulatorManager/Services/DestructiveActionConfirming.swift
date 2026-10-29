@@ -13,8 +13,9 @@ protocol DestructiveActionConfirming: AnyObject {
     func confirmPermanentSimulatorDeletion(simulatorCount: Int) -> Bool
 
     /// - Returns: `true` when the user confirmed deleting `runtimeCount` simulator runtimes.
-    ///   `simulatorCount` is how many simulators lose their runtime as a result.
-    func confirmRuntimeDeletion(runtimeCount: Int, totalBytes: Int64, simulatorCount: Int) -> Bool
+    ///   `simulatorCount` is how many simulators lose their runtime as a result, and
+    ///   `bootedSimulatorCount` how many of those are running and will be shut down.
+    func confirmRuntimeDeletion(runtimeCount: Int, totalBytes: Int64, simulatorCount: Int, bootedSimulatorCount: Int) -> Bool
 }
 
 @MainActor
@@ -39,7 +40,7 @@ final class AlertDestructiveActionConfirmer: DestructiveActionConfirming {
         return alert.runModal() == .alertFirstButtonReturn
     }
 
-    func confirmRuntimeDeletion(runtimeCount: Int, totalBytes: Int64, simulatorCount: Int) -> Bool {
+    func confirmRuntimeDeletion(runtimeCount: Int, totalBytes: Int64, simulatorCount: Int, bootedSimulatorCount: Int) -> Bool {
         let alert = NSAlert()
         alert.alertStyle = .critical
         alert.messageText = runtimeCount == 1
@@ -52,6 +53,11 @@ final class AlertDestructiveActionConfirmer: DestructiveActionConfirming {
             text += simulatorCount == 1
                 ? " 1 simulator uses it and will become unavailable; Cleanup Simulators will then list it."
                 : " \(simulatorCount) simulators use it and will become unavailable; Cleanup Simulators will then list them."
+        }
+        if bootedSimulatorCount > 0 {
+            text += bootedSimulatorCount == 1
+                ? " 1 running simulator will be shut down first."
+                : " \(bootedSimulatorCount) running simulators will be shut down first."
         }
         alert.informativeText = text
         alert.addButton(withTitle: "Delete")

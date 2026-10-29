@@ -50,7 +50,7 @@ final class CleanupRuntimesViewModel {
     }
 
     var totalReclaimableBytes: Int64 {
-        candidates.compactMap(\.sizeBytes).reduce(0, +)
+        candidates.totalSizeBytes
     }
 
     var buttonText: String {
@@ -66,7 +66,7 @@ final class CleanupRuntimesViewModel {
             return "Cleanup Runtimes"
         }
 
-        let size = ByteCountFormatter.string(fromByteCount: totalReclaimableBytes, countStyle: .file)
+        let size = SimulatorRuntimeCleanupCandidate.formattedBytes(totalReclaimableBytes)
         return "Cleanup Runtimes (\(candidates.count), \(size))"
     }
 
@@ -163,16 +163,15 @@ final class CleanupRuntimesViewModel {
         }
 
         // Candidates sharing a runtime identifier strand the same simulators; count them once.
-        let affectedSimulatorCount = Dictionary(grouping: toDelete, by: \.runtimeIdentifier)
-            .values
-            .map { $0.map(\.affectedSimulatorCount).max() ?? 0 }
-            .reduce(0, +)
-        let totalBytes = toDelete.compactMap(\.sizeBytes).reduce(0, +)
+        let sharedRuntimes = Dictionary(grouping: toDelete, by: \.runtimeIdentifier).values
+        let affectedSimulatorCount = sharedRuntimes.map { $0.map(\.affectedSimulatorCount).max() ?? 0 }.reduce(0, +)
+        let bootedSimulatorCount = sharedRuntimes.map { $0.map(\.bootedSimulatorCount).max() ?? 0 }.reduce(0, +)
 
         guard destructiveActionConfirmer.confirmRuntimeDeletion(
             runtimeCount: toDelete.count,
-            totalBytes: totalBytes,
-            simulatorCount: affectedSimulatorCount
+            totalBytes: toDelete.totalSizeBytes,
+            simulatorCount: affectedSimulatorCount,
+            bootedSimulatorCount: bootedSimulatorCount
         ) else {
             for candidate in toDelete {
                 deletingCandidateIDs.remove(candidate.id)
@@ -185,6 +184,7 @@ final class CleanupRuntimesViewModel {
 
         Task {
             var failureMessages: [String] = []
+            var deletedIDs = Set<String>()
 
             defer {
                 for candidate in toDelete {
@@ -199,6 +199,7 @@ final class CleanupRuntimesViewModel {
             for candidate in toDelete {
                 do {
                     try await cleanupService.deleteRuntimeCandidate(candidate)
+                    deletedIDs.insert(candidate.id)
                     os_log("Runtime cleanup deleted %{public}@", candidate.id)
                 } catch {
                     failureMessages.append("\(candidate.name): \(error.localizedDescription)")
@@ -216,22 +217,21 @@ final class CleanupRuntimesViewModel {
                 candidates = scan.candidates
                 checkedRuntimeCount = scan.checkedRuntimeCount
             } catch {
+                // The rescan failed, but the deletions did not: drop what was removed rather than
+                // leave rows that would offer to delete a runtime that is already gone.
+                candidates.removeAll { deletedIDs.contains($0.id) }
                 failureMessages.append(error.localizedDescription)
             }
         }
     }
 
     private func compareCandidates(lhs: SimulatorRuntimeCleanupCandidate, rhs: SimulatorRuntimeCleanupCandidate) -> Bool {
-        let left = lhs.versionSortComponents
-        let right = rhs.versionSortComponents
+        if SimulatorRuntimeVersion.isLower(rhs.version, than: lhs.version) {
+            return true
+        }
 
-        for index in 0 ..< max(left.count, right.count) {
-            let leftValue = index < left.count ? left[index] : 0
-            let rightValue = index < right.count ? right[index] : 0
-
-            if leftValue != rightValue {
-                return leftValue > rightValue
-            }
+        if SimulatorRuntimeVersion.isLower(lhs.version, than: rhs.version) {
+            return false
         }
 
         return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending

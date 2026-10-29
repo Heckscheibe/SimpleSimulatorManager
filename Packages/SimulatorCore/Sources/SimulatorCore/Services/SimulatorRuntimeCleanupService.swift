@@ -121,7 +121,9 @@ extension SimulatorRuntimeCleanupService {
         var reasonsByImage: [String: [SimulatorRuntimeCleanupReason]] = [:]
         var supersededBy: [String: SimctlRuntimeImageRecord] = [:]
 
-        for image in images where image.isDeletable {
+        // An image still downloading, staging or verifying is not stale, whatever its version or
+        // last-used date say; only settled images (Ready or Unusable) can qualify.
+        for image in images where image.isDeletable && (image.isReady || image.isUnusable) {
             var reasons: [SimulatorRuntimeCleanupReason] = []
 
             if image.isUnusable {
@@ -175,6 +177,7 @@ extension SimulatorRuntimeCleanupService {
                     for: image,
                     reasons: reasons,
                     supersededBy: supersededBy[image.identifier],
+                    replacementIsAlsoListed: supersededBy[image.identifier].map { reasonsByImage[$0.identifier] != nil } ?? false,
                     now: now
                 )
             )
@@ -212,8 +215,9 @@ extension SimulatorRuntimeCleanupService {
             .max { isNewer($1, than: $0) }
     }
 
-    /// Higher version wins; for the same version the higher build does. Builds compare as strings,
-    /// which is how Apple's build numbers are ordered within one release.
+    /// Higher version wins; for the same version the higher build does, when the two builds can be
+    /// ordered at all (see ``SimulatorRuntimeBuild``). Two builds that cannot be ordered replace
+    /// neither, which keeps both: deleting the wrong one is far worse than keeping an extra one.
     private static func isNewer(_ lhs: SimctlRuntimeImageRecord, than rhs: SimctlRuntimeImageRecord) -> Bool {
         if SimulatorRuntimeVersion.isLower(rhs.version, than: lhs.version) {
             return true
@@ -223,13 +227,14 @@ extension SimulatorRuntimeCleanupService {
             return false
         }
 
-        return lhs.build.compare(rhs.build, options: .numeric) == .orderedDescending
+        return SimulatorRuntimeBuild(lhs.build)?.isNewer(than: SimulatorRuntimeBuild(rhs.build)) ?? false
     }
 
     private static func detailMessage(
         for image: SimctlRuntimeImageRecord,
         reasons: [SimulatorRuntimeCleanupReason],
         supersededBy newer: SimctlRuntimeImageRecord?,
+        replacementIsAlsoListed: Bool,
         now: Date
     ) -> String {
         var sentences: [String] = []
@@ -239,7 +244,10 @@ extension SimulatorRuntimeCleanupService {
         }
 
         if reasons.contains(.superseded), let newer {
-            sentences.append("\(newer.platformName) \(newer.version) (\(newer.build)) of the same runtime is installed.")
+            let newerName = "\(newer.platformName) \(newer.version) (\(newer.build))"
+            sentences.append(replacementIsAlsoListed
+                ? "\(newerName) of the same runtime is newer, but is listed for removal too."
+                : "\(newerName) of the same runtime is installed.")
         }
 
         if reasons.contains(.unused), let lastUsedAt = image.lastUsedAt {

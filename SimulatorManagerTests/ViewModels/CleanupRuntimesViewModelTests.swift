@@ -147,6 +147,40 @@ struct CleanupRuntimesViewModelTests {
         #expect(confirmer.confirmedRuntimeRequests.map(\.simulatorCount) == [4])
     }
 
+    @Test("running simulators are passed to the confirmation, once per runtime")
+    func bootedSimulatorsReachTheConfirmation() async {
+        let service = MockSimulatorRuntimeCleanupService()
+        let confirmer = MockDestructiveActionConfirmer()
+        let candidate = makeCandidate(id: "a", affectedSimulators: 3, bootedSimulators: 2)
+        await service.setCandidates([candidate])
+        let viewModel = makeViewModel(service: service, confirmer: confirmer)
+
+        viewModel.refresh()
+        await waitUntil { !viewModel.isLoading }
+        viewModel.delete(candidate)
+        await waitUntil { viewModel.deletingCandidateIDs.isEmpty }
+
+        #expect(confirmer.confirmedRuntimeRequests.map(\.bootedSimulatorCount) == [2])
+    }
+
+    @Test("when the rescan after a deletion fails, the deleted runtime does not stay listed")
+    func failedRescanDropsDeletedRuntimes() async {
+        let service = MockSimulatorRuntimeCleanupService()
+        let deleted = makeCandidate(id: "deleted")
+        let kept = makeCandidate(id: "kept", runtime: "other")
+        await service.setCandidates([deleted, kept])
+        await service.setFailLoadsAfterDelete(true)
+        let viewModel = makeViewModel(service: service)
+
+        viewModel.refresh()
+        await waitUntil { !viewModel.isLoading }
+        viewModel.delete(deleted)
+        await waitUntil { viewModel.deletingCandidateIDs.isEmpty }
+
+        #expect(viewModel.candidates == [kept])
+        #expect(viewModel.errorMessage != nil)
+    }
+
     @Test("groups by platform")
     func groupsByPlatform() async throws {
         let service = MockSimulatorRuntimeCleanupService()
@@ -188,7 +222,8 @@ struct CleanupRuntimesViewModelTests {
         platform: String = "iOS",
         version: String = "26.4",
         sizeBytes: Int64? = 8_000_000_000,
-        affectedSimulators: Int = 0
+        affectedSimulators: Int = 0,
+        bootedSimulators: Int = 0
     ) -> SimulatorRuntimeCleanupCandidate {
         SimulatorRuntimeCleanupCandidate(
             imageIdentifier: id,
@@ -200,7 +235,7 @@ struct CleanupRuntimesViewModelTests {
             lastUsedAt: nil,
             reasons: [.unused],
             affectedSimulatorCount: affectedSimulators,
-            bootedSimulatorCount: 0,
+            bootedSimulatorCount: bootedSimulators,
             detailMessage: nil
         )
     }
