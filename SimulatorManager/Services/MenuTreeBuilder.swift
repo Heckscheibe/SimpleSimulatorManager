@@ -206,10 +206,9 @@ extension MenuTreeBuilder {
     private func appNodes(for viewModel: DeviceViewModel, prefix: String) -> [MenuNode] {
         var nodes: [MenuNode] = []
 
-        // Transcribed from `AppsView` as written: it draws the "Apps" header only when the device
-        // has *no* apps installed. That cannot happen, because the header is reached only from
-        // inside the apps submenu, which is itself conditional on apps existing — so the header
-        // never appears today. Kept as-is so the tree matches the menu rather than changing it.
+        // The "Apps" header is drawn only when the device has *no* apps installed. That cannot
+        // happen, because the header is reached only from inside the apps submenu, which is itself
+        // conditional on apps existing — so the header never appears today.
         if !viewModel.device.hasAppsInstalled {
             nodes.append(.sectionHeader(id: "\(prefix).apps.header", title: "Apps"))
         }

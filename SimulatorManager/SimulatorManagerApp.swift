@@ -65,13 +65,7 @@ struct SimulatorManagerApp: App {
     }
 
     var body: some Scene {
-        // Exactly one of these, chosen at compile time — see ``MenuBarPresentation`` for why this
-        // cannot be a runtime `Bool`.
-        #if LEGACY_MENU_BAR
-            nativeMenuScene
-        #else
-            searchablePanelScene
-        #endif
+        searchablePanelScene
 
         // A `Window` rather than a SwiftUI `Settings` scene: see `PreferencesWindow` for why the
         // latter cannot present in this app.
@@ -104,29 +98,6 @@ private extension SimulatorManagerApp {
                           searchViewModel: menuSearchViewModel)
         }
         .menuBarExtraStyle(.window)
-    }
-
-    /// The menu as it shipped, kept until the panel stops being provisional.
-    var nativeMenuScene: some Scene {
-        MenuBarExtra("SimulatorManager", systemImage: Self.menuBarSymbol) {
-            RecentAppsView(viewModel: viewModel, settings: settings)
-            Divider()
-            DeviceTypeView(viewModel: viewModel, settings: settings)
-            Divider()
-            SettingsView(viewModel: settingsViewModel, settings: settings)
-            OpenPreferencesButton()
-            Divider()
-            CleanupSimulatorsView(viewModel: cleanupSimulatorsViewModel)
-            Divider()
-            ResetSimulatorsView(viewModel: resetSimulatorsViewModel)
-            Divider()
-            GitHubView()
-            Divider()
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
-            }
-            .keyboardShortcut("q")
-        }
     }
 
     static let menuBarSymbol = "iphone.gen3"
