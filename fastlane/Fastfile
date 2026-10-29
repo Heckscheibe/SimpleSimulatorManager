@@ -28,6 +28,10 @@ PROJECT_FILE = File.join(PROJECT_ROOT, "SimulatorManager.xcodeproj")
 # The MCP server reports the app's version; SwiftPM can't read MARKETING_VERSION, so the release
 # lane writes it into this constant too.
 MCP_SERVER_VERSION_FILE = File.join(PROJECT_ROOT, "Packages/SimulatorCore/Sources/SimulatorMCPServer/SimulatorMCPServer.swift")
+GITHUB_REPO = "Heckscheibe/SimpleSimulatorManager"
+
+require "shellwords"
+require_relative "release_notes"
 
 # Homebrew tap (Heckscheibe/homebrew-tap). Defaults to a clone sitting next to this
 # repo; override with HOMEBREW_TAP_PATH. The cask is updated locally and pushed using
@@ -96,6 +100,149 @@ def add_mcp_binary_stanza(cask_contents)
   updated
 end
 
+def release_tag(version)
+  "v#{version}"
+end
+
+def release_notes_path(version)
+  File.join(RELEASE_DIR, "RELEASE_NOTES-#{version}.md")
+end
+
+def release_zip_path
+  File.join(RELEASE_DIR, "#{ZIP_NAME}.zip")
+end
+
+# Runs the GitHub CLI with the maintainer's own login (like the Homebrew tap push, so no CI secret
+# is needed). Returns stdout; any failure becomes a lane error carrying gh's message.
+def gh(*args, allow_failure: false)
+  stdout, stderr, status = Open3.capture3("gh", *args, binmode: true)
+  stdout.force_encoding(Encoding::UTF_8)
+  stderr.force_encoding(Encoding::UTF_8)
+  return status.success? if allow_failure
+  UI.user_error!("`gh #{args.first(3).join(' ')} …` failed: #{stderr.strip}") unless status.success?
+
+  stdout
+rescue Errno::ENOENT
+  UI.user_error!("The GitHub CLI is required to publish a release: brew install gh && gh auth login")
+end
+
+def git_output(*args)
+  stdout, stderr, status = Open3.capture3("git", "-C", PROJECT_ROOT, *args, binmode: true)
+  stdout.force_encoding(Encoding::UTF_8)
+  stderr.force_encoding(Encoding::UTF_8)
+  UI.user_error!("`git #{args.join(' ')}` failed: #{stderr.strip}") unless status.success?
+
+  stdout.strip
+end
+
+# The commit the release tag will point at. Defaults to HEAD; GitHub can only tag a commit it has,
+# so refuse one that was never pushed.
+def resolve_release_target(target)
+  sha = git_output("rev-parse", "--verify", "#{target || 'HEAD'}^{commit}")
+  if git_output("branch", "-r", "--contains", sha).empty?
+    UI.user_error!("Commit #{sha[0, 7]} is not on any remote branch. Push it first, or pass target:<branch-or-sha>.")
+  end
+
+  sha
+end
+
+# Cheap checks run before the (long) build, so a missing tool or an existing release does not
+# surface after the app has already been signed and notarized.
+def ensure_release_publishable(version)
+  gh("auth", "status")
+  tag = release_tag(version)
+  if gh("release", "view", tag, "--repo", GITHUB_REPO, allow_failure: true) ||
+     !git_output("ls-remote", "--tags", "origin", "refs/tags/#{tag}").empty?
+    UI.user_error!("#{tag} already exists on #{GITHUB_REPO}. Pick a new version or delete the release and tag first.")
+  end
+
+  claude = ENV["CLAUDE_CLI"] || "claude"
+  unless system("command -v #{Shellwords.escape(claude)} > /dev/null 2>&1")
+    UI.user_error!("`#{claude}` not found. Install Claude Code (it writes the release notes) or set CLAUDE_CLI.")
+  end
+end
+
+# GitHub's generated "What's Changed" lines for previous release → target, grouped and summarised
+# by Claude, written to release/RELEASE_NOTES-<version>.md. Returns that path.
+def generate_release_notes(version:, target:, previous_tag: nil)
+  previous_tag ||= gh("release", "view", "--repo", GITHUB_REPO, "--json", "tagName", "--jq", ".tagName").strip
+  UI.message("📝 Collecting pull requests #{previous_tag} → #{target[0, 7]}...")
+
+  generated_body = gh(
+    "api", "repos/#{GITHUB_REPO}/releases/generate-notes",
+    "-f", "tag_name=#{release_tag(version)}",
+    "-f", "previous_tag_name=#{previous_tag}",
+    "-f", "target_commitish=#{target}",
+    "--jq", ".body"
+  )
+  generated = ReleaseNotes.parse_generated(generated_body)
+  UI.user_error!("No merged pull requests between #{previous_tag} and #{target[0, 7]}.") if generated.entries.empty?
+
+  pull_requests = generated.entries.map do |entry|
+    JSON.parse(gh("pr", "view", entry.number.to_s, "--repo", GITHUB_REPO, "--json", "number,title,body,labels"))
+  end
+
+  UI.message("🤖 Asking Claude to categorise and summarise #{pull_requests.size} pull requests...")
+  answer = ReleaseNotes.ask_claude(ReleaseNotes.build_prompt(pull_requests))
+  classification = ReleaseNotes.parse_classification(answer)
+  ReleaseNotes.problems(generated, classification).each { |problem| UI.important("⚠️  #{problem}") }
+
+  FileUtils.mkdir_p(RELEASE_DIR)
+  path = release_notes_path(version)
+  File.write(path, ReleaseNotes.render(generated, classification))
+  path
+rescue ReleaseNotes::Error => e
+  UI.user_error!(e.message)
+end
+
+# Shows version, target, asset and notes; the maintainer can edit the notes before publishing.
+# Returns true once the release has been created, false if the maintainer cancelled.
+def confirm_and_publish_release(version:, target:, notes_path:, dry_run: false)
+  zip_path = release_zip_path
+  UI.user_error!("#{zip_path} not found — run the release lane first.") unless File.exist?(zip_path)
+
+  tag = release_tag(version)
+  dirty = git_output("status", "--porcelain")
+  loop do
+    UI.header("GitHub release #{version}")
+    UI.message("Repository: #{GITHUB_REPO}")
+    UI.message("Tag:        #{tag} (new) → #{target[0, 7]} #{git_output('log', '-1', '--format=%s', target)}")
+    UI.message("Asset:      #{File.basename(zip_path)} (#{(File.size(zip_path) / 1024.0 / 1024.0).round(2)} MB)")
+    unless dirty.empty?
+      UI.important("⚠️  The working tree has uncommitted changes (e.g. the version bump). They are NOT in the tagged commit #{target[0, 7]}.")
+    end
+    UI.message("")
+    UI.message("Release notes (#{notes_path}):")
+    UI.message("─" * 60)
+    puts File.read(notes_path, encoding: "UTF-8")
+    UI.message("─" * 60)
+
+    choice = UI.select("Publish release #{version}?", ["Publish", "Edit release notes", "Cancel"])
+    case choice
+    when "Publish" then break
+    when "Edit release notes"
+      editor = ENV["VISUAL"] || ENV["EDITOR"] || "open -W -t"
+      system("#{editor} #{Shellwords.escape(notes_path)}")
+    else
+      UI.important("Release cancelled — nothing was uploaded.")
+      return false
+    end
+  end
+
+  create_args = [
+    "release", "create", tag, zip_path,
+    "--repo", GITHUB_REPO, "--title", version, "--notes-file", notes_path, "--target", target, "--latest"
+  ]
+  if dry_run
+    UI.important("DRY RUN — would run: gh #{create_args.shelljoin}")
+    return false
+  end
+
+  url = gh(*create_args).strip
+  UI.success("🚀 Released #{version}: #{url}")
+  true
+end
+
 default_platform(:mac)
 
 platform :mac do
@@ -139,10 +286,14 @@ platform :mac do
     UI.success("✅ Build completed successfully!")
   end
 
-  desc "Set the release version, build the app, create the ZIP, and open the release folder"
+  desc "Set the release version, build, notarize and zip the app, write the release notes with Claude, " \
+       "publish the GitHub release after confirmation, then bump the Homebrew cask"
   lane :release do
     # Ask for release version
     release_version = prompt(text: "Enter the release version (e.g. 1.2.3):")
+
+    # Fail before the long build if the release cannot be published afterwards.
+    ensure_release_publishable(release_version)
 
     sh("rm -rf '#{BUILD_DIR}' '#{RELEASE_DIR}'")
     
@@ -214,16 +365,51 @@ platform :mac do
     UI.message("Files available in ./release/:")
     UI.message("- #{ZIP_NAME}.zip (notarized)")
     UI.message("")
-    UI.success("You can now upload these files to your GitHub release.")
 
-    # Update the Homebrew cask to point at this version (sha256 of the notarized zip).
-    bump_homebrew_cask(
-      version: release_version,
-      zip_path: File.join(RELEASE_DIR, "#{ZIP_NAME}.zip")
-    )
+    # Publish before touching the cask: the cask URL points at this release's asset, so it must
+    # exist by the time `brew install` can see the new version. If the maintainer cancels, the
+    # cask is left alone.
+    if github_release(version: release_version)
+      bump_homebrew_cask(version: release_version, zip_path: release_zip_path)
+    else
+      UI.important("GitHub release not published, so the Homebrew cask was not bumped. To finish later:")
+      UI.important("  bundle exec fastlane mac github_release version:#{release_version}")
+      UI.important("  bundle exec fastlane mac bump_homebrew_cask version:#{release_version}")
+    end
 
     # Open the release folder in Finder
     sh("open '#{RELEASE_DIR}'")
+  end
+
+  desc "Write the GitHub release notes for a version: GitHub's generated pull request list grouped " \
+       "into features, improvements and bugfixes, each with a short summary written by Claude. " \
+       "Options: version, target (commit/branch, default HEAD), previous_tag (default latest release)"
+  lane :release_notes do |options|
+    version = options[:version] || prompt(text: "Release version (e.g. 1.2.3):")
+    target = resolve_release_target(options[:target])
+    path = generate_release_notes(version: version, target: target, previous_tag: options[:previous_tag])
+    UI.success("📝 Release notes written to #{path}")
+    puts File.read(path, encoding: "UTF-8")
+    path
+  end
+
+  desc "Create the GitHub release v<version> from release/#{ZIP_NAME}.zip after confirming version and " \
+       "notes. Reuses release/RELEASE_NOTES-<version>.md if present (regenerate:true to rewrite). " \
+       "Options: version, target, previous_tag, regenerate, dry_run. Returns whether it was published"
+  lane :github_release do |options|
+    version = options[:version] || prompt(text: "Release version (e.g. 1.2.3):")
+    dry_run = options[:dry_run] || ENV["DRY_RUN"] == "1"
+    ensure_release_publishable(version)
+    target = resolve_release_target(options[:target])
+
+    notes_path = release_notes_path(version)
+    if options[:regenerate] || !File.exist?(notes_path)
+      notes_path = generate_release_notes(version: version, target: target, previous_tag: options[:previous_tag])
+    else
+      UI.message("📝 Reusing existing #{notes_path}")
+    end
+
+    confirm_and_publish_release(version: version, target: target, notes_path: notes_path, dry_run: dry_run)
   end
 
   desc "Update and push the Homebrew cask (version + sha256) for a given release"
@@ -254,7 +440,7 @@ platform :mac do
     sh("git -C '#{HOMEBREW_TAP_PATH}' push")
 
     UI.success("🍺 Homebrew cask updated to #{cask_version} and pushed.")
-    UI.important("ℹ️  Make sure the GitHub release asset SimulatorManager.zip is uploaded for v#{cask_version} so the cask URL resolves.")
+    UI.important("ℹ️  Make sure the GitHub release asset SimulatorManager.zip exists for v#{cask_version} so the cask URL resolves (the release lane publishes it first).")
   end
 
   end

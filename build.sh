@@ -39,13 +39,14 @@ if ! bundle check >/dev/null 2>&1; then
 fi
 
 # Run the build
-echo "🔨 Building app..."
+echo "🔨 Building app (asks for the version, then confirms the release notes before publishing)..."
 bundle exec fastlane release
 
 echo ""
 echo "✅ Build and notarization completed successfully!"
 echo ""
 echo "📁 Files created in ./release/:"
-echo "   - SimulatorManager.zip (notarized, for GitHub releases)"
+echo "   - SimulatorManager.zip (notarized)"
+echo "   - RELEASE_NOTES-<version>.md"
 echo ""
-echo "🎉 Ready to upload to GitHub releases!"
+echo "🎉 Release flow finished. If you cancelled at the confirmation, see 'GitHub Release Workflow' in FASTLANE_README.md to resume."
