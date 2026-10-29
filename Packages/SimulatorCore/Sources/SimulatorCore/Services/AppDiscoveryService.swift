@@ -94,6 +94,8 @@ public final class AppDiscoveryService: Sendable {
                                                    userDefaultsDomains: domains,
                                                    companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier,
                                                    contentModifiedAt: timestamp,
+                                                   shortVersion: infoPlist.cfBundleShortVersionString,
+                                                   buildVersion: infoPlist.cfBundleVersion,
                                                    isTestRunner: infoPlist.isTestRunner)
             } else {
                 simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
@@ -103,6 +105,8 @@ public final class AppDiscoveryService: Sendable {
                                                hasWatchApp: infoPlist.hasCompanionWatchApp,
                                                userDefaultsDomains: domains,
                                                contentModifiedAt: timestamp,
+                                               shortVersion: infoPlist.cfBundleShortVersionString,
+                                               buildVersion: infoPlist.cfBundleVersion,
                                                isTestRunner: infoPlist.isTestRunner)
             }
 

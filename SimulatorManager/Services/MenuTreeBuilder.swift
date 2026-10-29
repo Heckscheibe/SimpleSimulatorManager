@@ -24,6 +24,9 @@ struct MenuTreeBuilder {
     /// Defaults to the running bundle's version, and stays injectable so the version section can
     /// be exercised without depending on whichever bundle the tests happen to run in.
     var appVersion: String? = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    /// Offers Save Snapshot to Folder on every app when set. Optional so a test that is not about
+    /// snapshots does not have to build one.
+    var snapshotSaveViewModel: SnapshotSaveViewModel?
     let openPreferences: @MainActor () -> Void
     let quit: @MainActor () -> Void
 
@@ -83,7 +86,8 @@ extension MenuTreeBuilder {
                         actions: openActions(for: appChange.app, handler: simulatorManagerViewModel),
                         children: shortcutNodes(for: appChange.app,
                                                 handler: simulatorManagerViewModel,
-                                                identifierPrefix: identifier))
+                                                identifierPrefix: identifier)
+                            + snapshotNodes(for: appChange.app, on: appChange.device, identifierPrefix: identifier))
     }
 }
 
@@ -220,7 +224,8 @@ extension MenuTreeBuilder {
                             actions: openActions(for: app, handler: viewModel),
                             children: shortcutNodes(for: app,
                                                     handler: viewModel,
-                                                    identifierPrefix: identifier))
+                                                    identifierPrefix: identifier)
+                                + snapshotNodes(for: app, on: viewModel.device, identifierPrefix: identifier))
         })
 
         return nodes

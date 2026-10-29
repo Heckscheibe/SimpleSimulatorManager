@@ -57,3 +57,12 @@ extension AppGroup: Identifiable {
         identifier
     }
 }
+
+extension AppGroup {
+    /// The groups that share a container with `app`, by the same rule discovery and the MCP server
+    /// use — see ``belongs(toAppWithBundleIdentifier:)``. Snapshots need the answer per app, and
+    /// the callers must not drift apart, so it lives here rather than in any one of them.
+    static func groups(in appGroups: [AppGroup], associatedWith app: any SimulatorApp) -> [AppGroup] {
+        appGroups.filter { $0.belongs(toAppWithBundleIdentifier: app.bundleIdentifier) }
+    }
+}

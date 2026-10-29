@@ -18,6 +18,7 @@ struct SimulatorManagerApp: App {
     @State private var settingsViewModel: SettingsViewModel
     @State private var shortcutRecorderViewModel: ShortcutRecorderViewModel
     @State private var menuSearchViewModel: MenuSearchViewModel
+    @State private var snapshotSaveViewModel: SnapshotSaveViewModel
     @State private var agentIntegrationViewModel = AgentIntegrationViewModel()
     @StateObject private var settings: Settings
     @StateObject private var shortcutController: GlobalShortcutController
@@ -59,6 +60,7 @@ struct SimulatorManagerApp: App {
         self._shortcutRecorderViewModel = State(initialValue: ShortcutRecorderViewModel(settings: settings))
         self._menuSearchViewModel = State(initialValue: MenuSearchViewModel(deviceManager: deviceManager,
                                                                             settings: settings))
+        self._snapshotSaveViewModel = State(initialValue: SnapshotSaveViewModel(settings: settings))
         self._settings = StateObject(wrappedValue: settings)
         self._shortcutController = StateObject(wrappedValue: shortcutController)
     }
@@ -96,6 +98,7 @@ private extension SimulatorManagerApp {
                           settingsViewModel: settingsViewModel,
                           cleanupViewModel: cleanupSimulatorsViewModel,
                           resetViewModel: resetSimulatorsViewModel,
+                          snapshotSaveViewModel: snapshotSaveViewModel,
                           settings: settings,
                           githubService: githubService,
                           menuPresenter: menuPresenter,

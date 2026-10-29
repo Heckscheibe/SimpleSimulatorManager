@@ -79,6 +79,8 @@ struct PreferencesView: View {
                 Toggle("UI Test Runner Apps", isOn: settings.binding(for: \.showTestRunnerApps))
             }
 
+            SnapshotPreferencesSection(settings: settings)
+
             AgentIntegrationSection(viewModel: agentIntegrationViewModel)
         }
         .formStyle(.grouped)

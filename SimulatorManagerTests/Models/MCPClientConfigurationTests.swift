@@ -6,8 +6,16 @@ import Testing
 struct MCPClientConfigurationTests {
     private let path = "/Applications/Simulator Manager.app/Contents/Helpers/simple-simulator-mcp"
 
-    private func configuration(path: String? = nil, userDefaults: Bool = false, destructive: Bool = false) -> MCPClientConfiguration {
-        MCPClientConfiguration(executablePath: path ?? self.path, allowUserDefaults: userDefaults, allowDestructive: destructive)
+    private func configuration(
+        path: String? = nil,
+        userDefaults: Bool = false,
+        destructive: Bool = false,
+        snapshots: Bool = false
+    ) -> MCPClientConfiguration {
+        MCPClientConfiguration(executablePath: path ?? self.path,
+                               allowUserDefaults: userDefaults,
+                               allowDestructive: destructive,
+                               allowSnapshots: snapshots)
     }
 
     // MARK: - Arguments
@@ -20,6 +28,14 @@ struct MCPClientConfigurationTests {
     ])
     func argumentsFollowFlags(userDefaults: Bool, destructive: Bool, expected: [String]) {
         #expect(configuration(userDefaults: userDefaults, destructive: destructive).arguments == expected)
+    }
+
+    @Test("Allowing snapshots adds --allow-snapshots last, in every client's config", arguments: MCPClient.allCases)
+    func snapshotsFlagReachesEveryClient(client: MCPClient) {
+        let configuration = configuration(userDefaults: true, snapshots: true)
+
+        #expect(configuration.arguments == ["--allow-user-defaults", "--allow-snapshots"])
+        #expect(configuration.snippet(for: client).contains("--allow-snapshots"))
     }
 
     // MARK: - Claude Code

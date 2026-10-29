@@ -13,7 +13,10 @@ struct LaunchCommandTests {
     func flags() {
         #expect(LaunchCommand.parse(["--allow-user-defaults"]) == .run(ServerOptions(allowUserDefaults: true)))
         #expect(LaunchCommand.parse(["--allow-destructive"]) == .run(ServerOptions(allowDestructive: true)))
-        #expect(LaunchCommand.parse(["--allow-destructive", "--allow-user-defaults"]) == .run(.allFlags))
+        #expect(LaunchCommand.parse(["--allow-snapshots"]) == .run(ServerOptions(allowSnapshots: true)))
+        #expect(LaunchCommand.parse(["--allow-destructive", "--allow-user-defaults"])
+            == .run(ServerOptions(allowUserDefaults: true, allowDestructive: true)))
+        #expect(LaunchCommand.parse(["--allow-snapshots", "--allow-destructive", "--allow-user-defaults"]) == .run(.allFlags))
     }
 
     @Test("--version and --help win over flags")
@@ -29,10 +32,11 @@ struct LaunchCommandTests {
         #expect(LaunchCommand.parse(["--allow-user-defaults", "--allow-destructve"]) == .invalid(argument: "--allow-destructve"))
     }
 
-    @Test("The usage names both flags")
+    @Test("The usage names every flag")
     func usageNamesFlags() {
         #expect(LaunchCommand.usage.contains("--allow-user-defaults"))
         #expect(LaunchCommand.usage.contains("--allow-destructive"))
+        #expect(LaunchCommand.usage.contains("--allow-snapshots"))
     }
 
     @Test("The server version matches the app's MARKETING_VERSION")

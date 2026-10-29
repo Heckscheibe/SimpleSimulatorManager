@@ -71,6 +71,18 @@ struct ToolArguments {
         throw ToolArgumentError(message: "Argument \(name) must be an integer.")
     }
 
+    /// `null` counts as absent, and gives `defaultValue`.
+    func bool(_ name: String, default defaultValue: Bool) throws -> Bool {
+        guard let value = values[name], value != .null else {
+            return defaultValue
+        }
+        guard let bool = value.boolValue else {
+            throw ToolArgumentError(message: "Argument \(name) must be a boolean.")
+        }
+
+        return bool
+    }
+
     /// `value` must be one of `allowed`, compared case-insensitively; returns the canonical spelling.
     func optionalChoice(_ name: String, from allowed: [String]) throws -> String? {
         guard let value = try optionalString(name) else {

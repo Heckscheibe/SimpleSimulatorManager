@@ -21,6 +21,10 @@ public protocol SimulatorApp: Identifiable, Sendable {
     /// Whether this is an XCUITest runner Xcode generated, rather than an app anyone built to be
     /// used. Discovery only flags it; hiding it is each consumer's decision. See ``TestRunnerApp``.
     var isTestRunner: Bool { get }
+    /// `CFBundleShortVersionString` as the app's `Info.plist` recorded it.
+    var shortVersion: String? { get }
+    /// `CFBundleVersion` as the app's `Info.plist` recorded it.
+    var buildVersion: String? { get }
 }
 
 extension SimulatorApp {
@@ -53,6 +57,16 @@ extension SimulatorApp {
     }
 
     public var contentModifiedAt: Date? {
+        nil
+    }
+
+    /// Defaulted so a conformer that has no bundle to read — a test double, say — is not forced to
+    /// invent version strings.
+    public var shortVersion: String? {
+        nil
+    }
+
+    public var buildVersion: String? {
         nil
     }
 
@@ -90,6 +104,8 @@ public final class SimulatoriOSApp: SimulatorApp {
     public let appPackageURL: URL?
     public let userDefaultsDomains: [String]
     public let contentModifiedAt: Date?
+    public let shortVersion: String?
+    public let buildVersion: String?
     public let isTestRunner: Bool
     public let iconName = "iphone.gen3"
 
@@ -103,6 +119,8 @@ public final class SimulatoriOSApp: SimulatorApp {
         hasWatchApp: Bool,
         userDefaultsDomains: [String],
         contentModifiedAt: Date? = nil,
+        shortVersion: String? = nil,
+        buildVersion: String? = nil,
         isTestRunner: Bool = false
     ) {
         self.displayName = displayName
@@ -112,6 +130,8 @@ public final class SimulatoriOSApp: SimulatorApp {
         self.hasWatchApp = hasWatchApp
         self.userDefaultsDomains = userDefaultsDomains
         self.contentModifiedAt = contentModifiedAt
+        self.shortVersion = shortVersion
+        self.buildVersion = buildVersion
         self.isTestRunner = isTestRunner
     }
 }
@@ -123,6 +143,8 @@ public final class SimulatorWatchOSApp: SimulatorApp {
     public let userDefaultsDomains: [String]
     public let appPackageURL: URL?
     public let contentModifiedAt: Date?
+    public let shortVersion: String?
+    public let buildVersion: String?
     public let isTestRunner: Bool
     public let iconName = "applewatch"
 
@@ -136,6 +158,8 @@ public final class SimulatorWatchOSApp: SimulatorApp {
         userDefaultsDomains: [String],
         companioniOSAppBundleIdentifier: String?,
         contentModifiedAt: Date? = nil,
+        shortVersion: String? = nil,
+        buildVersion: String? = nil,
         isTestRunner: Bool = false
     ) {
         self.displayName = displayName
@@ -145,6 +169,8 @@ public final class SimulatorWatchOSApp: SimulatorApp {
         self.userDefaultsDomains = userDefaultsDomains
         self.companioniOSAppBundleIdentifier = companioniOSAppBundleIdentifier
         self.contentModifiedAt = contentModifiedAt
+        self.shortVersion = shortVersion
+        self.buildVersion = buildVersion
         self.isTestRunner = isTestRunner
     }
 }
