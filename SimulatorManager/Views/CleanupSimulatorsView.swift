@@ -19,7 +19,7 @@ struct CleanupSimulatorsView: View {
             if viewModel.isLoadingCleanupCandidates {
                 Text("Inspecting simulator installations…")
             } else if cleanupCandidates.isEmpty {
-                Text("No invalid simulators found")
+                Text(viewModel.emptyStateText)
             }
 
             Divider()

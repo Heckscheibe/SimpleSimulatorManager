@@ -14,6 +14,7 @@ struct SimulatorManagerApp: App {
     @StateObject private var deviceManager: DeviceManager
     @State private var viewModel: SimulatorManagerViewModel
     @State private var cleanupSimulatorsViewModel: CleanupSimulatorsViewModel
+    @State private var cleanupRuntimesViewModel: CleanupRuntimesViewModel
     @State private var resetSimulatorsViewModel: ResetSimulatorsViewModel
     @State private var settingsViewModel: SettingsViewModel
     @State private var shortcutRecorderViewModel: ShortcutRecorderViewModel
@@ -37,6 +38,13 @@ struct SimulatorManagerApp: App {
                                                   simulatorResetService: simulatorResetService)
         let cleanupSimulatorsViewModel = CleanupSimulatorsViewModel(cleanupService: simulatorCleanupService,
                                                                     deviceManager: deviceManager)
+        let cleanupRuntimesViewModel = CleanupRuntimesViewModel(
+            cleanupService: SimulatorRuntimeCleanupService(),
+            deviceManager: deviceManager,
+            // Removing a runtime leaves its simulators unavailable, which the simulator cleanup
+            // list should pick up without waiting for a manual refresh.
+            didDeleteRuntimes: { cleanupSimulatorsViewModel.refreshCleanupCandidates() }
+        )
         let resetSimulatorsViewModel = ResetSimulatorsViewModel(deviceManager: deviceManager,
                                                                 simulatorResetService: simulatorResetService)
         let settings = Settings()
@@ -52,6 +60,7 @@ struct SimulatorManagerApp: App {
         self._deviceManager = StateObject(wrappedValue: deviceManager)
         self._viewModel = State(initialValue: viewModel)
         self._cleanupSimulatorsViewModel = State(initialValue: cleanupSimulatorsViewModel)
+        self._cleanupRuntimesViewModel = State(initialValue: cleanupRuntimesViewModel)
         self._resetSimulatorsViewModel = State(initialValue: resetSimulatorsViewModel)
         self._settingsViewModel = State(initialValue: SettingsViewModel(settings: settings,
                                                                         simulatorManagerViewModel: viewModel))
@@ -94,6 +103,7 @@ private extension SimulatorManagerApp {
             MenuPanelView(simulatorManagerViewModel: viewModel,
                           settingsViewModel: settingsViewModel,
                           cleanupViewModel: cleanupSimulatorsViewModel,
+                          cleanupRuntimesViewModel: cleanupRuntimesViewModel,
                           resetViewModel: resetSimulatorsViewModel,
                           settings: settings,
                           githubService: githubService,
@@ -114,6 +124,7 @@ private extension SimulatorManagerApp {
             OpenPreferencesButton()
             Divider()
             CleanupSimulatorsView(viewModel: cleanupSimulatorsViewModel)
+            CleanupRuntimesView(viewModel: cleanupRuntimesViewModel)
             Divider()
             ResetSimulatorsView(viewModel: resetSimulatorsViewModel)
             Divider()

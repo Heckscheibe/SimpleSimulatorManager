@@ -20,6 +20,9 @@ final class CleanupSimulatorsViewModel {
     }
 
     var cleanupCandidates: [SimulatorCleanupCandidate] = []
+    /// How many simulators the last successful scan examined, or `nil` when it has not run or
+    /// cannot say. It is what turns an empty list into "nothing wrong" rather than "no idea".
+    var checkedSimulatorCount: Int?
     var errorMessage: String?
     var isLoadingCleanupCandidates = false
     var deletingCandidateIDs = Set<String>()
@@ -61,6 +64,14 @@ final class CleanupSimulatorsViewModel {
         }
 
         return cleanupCandidates.isEmpty ? "trash.slash" : "exclamationmark.triangle"
+    }
+
+    var emptyStateText: String {
+        guard let checkedSimulatorCount else {
+            return "No invalid simulators found"
+        }
+
+        return "No invalid simulators found (\(checkedSimulatorCount) checked)"
     }
 
     var cleanupCandidateGroups: [CandidateGroup] {
@@ -108,10 +119,13 @@ final class CleanupSimulatorsViewModel {
             }
 
             do {
-                cleanupCandidates = try await cleanupService.loadCleanupCandidates()
+                let scan = try await cleanupService.loadCleanupScan()
+                cleanupCandidates = scan.candidates
+                checkedSimulatorCount = scan.checkedSimulatorCount
                 os_log("Cleanup scan loaded %{public}ld candidates", cleanupCandidates.count)
             } catch {
                 cleanupCandidates = []
+                checkedSimulatorCount = nil
                 errorMessage = error.localizedDescription
                 os_log("Cleanup scan failed: %{public}@", error.localizedDescription)
             }
@@ -219,7 +233,9 @@ final class CleanupSimulatorsViewModel {
             os_log("Cleanup delete triggered device reload")
 
             do {
-                cleanupCandidates = try await cleanupService.loadCleanupCandidates()
+                let scan = try await cleanupService.loadCleanupScan()
+                cleanupCandidates = scan.candidates
+                checkedSimulatorCount = scan.checkedSimulatorCount
                 os_log("Cleanup delete refreshed candidate list to %{public}ld items", cleanupCandidates.count)
             } catch {
                 failureMessages.append(error.localizedDescription)

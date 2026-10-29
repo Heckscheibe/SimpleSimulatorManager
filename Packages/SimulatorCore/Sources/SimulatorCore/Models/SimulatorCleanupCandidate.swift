@@ -148,3 +148,18 @@ public struct SimulatorCleanupCandidate: Identifiable, Sendable, Hashable {
         )
     }
 }
+
+/// The outcome of one cleanup scan: what qualified, and how much was looked at to decide.
+///
+/// The count is what lets an empty result be told apart from a scan that silently did nothing.
+public struct SimulatorCleanupScan: Sendable, Equatable {
+    public let candidates: [SimulatorCleanupCandidate]
+    /// Simulators `simctl` reported plus simulator directories found on disk with no registration.
+    /// `nil` when the service cannot say.
+    public let checkedSimulatorCount: Int?
+
+    public init(candidates: [SimulatorCleanupCandidate], checkedSimulatorCount: Int?) {
+        self.candidates = candidates
+        self.checkedSimulatorCount = checkedSimulatorCount
+    }
+}

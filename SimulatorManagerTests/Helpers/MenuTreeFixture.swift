@@ -19,6 +19,7 @@ final class MenuTreeFixture {
     let simulatorManagerViewModel: SimulatorManagerViewModel
     let settingsViewModel: SettingsViewModel
     let cleanupViewModel: CleanupSimulatorsViewModel
+    let cleanupRuntimesViewModel: CleanupRuntimesViewModel
     let resetViewModel: ResetSimulatorsViewModel
     let githubService = GithubService()
 
@@ -51,6 +52,9 @@ final class MenuTreeFixture {
         cleanupViewModel = CleanupSimulatorsViewModel(cleanupService: MockSimulatorCleanupService(),
                                                       deviceManager: deviceManager,
                                                       destructiveActionConfirmer: MockDestructiveActionConfirmer())
+        cleanupRuntimesViewModel = CleanupRuntimesViewModel(cleanupService: MockSimulatorRuntimeCleanupService(),
+                                                            deviceManager: deviceManager,
+                                                            destructiveActionConfirmer: MockDestructiveActionConfirmer())
         resetViewModel = ResetSimulatorsViewModel(deviceManager: deviceManager,
                                                   simulatorResetService: resetService)
     }
@@ -59,6 +63,7 @@ final class MenuTreeFixture {
         MenuTreeBuilder(simulatorManagerViewModel: simulatorManagerViewModel,
                         settingsViewModel: settingsViewModel,
                         cleanupViewModel: cleanupViewModel,
+                        cleanupRuntimesViewModel: cleanupRuntimesViewModel,
                         resetViewModel: resetViewModel,
                         settings: settings,
                         githubService: githubService,
