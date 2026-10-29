@@ -44,6 +44,23 @@ extension MenuBarPanelIntegrationTests {
             #expect(button.window != nil)
         }
 
+        @Test("From macOS 27 the panel is opened through an expanded interface session")
+        func expandedInterfaceSessionIsReachable() throws {
+            guard #available(macOS 27, *) else {
+                return
+            }
+
+            let presenter = MenuBarMenuPresenter()
+            let button = try #require(presenter.statusItemButton())
+            // Clicking the button no longer opens the panel, so without this path the shortcut would
+            // only toggle the button's highlight.
+            let statusItem = try #require(MenuBarMenuPresenter.expandedInterfaceStatusItem(of: button),
+                                          "The status item has no expanded interface delegate, or AppKit no longer exposes it")
+
+            #expect(MenuBarMenuPresenter.canRequestExpandedInterfaceSession(for: statusItem),
+                    "AppKit no longer accepts a request for an expanded interface session, so the menu cannot be opened")
+        }
+
         @Test("Opening puts the panel window on screen and marks the status item as showing it")
         func openingShowsThePanel() async throws {
             let presenter = MenuBarMenuPresenter()
@@ -72,7 +89,12 @@ extension MenuBarPanelIntegrationTests {
             defer { presenter.closeMenu() }
 
             presenter.openMenu()
-            await waitUntil { presenter.panelWindow() != nil }
+            // From macOS 27 the panel is put on screen before its rows have been measured, so it
+            // only reaches its size a few frames later. A panel that never measures them still
+            // fails below once this gives up.
+            await waitUntil {
+                (presenter.panelWindow()?.contentView?.bounds.height ?? 0) > MenuPanelStyle.rowMinimumHeight * 4
+            }
 
             let window = try #require(presenter.panelWindow())
             let contentView = try #require(window.contentView)
