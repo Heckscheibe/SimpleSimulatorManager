@@ -26,6 +26,13 @@ class Settings: ObservableObject {
         static let globalShortcut = "globalShortcut"
     }
 
+    /// Also outside ``Keys``, for the same reason and the opposite default: caches are left out of
+    /// a snapshot unless the user asks for them.
+    private enum SnapshotKeys {
+        static let includeCaches = "includeCachesInSnapshots"
+        static let exportFolder = "snapshotExportFolder"
+    }
+
     @Published var visiblePlatforms = Set<SimulatorPlatform>()
 
     /// The shortcut that opens the menu bar menu, or `nil` when the user cleared it.
@@ -68,6 +75,49 @@ class Settings: ObservableObject {
         userDefaults?.setValue(data, forKey: ShortcutKeys.globalShortcut)
     }
     
+    /// Whether a new app container snapshot captures `Library/Caches` and `tmp`.
+    ///
+    /// Off by default: both are regenerable and are frequently the bulk of a container's size, so
+    /// including them would make every snapshot cost far more disk than the state worth keeping.
+    var includeCachesInSnapshots: Bool {
+        get {
+            userDefaults?.bool(forKey: SnapshotKeys.includeCaches) ?? false
+        }
+        set {
+            // Not feeding a `@Published` value, so the settings window is told explicitly.
+            objectWillChange.send()
+            userDefaults?.setValue(newValue, forKey: SnapshotKeys.includeCaches)
+        }
+    }
+
+    /// Where Save Snapshot to Folder writes, or `nil` to ask every time.
+    ///
+    /// Downloads until the user changes it: the one folder every user has, already the place things
+    /// the user asked for land, and not inside anything synced by default.
+    var snapshotExportFolder: URL? {
+        get {
+            guard let path = userDefaults?.string(forKey: SnapshotKeys.exportFolder) else {
+                // Never configured.
+                return Self.defaultSnapshotExportFolder
+            }
+            guard !path.isEmpty else {
+                // Deliberately set to ask every time — distinct from never configured, as with the
+                // global shortcut.
+                return nil
+            }
+
+            return URL(fileURLWithPath: path, isDirectory: true)
+        }
+        set {
+            objectWillChange.send()
+            userDefaults?.setValue(newValue?.path ?? "", forKey: SnapshotKeys.exportFolder)
+        }
+    }
+
+    static var defaultSnapshotExportFolder: URL? {
+        FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+    }
+
     var showTVOS: Bool {
         get {
             userDefaults?.bool(forKey: Keys.showTVOS.rawValue) ?? true

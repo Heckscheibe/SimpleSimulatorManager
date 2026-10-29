@@ -127,7 +127,7 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
 
         // Building candidates walks simulator directories to size them, so it belongs on the
         // work queue too rather than on the cooperative thread running this function.
-        let candidates = try await onWorkQueue {
+        let candidates = try await Self.workQueue.perform {
             Self.buildCleanupCandidates(
                 simctlDevices: loadedSimctlDevices,
                 availableRuntimeIdentifiers: loadedRuntimeIdentifiers,
@@ -154,7 +154,7 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
             _ = try await runSimctlCommand(arguments: ["delete", udid])
             os_log("Cleanup service deleted simulator %{public}@ via simctl", udid)
         case let .trashDirectory(directoryURL):
-            try await onWorkQueue {
+            try await Self.workQueue.perform {
                 var resultingItemURL: NSURL?
                 try FileManager.default.trashItem(at: directoryURL, resultingItemURL: &resultingItemURL)
             }
@@ -213,15 +213,6 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
         return candidates.sorted(by: sortCandidates)
     }
 
-    /// Runs blocking work on the dedicated queue and bridges it back into async/await.
-    private func onWorkQueue<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
-        try await withCheckedThrowingContinuation { continuation in
-            Self.workQueue.async {
-                continuation.resume(with: Result { try work() })
-            }
-        }
-    }
-
     private func loadSimctlDevices() async throws -> [SimctlDeviceRecord] {
         os_log("Cleanup service loading simctl devices")
         let output = try await runSimctlCommand(arguments: ["list", "devices", "--json"])
@@ -261,7 +252,7 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
 
     private func loadDirectoryRecords() async throws -> [SimulatorDirectoryRecord] {
         os_log("Cleanup service loading simulator directories")
-        return try await onWorkQueue {
+        return try await Self.workQueue.perform {
             guard let devicesDirectoryURL = SimulatorPaths.coreSimulatorDevicesDirectoryURL() else {
                 os_log("Cleanup service could not determine CoreSimulator devices directory URL")
                 return [SimulatorDirectoryRecord]()
@@ -286,7 +277,7 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
     private func runSimctlCommand(arguments: [String]) async throws -> String {
         os_log("Cleanup service running simctl command: %{public}@", arguments.joined(separator: " "))
 
-        let output = try await onWorkQueue {
+        let output = try await Self.workQueue.perform {
             try Process.execute(command: "/usr/bin/xcrun", arguments: ["simctl"] + arguments)
         }
 

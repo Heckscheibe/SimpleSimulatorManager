@@ -107,7 +107,71 @@ private extension ToolRegistry {
         case .deleteCleanupCandidate:
             let id = try arguments.requiredString(Argument.id)
             return try JSONOutput.result(DeletedCandidate(deleted: await service.deleteCleanupCandidate(withId: id)))
+
+        case .listSnapshots:
+            let bundleIdentifier = try arguments.optionalString(Argument.bundleId)
+            return try JSONOutput.result(SnapshotList(snapshots: await service.snapshots(ofBundleIdentifier: bundleIdentifier)))
+
+        case .captureSnapshot:
+            return try await captureSnapshot(with: arguments)
+
+        case .diffSnapshot:
+            return try await diffSnapshot(with: arguments)
+
+        case .restoreSnapshot:
+            let id = try arguments.requiredString(Argument.snapshotId)
+            let udid = try arguments.optionalString(Argument.udid)
+            let acceptWarnings = try arguments.bool(Argument.acceptWarnings, default: false)
+            return try JSONOutput.result(await service.restoreSnapshot(withId: id, ontoDeviceWithUdid: udid, acceptingWarnings: acceptWarnings))
+
+        case .deleteSnapshot:
+            let id = try arguments.requiredString(Argument.snapshotId)
+            return try JSONOutput.result(DeletedSnapshot(deleted: await service.deleteSnapshot(withId: id)))
         }
+    }
+
+    func captureSnapshot(with arguments: ToolArguments) async throws -> CallTool.Result {
+        let contents = try arguments.optionalChoice(Argument.contents, from: SnapshotContents.identifiers)
+            .flatMap(SnapshotContents.init(identifier:)) ?? .everything
+        let request = try SnapshotCaptureRequest(
+            bundleIdentifier: arguments.requiredString(Argument.bundleId),
+            udid: arguments.requiredString(Argument.udid),
+            label: arguments.optionalString(Argument.label),
+            contents: contents,
+            includeCaches: arguments.bool(Argument.includeCaches, default: false),
+            terminateApp: arguments.bool(Argument.terminateApp, default: true)
+        )
+
+        return try JSONOutput.result(await service.captureSnapshot(request))
+    }
+
+    func diffSnapshot(with arguments: ToolArguments) async throws -> CallTool.Result {
+        let snapshotId = try arguments.requiredString(Argument.snapshotId)
+        let againstSnapshotId = try arguments.optionalString(Argument.againstSnapshotId)
+        let againstLive = try arguments.bool(Argument.againstLive, default: false)
+        let udid = try arguments.optionalString(Argument.udid)
+        let limit = try max(arguments.optionalInteger(Argument.limit) ?? SimulatorTool.defaultDiffLimit, 1)
+
+        let against: SnapshotDiffSubject
+        switch (againstSnapshotId, againstLive) {
+        case let (id?, false):
+            guard udid == nil else {
+                throw ToolArgumentError(message: "\(Argument.udid) only applies with \(Argument.againstLive).")
+            }
+
+            against = .snapshot(id: id)
+        case (nil, true):
+            against = .live(udid: udid)
+        default:
+            throw ToolArgumentError(message: "Pass exactly one of \(Argument.againstSnapshotId) or \(Argument.againstLive): true.")
+        }
+
+        let request = SnapshotDiffRequest(snapshotId: snapshotId,
+                                          against: against,
+                                          limit: limit,
+                                          includesDefaultsValues: options.allowUserDefaults)
+
+        return try JSONOutput.result(await service.diffSnapshot(request))
     }
 
     /// The text content is the export verbatim, so it is byte-for-byte what the menu copies.
@@ -166,6 +230,14 @@ private struct CleanupCandidateList: Encodable {
 
 private struct DeletedCandidate: Encodable {
     let deleted: CleanupCandidateDTO
+}
+
+private struct SnapshotList: Encodable {
+    let snapshots: [SnapshotDTO]
+}
+
+private struct DeletedSnapshot: Encodable {
+    let deleted: SnapshotDTO
 }
 
 private struct Status: Encodable {

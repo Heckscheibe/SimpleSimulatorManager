@@ -85,7 +85,7 @@ struct SampleSimulators {
 }
 
 extension ServerOptions {
-    static let allFlags = ServerOptions(allowUserDefaults: true, allowDestructive: true)
+    static let allFlags = ServerOptions(allowUserDefaults: true, allowDestructive: true, allowSnapshots: true)
 }
 
 enum CleanupCandidateFactory {

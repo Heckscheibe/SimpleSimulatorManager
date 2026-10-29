@@ -23,6 +23,8 @@ public enum SimulatorQueryError: LocalizedError, Equatable {
     case unknownUserDefaultsDomain(domain: String, available: [String])
     case noUserDefaults(subject: String)
     case unknownCleanupCandidate(id: String)
+    case unknownSnapshot(id: String)
+    case appHasNoDataContainer(bundleIdentifier: String, udid: String)
 
     public var errorDescription: String? {
         switch self {
@@ -42,6 +44,10 @@ public enum SimulatorQueryError: LocalizedError, Equatable {
             "\(subject) has not written any UserDefaults yet."
         case let .unknownCleanupCandidate(id):
             "No cleanup candidate with id \(id) exists. Call list_cleanup_candidates for current ids."
+        case let .unknownSnapshot(id):
+            "No snapshot with id \(id) exists. Call list_snapshots for current ids."
+        case let .appHasNoDataContainer(bundleIdentifier, udid):
+            "\(bundleIdentifier) on simulator \(udid) has no data container to snapshot. Launch it once so the simulator creates one."
         }
     }
 }
@@ -61,6 +67,12 @@ public protocol SimulatorQuerying: Sendable {
     func eraseDevice(withUdid udid: String) async throws
     func eraseAllSimulators() async throws
     func deleteCleanupCandidate(withId id: String) async throws -> CleanupCandidateDTO
+
+    func snapshots(ofBundleIdentifier bundleIdentifier: String?) async throws -> [SnapshotDTO]
+    func captureSnapshot(_ request: SnapshotCaptureRequest) async throws -> SnapshotCaptureDTO
+    func diffSnapshot(_ request: SnapshotDiffRequest) async throws -> SnapshotDiffDTO
+    func restoreSnapshot(withId id: String, ontoDeviceWithUdid udid: String?, acceptingWarnings: Bool) async throws -> SnapshotRestoreDTO
+    func deleteSnapshot(withId id: String) async throws -> SnapshotDTO
 }
 
 /// Answers tool calls from the same services the menu bar app uses, so both always agree.
@@ -73,10 +85,11 @@ public struct SimulatorQueryService: SimulatorQuerying {
     private let userDefaultsExporter: any UserDefaultsExporting
     private let resetService: any SimulatorResetServing
     private let cleanupService: any SimulatorCleanupServing
+    let snapshotService: any AppSnapshotting
 
     /// Disk scans block for as long as the simulators take to enumerate, so — as in
     /// `SimulatorCleanupService.workQueue` — they run here rather than on a cooperative thread.
-    private static let workQueue = DispatchQueue(
+    static let workQueue = DispatchQueue(
         label: "SimulatorQueryService.workQueue",
         qos: .userInitiated,
         attributes: .concurrent
@@ -87,19 +100,21 @@ public struct SimulatorQueryService: SimulatorQuerying {
         appDiscoveryService: AppDiscoveryService = AppDiscoveryService(),
         userDefaultsExporter: any UserDefaultsExporting = UserDefaultsExportService(),
         resetService: any SimulatorResetServing = SimulatorResetService(),
-        cleanupService: any SimulatorCleanupServing = SimulatorCleanupService()
+        cleanupService: any SimulatorCleanupServing = SimulatorCleanupService(),
+        snapshotService: any AppSnapshotting = AppSnapshotService()
     ) {
         self.deviceLoader = deviceLoader
         self.appDiscoveryService = appDiscoveryService
         self.userDefaultsExporter = userDefaultsExporter
         self.resetService = resetService
         self.cleanupService = cleanupService
+        self.snapshotService = snapshotService
     }
 
     // MARK: - Reading
 
     public func devices() async throws -> [DeviceDTO] {
-        try await onWorkQueue { [deviceLoader] in
+        try await Self.workQueue.perform { [deviceLoader] in
             try Self.deviceList(from: deviceLoader)
                 .sorted { ($0.name, $0.osVersion, $0.udid) < ($1.name, $1.osVersion, $1.udid) }
                 .map(DeviceDTO.init(device:))
@@ -107,7 +122,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func apps(onDeviceWithUdid udid: String) async throws -> [AppDTO] {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             try loadDevice(withUdid: udid, includingAppGroups: false)
                 .apps
                 .sorted(by: Self.appOrder)
@@ -116,7 +131,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func installations(ofBundleIdentifier bundleIdentifier: String) async throws -> [AppInstallationDTO] {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             let installations = try loadAllDevicesWithoutAppGroups()
                 .devices
                 .sorted { ($0.name, $0.udid) < ($1.name, $1.udid) }
@@ -135,7 +150,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func containers(ofBundleIdentifier bundleIdentifier: String, onDeviceWithUdid udid: String) async throws -> AppContainersDTO {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             let device = try loadDevice(withUdid: udid)
             let app = try Self.app(withBundleIdentifier: bundleIdentifier, on: device)
             let appGroups = device.appGroups
@@ -147,7 +162,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func appGroups(onDeviceWithUdid udid: String) async throws -> [AppGroupDTO] {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             try loadDevice(withUdid: udid)
                 .appGroups
                 .sorted { $0.identifier < $1.identifier }
@@ -156,7 +171,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func recentApps(limit: Int) async throws -> [RecentAppDTO] {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             // The menu's list first, then its head, so a limit never reorders or re-dedupes it.
             try RecentApps.initial(from: loadAllDevicesWithoutAppGroups().initialAppChanges)
                 .prefix(limit)
@@ -169,7 +184,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
     }
 
     public func userDefaultsJSON(of subject: UserDefaultsSubject, onDeviceWithUdid udid: String, domain: String?) async throws -> String {
-        try await onWorkQueue { [self] in
+        try await Self.workQueue.perform { [self] in
             let isAppGroup =
                 if case .appGroup = subject {
                     true
@@ -224,7 +239,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
 
     public func eraseDevice(withUdid udid: String) async throws {
         // Validated against the device list first, so simctl never sees an arbitrary string.
-        let knownUdids = try await onWorkQueue { [deviceLoader] in
+        let knownUdids = try await Self.workQueue.perform { [deviceLoader] in
             try Self.deviceList(from: deviceLoader).map(\.udid)
         }
 
@@ -257,7 +272,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
 
 // MARK: - Helpers
 
-private extension SimulatorQueryService {
+extension SimulatorQueryService {
     static func appOrder(_ lhs: any SimulatorApp, _ rhs: any SimulatorApp) -> Bool {
         (lhs.displayName.localizedLowercase, lhs.bundleIdentifier) < (rhs.displayName.localizedLowercase, rhs.bundleIdentifier)
     }
@@ -311,13 +326,5 @@ private extension SimulatorQueryService {
 
     static func isSinglePathComponent(_ name: String) -> Bool {
         !name.isEmpty && name != "." && name != ".." && !name.contains("/")
-    }
-
-    func onWorkQueue<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
-        try await withCheckedThrowingContinuation { continuation in
-            Self.workQueue.async {
-                continuation.resume(with: Result { try work() })
-            }
-        }
     }
 }

@@ -26,6 +26,7 @@ struct MenuPanelView: View {
     let cleanupViewModel: CleanupSimulatorsViewModel
     let cleanupRuntimesViewModel: CleanupRuntimesViewModel
     let resetViewModel: ResetSimulatorsViewModel
+    let snapshotSaveViewModel: SnapshotSaveViewModel
     @ObservedObject var settings: Settings
     @ObservedObject var githubService: GithubService
     /// Closing the panel is the same status-item operation as opening it, so it goes through the
@@ -160,6 +161,7 @@ private extension MenuPanelView {
                         resetViewModel: resetViewModel,
                         settings: settings,
                         githubService: githubService,
+                        snapshotSaveViewModel: snapshotSaveViewModel,
                         openPreferences: openPreferences,
                         quit: quit)
     }

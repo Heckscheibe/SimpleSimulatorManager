@@ -56,6 +56,9 @@ struct MenuNode: Identifiable {
     /// deferred until the user asks for it, exactly as the `.task` on the old cleanup submenu did.
     let onEnter: (@MainActor () -> Void)?
     let kind: Kind
+    /// What VoiceOver reads instead of `title`, for a row whose title only makes sense next to the
+    /// app and device its submenu hangs off — "Save Snapshot to Folder…" for every app otherwise.
+    var accessibilityTitle: String?
 }
 
 // MARK: - Convenience
@@ -159,7 +162,7 @@ extension MenuNode {
     /// assembled explicitly — and an app hit has to name its device, because "Documents Folder" is
     /// useless when the same app is installed on eight simulators.
     var accessibilityLabel: String {
-        var components = [title]
+        var components = [accessibilityTitle ?? title]
 
         if let subtitle {
             components.append(subtitle)

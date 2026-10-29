@@ -57,10 +57,11 @@ struct MCPClientConfiguration: Equatable {
     let executablePath: String
     let arguments: [String]
 
-    init(executablePath: String, allowUserDefaults: Bool, allowDestructive: Bool) {
+    init(executablePath: String, allowUserDefaults: Bool, allowDestructive: Bool, allowSnapshots: Bool = false) {
         self.executablePath = executablePath
         self.arguments = MCPServerLaunch.arguments(allowUserDefaults: allowUserDefaults,
-                                                   allowDestructive: allowDestructive)
+                                                   allowDestructive: allowDestructive,
+                                                   allowSnapshots: allowSnapshots)
     }
 
     func snippet(for client: MCPClient) -> String {

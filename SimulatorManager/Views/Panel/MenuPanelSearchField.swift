@@ -67,10 +67,7 @@ private extension MenuPanelSearchField {
     /// field claims it whenever the panel is the key window.
     func claimFocus(for field: NSSearchField) {
         DispatchQueue.main.async {
-            guard let window = field.window, window.isKeyWindow else {
-                return
-            }
-            guard window.firstResponder !== field.currentEditor() else {
+            guard let window = field.window, window.isKeyWindow, window.firstResponder !== field.currentEditor() else {
                 return
             }
 

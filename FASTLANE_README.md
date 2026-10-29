@@ -9,6 +9,8 @@ This document describes the current Fastlane workflow for building and signing t
 3. **Access to the certificates repo**: [Heckscheibe/simplesimulatormanager-certificates](https://github.com/Heckscheibe/simplesimulatormanager-certificates) (private) — this is where match stores the encrypted certificate and provisioning profile; you need read access via git (SSH) plus the shared `MATCH_PASSWORD` to decrypt them
 4. **Ruby**: the version pinned in [.ruby-version](.ruby-version) (currently 4.0.6). macOS's pre-installed Ruby is not sufficient — see [Install Ruby](#1-install-ruby) below
 5. **Xcode Command Line Tools**: Install with `xcode-select --install`
+6. **GitHub CLI** (`brew install gh`, then `gh auth login`) with push access to this repo: the release lane creates the GitHub release with your own login, so no token goes into `.env`
+7. **Claude Code** (`claude` on your `PATH`, signed in): the release lane uses `claude -p` to write the release notes. Set `CLAUDE_CLI` to use a different binary and `RELEASE_NOTES_MODEL` to pick a model
 
 ## Initial Setup
 
@@ -114,11 +116,18 @@ This will:
 - build and sign the app
 - notarize and staple the app with Apple
 - create `release/SimulatorManager.zip` from the stapled app bundle
+- write the release notes (see [GitHub Release Workflow](#github-release-workflow))
+- ask you to confirm the version and notes, then create the GitHub release and upload the ZIP
+- bump and push the Homebrew cask (only after the release was published)
+
+The checks that can fail cheaply — `gh` login, `claude` on the `PATH`, `v<version>` not yet existing — run before the build starts.
 
 ## Lanes Available
 
 - `fastlane mac build` - Build and sign the macOS app for Developer ID distribution
-- `fastlane mac release` - Set the release version, build the app, notarize it, create the ZIP, and open the release folder
+- `fastlane mac release` - Set the release version, build the app, notarize it, create the ZIP, write the release notes, publish the GitHub release after confirmation, and bump the Homebrew cask
+- `fastlane mac release_notes` - Write `release/RELEASE_NOTES-<version>.md` only (options: `version`, `target`, `previous_tag`)
+- `fastlane mac github_release` - Confirm and publish the GitHub release for an already built `release/SimulatorManager.zip` (options: `version`, `target`, `previous_tag`, `regenerate:true`, `dry_run:true`)
 - `fastlane mac update_signing_assets` - One-time/maintenance: push the Developer ID certificate/profile via match to the certs repo (needs push access to [simplesimulatormanager-certificates](https://github.com/Heckscheibe/simplesimulatormanager-certificates)); can't create a brand-new certificate — see below
 
 ## Troubleshooting
@@ -157,12 +166,19 @@ If notarization fails:
 
 ## GitHub Release Workflow
 
-After running `bundle exec fastlane mac release`:
+`bundle exec fastlane mac release` publishes the GitHub release itself, after the build and before the Homebrew cask is bumped (the cask URL points at the release asset, so the asset has to exist first).
 
-1. Files will be in the `release/` directory
-2. Create a new release on GitHub
-3. Upload `SimulatorManager.zip`
-4. Users can download the ZIP and move the app into their Applications folder
+**Release notes.** They keep the style of GitHub's auto-generated notes. The `* <PR title> by @<author> in <PR url>` lines and the `Full Changelog` link come verbatim from GitHub's `generate-notes` API for the range *latest release → target commit*. Claude reads each PR's title, body and labels and returns a category and a user-facing summary of at most three sentences; the lane groups the entries under **Features**, **Improvements** and **Bugfixes** (in that order, empty groups omitted) and indents the summary under its entry. Claude gets no tools and the PR text is passed as data. The result is saved as `release/RELEASE_NOTES-<version>.md`; the lane warns about a missing summary or one over three sentences.
+
+**Confirmation.** Before anything is uploaded the lane prints the repository, the tag `v<version>` and the commit it will point at, the ZIP and its size, and the full notes, then asks:
+
+1. *Publish* — creates the release `<version>` (tag `v<version>`, marked latest) and uploads `SimulatorManager.zip`
+2. *Edit release notes* — opens the file in `$VISUAL`/`$EDITOR` (default: TextEdit; use `code --wait` style commands for editors that return immediately), then shows the prompt again
+3. *Cancel* — uploads nothing and leaves the Homebrew cask untouched
+
+**The tag points at `HEAD`** (override with `target:<branch-or-sha>`), which must be pushed. The release lane bumps the version in the working tree without committing it, so the lane warns when the tree is dirty: commit and push the bump first if the tagged commit should contain it.
+
+**Resuming.** If you cancel or the upload fails, nothing else has changed. Run `bundle exec fastlane mac github_release version:X.Y.Z` (reuses the saved notes, `regenerate:true` rewrites them; `dry_run:true` shows the `gh release create` command without running it), then `bundle exec fastlane mac bump_homebrew_cask version:X.Y.Z`.
 
 ## Distribution Notes
 

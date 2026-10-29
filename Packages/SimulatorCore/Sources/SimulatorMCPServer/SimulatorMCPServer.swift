@@ -22,6 +22,15 @@ public enum SimulatorMCPServer {
     installed recently and which simulators can be cleaned up. Tools take simulator UDIDs, \
     bundle identifiers, app group identifiers and cleanup candidate ids — call list_devices or \
     find_app first to look them up.
+    
+    With --allow-snapshots it is also a database migration test harness. Testing how a new build \
+    migrates (Core Data, SwiftData, GRDB, SQLite or Realm) the data an older build left behind is \
+    what the snapshot tools are for: capture_snapshot the old build's data with contents \
+    "databases", install and launch the new build, diff_snapshot against_live to see what the \
+    migration changed, and restore_snapshot (accept_warnings: true) to run it again from exactly \
+    the same old data. The same works for downgrades (an old build launched on migrated data) and \
+    for relaunching the new build on data it already migrated. Building, installing and launching \
+    builds is not part of this server: use xcodebuild and simctl.
     """
 
     /// A server with the tool handlers registered, ready for `start(transport:)`.

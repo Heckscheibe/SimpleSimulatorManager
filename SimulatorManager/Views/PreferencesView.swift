@@ -78,6 +78,8 @@ struct PreferencesView: View {
                 Toggle("visionOS", isOn: settings.binding(for: \.showVisionOS))
             }
 
+            SnapshotPreferencesSection(settings: settings)
+
             AgentIntegrationSection(viewModel: agentIntegrationViewModel)
         }
         .formStyle(.grouped)

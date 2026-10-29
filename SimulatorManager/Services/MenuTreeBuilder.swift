@@ -25,6 +25,9 @@ struct MenuTreeBuilder {
     /// Defaults to the running bundle's version, and stays injectable so the version section can
     /// be exercised without depending on whichever bundle the tests happen to run in.
     var appVersion: String? = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    /// Offers Save Snapshot to Folder on every app when set. Optional so a test that is not about
+    /// snapshots does not have to build one.
+    var snapshotSaveViewModel: SnapshotSaveViewModel?
     let openPreferences: @MainActor () -> Void
     let quit: @MainActor () -> Void
 
@@ -85,7 +88,8 @@ extension MenuTreeBuilder {
                         actions: openActions(for: appChange.app, handler: simulatorManagerViewModel),
                         children: shortcutNodes(for: appChange.app,
                                                 handler: simulatorManagerViewModel,
-                                                identifierPrefix: identifier))
+                                                identifierPrefix: identifier)
+                            + snapshotNodes(for: appChange.app, on: appChange.device, identifierPrefix: identifier))
     }
 }
 
@@ -204,10 +208,9 @@ extension MenuTreeBuilder {
     private func appNodes(for viewModel: DeviceViewModel, prefix: String) -> [MenuNode] {
         var nodes: [MenuNode] = []
 
-        // Transcribed from `AppsView` as written: it draws the "Apps" header only when the device
-        // has *no* apps installed. That cannot happen, because the header is reached only from
-        // inside the apps submenu, which is itself conditional on apps existing — so the header
-        // never appears today. Kept as-is so the tree matches the menu rather than changing it.
+        // The "Apps" header is drawn only when the device has *no* apps installed. That cannot
+        // happen, because the header is reached only from inside the apps submenu, which is itself
+        // conditional on apps existing — so the header never appears today.
         if !viewModel.device.hasAppsInstalled {
             nodes.append(.sectionHeader(id: "\(prefix).apps.header", title: "Apps"))
         }
@@ -222,7 +225,8 @@ extension MenuTreeBuilder {
                             actions: openActions(for: app, handler: viewModel),
                             children: shortcutNodes(for: app,
                                                     handler: viewModel,
-                                                    identifierPrefix: identifier))
+                                                    identifierPrefix: identifier)
+                                + snapshotNodes(for: app, on: viewModel.device, identifierPrefix: identifier))
         })
 
         return nodes

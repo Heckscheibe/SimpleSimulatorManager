@@ -10,7 +10,7 @@ import SimulatorCore
 /// Drives the "Agent Integration (MCP)" preferences section: where the embedded server lives and
 /// the ready-to-paste config for each agent.
 ///
-/// The two opt-in toggles only change the generated snippet. They are deliberately not stored
+/// The opt-in toggles only change the generated snippet. They are deliberately not stored
 /// settings: each agent decides for itself what it may do, in its own config.
 @MainActor
 @Observable
@@ -26,6 +26,7 @@ final class AgentIntegrationViewModel {
     var selectedClient: MCPClient = .claudeCode
     var allowUserDefaults = false
     var allowDestructive = false
+    var allowSnapshots = false
 
     /// The snippet most recently copied, so the view can confirm it until the input changes.
     private(set) var lastCopiedSnippet: String?
@@ -43,7 +44,8 @@ final class AgentIntegrationViewModel {
     var configuration: MCPClientConfiguration {
         MCPClientConfiguration(executablePath: executableURL.path,
                                allowUserDefaults: allowUserDefaults,
-                               allowDestructive: allowDestructive)
+                               allowDestructive: allowDestructive,
+                               allowSnapshots: allowSnapshots)
     }
 
     var snippet: String {

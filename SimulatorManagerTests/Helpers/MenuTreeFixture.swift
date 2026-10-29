@@ -59,7 +59,10 @@ final class MenuTreeFixture {
                                                   simulatorResetService: resetService)
     }
 
-    func makeBuilder(appVersion: String? = "1.4.0") -> MenuTreeBuilder {
+    func makeBuilder(
+        appVersion: String? = "1.4.0",
+        snapshotSaveViewModel: SnapshotSaveViewModel? = nil
+    ) -> MenuTreeBuilder {
         MenuTreeBuilder(simulatorManagerViewModel: simulatorManagerViewModel,
                         settingsViewModel: settingsViewModel,
                         cleanupViewModel: cleanupViewModel,
@@ -68,6 +71,7 @@ final class MenuTreeFixture {
                         settings: settings,
                         githubService: githubService,
                         appVersion: appVersion,
+                        snapshotSaveViewModel: snapshotSaveViewModel,
                         openPreferences: { [weak self] in self?.openPreferencesCount += 1 },
                         quit: { [weak self] in self?.quitCount += 1 })
     }
