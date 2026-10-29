@@ -143,6 +143,7 @@ struct AppSnapshotCaptureTests {
         let recorder = ProgressRecorder()
         _ = try await environment.service.captureSnapshot(of: environment.target,
                                                           label: "Baseline",
+                                                          contents: .everything,
                                                           includeCaches: false,
                                                           progress: { recorder.record($0) })
 

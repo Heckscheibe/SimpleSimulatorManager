@@ -13,7 +13,9 @@ struct AgentIntegrationSection: View {
         Section("Agent Integration (MCP)") {
             Text("""
             Coding agents can query simulators, installed apps and their containers through the \
-            bundled MCP server. It runs only while an agent uses it, and opens no network port.
+            bundled MCP server, and with app snapshots allowed, test database migrations by \
+            capturing, restoring and diffing an app's data. It runs only while an agent uses it, \
+            and opens no network port.
             """)
             .font(.callout)
             .foregroundStyle(.secondary)
@@ -41,6 +43,14 @@ struct AgentIntegrationSection: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Toggle("Allow destructive actions", isOn: $viewModel.allowDestructive)
                     Text("Erasing simulators and deleting cleanup candidates.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Toggle("Allow app snapshots", isOn: $viewModel.allowSnapshots)
+                    Text("For database migration testing. Capturing copies an app's data and may terminate the app; "
+                        + "restoring overwrites its containers.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

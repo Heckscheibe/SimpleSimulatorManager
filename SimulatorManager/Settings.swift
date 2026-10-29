@@ -39,6 +39,7 @@ class Settings: ObservableObject {
     /// a snapshot unless the user asks for them.
     private enum SnapshotKeys {
         static let includeCaches = "includeCachesInSnapshots"
+        static let exportFolder = "snapshotExportFolder"
     }
 
     @Published var visiblePlatforms = Set<SimulatorPlatform>()
@@ -92,8 +93,38 @@ class Settings: ObservableObject {
             userDefaults?.bool(forKey: SnapshotKeys.includeCaches) ?? false
         }
         set {
+            // Not feeding a `@Published` value, so the settings window is told explicitly.
+            objectWillChange.send()
             userDefaults?.setValue(newValue, forKey: SnapshotKeys.includeCaches)
         }
+    }
+
+    /// Where Save Snapshot to Folder writes, or `nil` to ask every time.
+    ///
+    /// Downloads until the user changes it: the one folder every user has, already the place things
+    /// the user asked for land, and not inside anything synced by default.
+    var snapshotExportFolder: URL? {
+        get {
+            guard let path = userDefaults?.string(forKey: SnapshotKeys.exportFolder) else {
+                // Never configured.
+                return Self.defaultSnapshotExportFolder
+            }
+            guard !path.isEmpty else {
+                // Deliberately set to ask every time — distinct from never configured, as with the
+                // global shortcut.
+                return nil
+            }
+
+            return URL(fileURLWithPath: path, isDirectory: true)
+        }
+        set {
+            objectWillChange.send()
+            userDefaults?.setValue(newValue?.path ?? "", forKey: SnapshotKeys.exportFolder)
+        }
+    }
+
+    static var defaultSnapshotExportFolder: URL? {
+        FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
     }
 
     var showTVOS: Bool {

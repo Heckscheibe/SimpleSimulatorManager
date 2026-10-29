@@ -25,6 +25,7 @@ struct MenuPanelView: View {
     let settingsViewModel: SettingsViewModel
     let cleanupViewModel: CleanupSimulatorsViewModel
     let resetViewModel: ResetSimulatorsViewModel
+    let snapshotSaveViewModel: SnapshotSaveViewModel
     @ObservedObject var settings: Settings
     @ObservedObject var githubService: GithubService
     /// Closing the panel is the same status-item operation as opening it, so it goes through the
@@ -86,6 +87,8 @@ struct MenuPanelView: View {
             flyouts.reset()
             viewModel.reset()
             searchViewModel.clear()
+            // Ready for the next opening, which must not show ages measured when this one began.
+            now = Date()
         }
         .task {
             githubService.startPeriodicUpdateCheck()
@@ -99,11 +102,13 @@ struct MenuPanelView: View {
 // MARK: - Install ages
 
 private extension MenuPanelView {
-    /// Re-measures ages when the panel opens and then once a minute, the finest unit a relative age
-    /// shows. Tied to the view's lifetime by `.task`, so it stops when the panel closes.
+    /// Re-measures ages once a minute while the panel is up, the finest unit a relative age shows.
+    /// Tied to the view's lifetime by `.task`, so it stops when the panel closes.
+    ///
+    /// It sleeps before its first update on purpose: changing state while the panel is being laid
+    /// out for the first time disturbs the measurement of its rows, and the panel then never reaches
+    /// its size. The age for the first minute is the one taken when the panel last closed.
     func keepAgesCurrent() async {
-        now = Date()
-
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(60))
             now = Date()
@@ -180,6 +185,7 @@ private extension MenuPanelView {
                         settings: settings,
                         githubService: githubService,
                         now: now,
+                        snapshotSaveViewModel: snapshotSaveViewModel,
                         openPreferences: openPreferences,
                         quit: quit)
     }

@@ -28,6 +28,9 @@ struct MenuTreeBuilder {
     /// inputs; the panel advances it while open so the ages do not freeze.
     var now: Date = .init()
     var ageFormatter: AppInstallAgeFormatter = MenuTreeBuilder.sharedAgeFormatter
+    /// Offers Save Snapshot to Folder on every app when set. Optional so a test that is not about
+    /// snapshots does not have to build one.
+    var snapshotSaveViewModel: SnapshotSaveViewModel?
     let openPreferences: @MainActor () -> Void
     let quit: @MainActor () -> Void
 
@@ -90,6 +93,7 @@ extension MenuTreeBuilder {
                         children: shortcutNodes(for: appChange.app,
                                                 handler: simulatorManagerViewModel,
                                                 identifierPrefix: identifier)
+                            + snapshotNodes(for: appChange.app, on: appChange.device, identifierPrefix: identifier)
                             + ageNodes(for: appChange.app, age: age, identifierPrefix: identifier))
     }
 }
@@ -209,10 +213,9 @@ extension MenuTreeBuilder {
     private func appNodes(for viewModel: DeviceViewModel, prefix: String) -> [MenuNode] {
         var nodes: [MenuNode] = []
 
-        // Transcribed from `AppsView` as written: it draws the "Apps" header only when the device
-        // has *no* apps installed. That cannot happen, because the header is reached only from
-        // inside the apps submenu, which is itself conditional on apps existing — so the header
-        // never appears today. Kept as-is so the tree matches the menu rather than changing it.
+        // The "Apps" header is drawn only when the device has *no* apps installed. That cannot
+        // happen, because the header is reached only from inside the apps submenu, which is itself
+        // conditional on apps existing — so the header never appears today.
         if !viewModel.device.hasAppsInstalled {
             nodes.append(.sectionHeader(id: "\(prefix).apps.header", title: "Apps"))
         }
@@ -230,6 +233,7 @@ extension MenuTreeBuilder {
                             children: shortcutNodes(for: app,
                                                     handler: viewModel,
                                                     identifierPrefix: identifier)
+                                + snapshotNodes(for: app, on: viewModel.device, identifierPrefix: identifier)
                                 + ageNodes(for: app, age: age, identifierPrefix: identifier))
         })
 

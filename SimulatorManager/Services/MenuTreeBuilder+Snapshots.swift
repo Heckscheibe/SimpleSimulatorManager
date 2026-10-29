@@ -1,0 +1,100 @@
+//
+//  MenuTreeBuilder+Snapshots.swift
+//  SimulatorManager
+//
+//  Created by Nicolas Hiller on 20.10.26.
+//
+
+import Foundation
+import SimulatorCore
+
+/// Save Snapshot to Folder, at the end of an app's submenu: a submenu of what the snapshot holds.
+///
+/// Needs the device as well as the app — the snapshot is of one install on one simulator, and its
+/// name says which — which is why it is not part of the shortcut rows, which only know the app.
+///
+/// Every option is always offered. Knowing which would find something means reading file headers,
+/// which building the tree must never do; an option that finds nothing says so when it is picked.
+extension MenuTreeBuilder {
+    func snapshotNodes(for app: any SimulatorApp, on device: Device, identifierPrefix prefix: String) -> [MenuNode] {
+        guard let snapshotSaveViewModel, snapshotSaveViewModel.canSaveSnapshot(of: app) else {
+            return []
+        }
+
+        let identifier = "\(prefix).saveSnapshot"
+        let divider = MenuNode.divider(id: "\(prefix).snapshotDivider")
+
+        // The save outlives the panel, so reopening it mid-save shows how far along it is — and
+        // the row being informational is what stops the same save being started twice.
+        if let progress = snapshotSaveViewModel.progress(for: app, on: device) {
+            var progressNode = MenuNode.informational(id: "\(identifier).progress", title: Self.progressTitle(progress))
+            progressNode.accessibilityTitle = "\(Self.progressTitle(progress)) of \(app.displayName) on \(device.name)"
+
+            return [divider, progressNode]
+        }
+
+        let accessibilityTitle = Self.saveSnapshotAccessibilityTitle(for: app, on: device)
+        let options = SnapshotSaveOption.allCases.map { option in
+            let save = MenuActionItem(title: option.title) {
+                snapshotSaveViewModel.saveSnapshot(of: app, on: device, contents: option.contents)
+            }
+
+            var node = MenuNode.action(id: "\(identifier).\(option.rawValue)",
+                                       title: option.title,
+                                       actions: [save])
+            node.accessibilityTitle = "\(option.title): \(accessibilityTitle)"
+
+            return node
+        }
+
+        var submenu = MenuNode.submenu(id: identifier, title: Self.saveSnapshotTitle, children: options)
+        submenu.accessibilityTitle = accessibilityTitle
+
+        return [divider, submenu]
+    }
+
+    static func saveSnapshotAccessibilityTitle(for app: any SimulatorApp, on device: Device) -> String {
+        "Save snapshot of \(app.displayName) on \(device.name) to folder"
+    }
+
+    static let saveSnapshotTitle = "Save Snapshot to Folder"
+
+    static func progressTitle(_ progress: Double) -> String {
+        "Saving Snapshot… \(Int((progress * 100).rounded(.down)))%"
+    }
+}
+
+/// The rows under Save Snapshot to Folder, in the order they are listed. The raw value is the
+/// row's identifier component.
+enum SnapshotSaveOption: String, CaseIterable {
+    case everything
+    case databasesAndUserDefaults
+    case databases
+    case userDefaults
+
+    var title: String {
+        switch self {
+        case .everything:
+            "Everything"
+        case .databasesAndUserDefaults:
+            "Database and UserDefaults"
+        case .databases:
+            "Database"
+        case .userDefaults:
+            "UserDefaults"
+        }
+    }
+
+    var contents: SnapshotContents {
+        switch self {
+        case .everything:
+            .everything
+        case .databasesAndUserDefaults:
+            .databasesAndUserDefaults
+        case .databases:
+            .databases
+        case .userDefaults:
+            .userDefaults
+        }
+    }
+}

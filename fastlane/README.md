@@ -37,7 +37,23 @@ Build and sign the macOS app for Developer ID distribution
 [bundle exec] fastlane mac release
 ```
 
-Set the release version, build the app, create the ZIP, and open the release folder
+Set the release version, build, notarize and zip the app, write the release notes with Claude, publish the GitHub release after confirmation, then bump the Homebrew cask
+
+### mac release_notes
+
+```sh
+[bundle exec] fastlane mac release_notes
+```
+
+Write the GitHub release notes for a version: GitHub's generated pull request list grouped into features, improvements and bugfixes, each with a short summary written by Claude. Options: version, target (commit/branch, default HEAD), previous_tag (default latest release)
+
+### mac github_release
+
+```sh
+[bundle exec] fastlane mac github_release
+```
+
+Create the GitHub release v<version> from release/SimulatorManager.zip after confirming version and notes. Reuses release/RELEASE_NOTES-<version>.md if present (regenerate:true to rewrite). Options: version, target, previous_tag, regenerate, dry_run. Returns whether it was published
 
 ### mac bump_homebrew_cask
 

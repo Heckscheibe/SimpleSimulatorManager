@@ -18,6 +18,7 @@ struct SimulatorManagerApp: App {
     @State private var settingsViewModel: SettingsViewModel
     @State private var shortcutRecorderViewModel: ShortcutRecorderViewModel
     @State private var menuSearchViewModel: MenuSearchViewModel
+    @State private var snapshotSaveViewModel: SnapshotSaveViewModel
     @State private var agentIntegrationViewModel = AgentIntegrationViewModel()
     @StateObject private var settings: Settings
     @StateObject private var shortcutController: GlobalShortcutController
@@ -58,18 +59,13 @@ struct SimulatorManagerApp: App {
         self._shortcutRecorderViewModel = State(initialValue: ShortcutRecorderViewModel(settings: settings))
         self._menuSearchViewModel = State(initialValue: MenuSearchViewModel(deviceManager: deviceManager,
                                                                             settings: settings))
+        self._snapshotSaveViewModel = State(initialValue: SnapshotSaveViewModel(settings: settings))
         self._settings = StateObject(wrappedValue: settings)
         self._shortcutController = StateObject(wrappedValue: shortcutController)
     }
 
     var body: some Scene {
-        // Exactly one of these, chosen at compile time — see ``MenuBarPresentation`` for why this
-        // cannot be a runtime `Bool`.
-        #if LEGACY_MENU_BAR
-            nativeMenuScene
-        #else
-            searchablePanelScene
-        #endif
+        searchablePanelScene
 
         // A `Window` rather than a SwiftUI `Settings` scene: see `PreferencesWindow` for why the
         // latter cannot present in this app.
@@ -95,35 +91,13 @@ private extension SimulatorManagerApp {
                           settingsViewModel: settingsViewModel,
                           cleanupViewModel: cleanupSimulatorsViewModel,
                           resetViewModel: resetSimulatorsViewModel,
+                          snapshotSaveViewModel: snapshotSaveViewModel,
                           settings: settings,
                           githubService: githubService,
                           menuPresenter: menuPresenter,
                           searchViewModel: menuSearchViewModel)
         }
         .menuBarExtraStyle(.window)
-    }
-
-    /// The menu as it shipped, kept until the panel stops being provisional.
-    var nativeMenuScene: some Scene {
-        MenuBarExtra("SimulatorManager", systemImage: Self.menuBarSymbol) {
-            RecentAppsView(viewModel: viewModel, settings: settings)
-            Divider()
-            DeviceTypeView(viewModel: viewModel, settings: settings)
-            Divider()
-            SettingsView(viewModel: settingsViewModel, settings: settings)
-            OpenPreferencesButton()
-            Divider()
-            CleanupSimulatorsView(viewModel: cleanupSimulatorsViewModel)
-            Divider()
-            ResetSimulatorsView(viewModel: resetSimulatorsViewModel)
-            Divider()
-            GitHubView()
-            Divider()
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
-            }
-            .keyboardShortcut("q")
-        }
     }
 
     static let menuBarSymbol = "iphone.gen3"

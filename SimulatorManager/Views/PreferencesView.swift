@@ -95,6 +95,8 @@ struct PreferencesView: View {
                     .foregroundStyle(.secondary)
             }
 
+            SnapshotPreferencesSection(settings: settings)
+
             AgentIntegrationSection(viewModel: agentIntegrationViewModel)
         }
         .formStyle(.grouped)
