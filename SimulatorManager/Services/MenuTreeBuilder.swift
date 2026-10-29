@@ -18,6 +18,7 @@ struct MenuTreeBuilder {
     let simulatorManagerViewModel: SimulatorManagerViewModel
     let settingsViewModel: SettingsViewModel
     let cleanupViewModel: CleanupSimulatorsViewModel
+    let cleanupRuntimesViewModel: CleanupRuntimesViewModel
     let resetViewModel: ResetSimulatorsViewModel
     let settings: Settings
     let githubService: GithubService
@@ -40,6 +41,7 @@ struct MenuTreeBuilder {
         nodes.append(preferencesNode())
         nodes.append(.divider(id: "divider.afterSettings"))
         nodes.append(cleanupNode())
+        nodes.append(cleanupRuntimesNode())
         nodes.append(.divider(id: "divider.afterCleanup"))
         nodes.append(resetNode())
         nodes.append(.divider(id: "divider.afterReset"))

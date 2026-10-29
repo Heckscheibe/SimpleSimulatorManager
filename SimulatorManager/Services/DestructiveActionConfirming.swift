@@ -11,6 +11,11 @@ import Foundation
 protocol DestructiveActionConfirming: AnyObject {
     /// - Returns: `true` when the user confirmed deleting `simulatorCount` unrecoverable simulators.
     func confirmPermanentSimulatorDeletion(simulatorCount: Int) -> Bool
+
+    /// - Returns: `true` when the user confirmed deleting `runtimeCount` simulator runtimes.
+    ///   `simulatorCount` is how many simulators lose their runtime as a result, and
+    ///   `bootedSimulatorCount` how many of those are running and will be shut down.
+    func confirmRuntimeDeletion(runtimeCount: Int, totalBytes: Int64, simulatorCount: Int, bootedSimulatorCount: Int) -> Bool
 }
 
 @MainActor
@@ -30,6 +35,34 @@ final class AlertDestructiveActionConfirmer: DestructiveActionConfirming {
 
         // The menu closes as soon as the item is clicked, so bring the app forward to make sure
         // the alert is not stranded behind whatever the user was working in.
+        NSApp.activate(ignoringOtherApps: true)
+
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    func confirmRuntimeDeletion(runtimeCount: Int, totalBytes: Int64, simulatorCount: Int, bootedSimulatorCount: Int) -> Bool {
+        let alert = NSAlert()
+        alert.alertStyle = .critical
+        alert.messageText = runtimeCount == 1
+            ? "Delete this simulator runtime?"
+            : "Delete \(runtimeCount) simulator runtimes?"
+
+        let size = ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file)
+        var text = "This frees up about \(size). A deleted runtime can only be restored by downloading it again."
+        if simulatorCount > 0 {
+            text += simulatorCount == 1
+                ? " 1 simulator uses it and will become unavailable; Cleanup Simulators will then list it."
+                : " \(simulatorCount) simulators use it and will become unavailable; Cleanup Simulators will then list them."
+        }
+        if bootedSimulatorCount > 0 {
+            text += bootedSimulatorCount == 1
+                ? " 1 running simulator will be shut down first."
+                : " \(bootedSimulatorCount) running simulators will be shut down first."
+        }
+        alert.informativeText = text
+        alert.addButton(withTitle: "Delete")
+        alert.addButton(withTitle: "Cancel")
+
         NSApp.activate(ignoringOtherApps: true)
 
         return alert.runModal() == .alertFirstButtonReturn
