@@ -80,7 +80,9 @@ public final class AppDiscoveryService: Sendable {
 
             // The app data folder changes when the container is touched; the .app bundle
             // directory is replaced on install/update. The newer of the two is the best
-            // "last installed/updated" signal.
+            // "did this app change" signal and keeps backing `contentModifiedAt`. The bundle date
+            // alone is what says when it was installed, so it is carried separately: a running app
+            // writing to its container must not make an old install look new.
             let bundleDate = infoPlist.url.flatMap { getFileModificationDate(url: $0) }
             let timestamp = [container.modificationDate, bundleDate].compactMap { $0 }.max() ?? Date.distantPast
 
@@ -94,6 +96,7 @@ public final class AppDiscoveryService: Sendable {
                                                    userDefaultsDomains: domains,
                                                    companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier,
                                                    contentModifiedAt: timestamp,
+                                                   bundleModifiedAt: bundleDate,
                                                    shortVersion: infoPlist.cfBundleShortVersionString,
                                                    buildVersion: infoPlist.cfBundleVersion)
             } else {
@@ -104,6 +107,7 @@ public final class AppDiscoveryService: Sendable {
                                                hasWatchApp: infoPlist.hasCompanionWatchApp,
                                                userDefaultsDomains: domains,
                                                contentModifiedAt: timestamp,
+                                               bundleModifiedAt: bundleDate,
                                                shortVersion: infoPlist.cfBundleShortVersionString,
                                                buildVersion: infoPlist.cfBundleVersion)
             }
