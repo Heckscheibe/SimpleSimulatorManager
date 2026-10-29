@@ -35,6 +35,7 @@ final class MenuSearchViewModel {
     @ObservationIgnored private var devices: [Device] = []
     @ObservationIgnored private var recentApps: [AppChange] = []
     @ObservationIgnored private var visiblePlatforms: Set<SimulatorPlatform> = []
+    @ObservationIgnored private var hidesTestRunnerApps = false
 
     init(
         deviceManager: DeviceManaging,
@@ -100,12 +101,21 @@ private extension MenuSearchViewModel {
                 self?.rebuildIndex()
             }
             .store(in: &cancellables)
+
+        settings.$hideTestRunnerApps
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] hidesTestRunnerApps in
+                self?.hidesTestRunnerApps = hidesTestRunnerApps
+                self?.rebuildIndex()
+            }
+            .store(in: &cancellables)
     }
 
     func rebuildIndex() {
         searchService.updateIndex(devices: devices,
                                   recentApps: recentApps,
-                                  visiblePlatforms: visiblePlatforms)
+                                  visiblePlatforms: visiblePlatforms,
+                                  hidesTestRunnerApps: hidesTestRunnerApps)
         // An app installed while the panel is open with a live query has to show up in the results,
         // not just in the index.
         refreshResults()

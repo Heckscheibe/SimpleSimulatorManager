@@ -18,6 +18,9 @@ public protocol SimulatorApp: Identifiable, Sendable {
     /// Most recent modification date of the app's bundle or data container.
     /// Used to detect whether an app actually changed between two discovery runs.
     var contentModifiedAt: Date? { get }
+    /// Whether this is an XCUITest runner Xcode generated, rather than an app anyone built to be
+    /// used. Discovery only flags it; hiding it is each consumer's decision. See ``TestRunnerApp``.
+    var isTestRunner: Bool { get }
     /// `CFBundleShortVersionString` as the app's `Info.plist` recorded it.
     var shortVersion: String? { get }
     /// `CFBundleVersion` as the app's `Info.plist` recorded it.
@@ -66,6 +69,32 @@ extension SimulatorApp {
     public var buildVersion: String? {
         nil
     }
+
+    public var isTestRunner: Bool {
+        false
+    }
+}
+
+/// How an app is recognised as a generated UI test runner.
+///
+/// Deliberately not detected from a `PlugIns/*.xctest` bundle (an ordinary app that hosts its own
+/// unit tests embeds those) or from a display name containing `Runner` (every Flutter iOS target
+/// is called `Runner`).
+enum TestRunnerApp {
+    /// Xcode 11 and later append this to the test target's identifier; the developer cannot choose it.
+    static let identifierSuffix = ".xctrunner"
+    /// Xcode 10 and earlier named runners `com.apple.test.<Target>-Runner`.
+    static let legacyIdentifierPrefix = "com.apple.test."
+    static let legacyIdentifierSuffix = "-Runner"
+    /// Private Apple class that only the generated runner template names as its scene delegate.
+    static let sceneDelegateClassName = "_XCTRunnerAppDelegate"
+
+    /// Any one rule matching is sufficient.
+    static func isRunner(bundleIdentifier: String, sceneDelegateClassName: String?) -> Bool {
+        bundleIdentifier.hasSuffix(identifierSuffix)
+            || (bundleIdentifier.hasPrefix(legacyIdentifierPrefix) && bundleIdentifier.hasSuffix(legacyIdentifierSuffix))
+            || sceneDelegateClassName == Self.sceneDelegateClassName
+    }
 }
 
 public final class SimulatoriOSApp: SimulatorApp {
@@ -77,6 +106,7 @@ public final class SimulatoriOSApp: SimulatorApp {
     public let contentModifiedAt: Date?
     public let shortVersion: String?
     public let buildVersion: String?
+    public let isTestRunner: Bool
     public let iconName = "iphone.gen3"
 
     public let hasWatchApp: Bool
@@ -90,7 +120,8 @@ public final class SimulatoriOSApp: SimulatorApp {
         userDefaultsDomains: [String],
         contentModifiedAt: Date? = nil,
         shortVersion: String? = nil,
-        buildVersion: String? = nil
+        buildVersion: String? = nil,
+        isTestRunner: Bool = false
     ) {
         self.displayName = displayName
         self.bundleIdentifier = bundleIdentifier
@@ -101,6 +132,7 @@ public final class SimulatoriOSApp: SimulatorApp {
         self.contentModifiedAt = contentModifiedAt
         self.shortVersion = shortVersion
         self.buildVersion = buildVersion
+        self.isTestRunner = isTestRunner
     }
 }
 
@@ -113,6 +145,7 @@ public final class SimulatorWatchOSApp: SimulatorApp {
     public let contentModifiedAt: Date?
     public let shortVersion: String?
     public let buildVersion: String?
+    public let isTestRunner: Bool
     public let iconName = "applewatch"
 
     public let companioniOSAppBundleIdentifier: String?
@@ -126,7 +159,8 @@ public final class SimulatorWatchOSApp: SimulatorApp {
         companioniOSAppBundleIdentifier: String?,
         contentModifiedAt: Date? = nil,
         shortVersion: String? = nil,
-        buildVersion: String? = nil
+        buildVersion: String? = nil,
+        isTestRunner: Bool = false
     ) {
         self.displayName = displayName
         self.bundleIdentifier = bundleIdentifier
@@ -137,5 +171,6 @@ public final class SimulatorWatchOSApp: SimulatorApp {
         self.contentModifiedAt = contentModifiedAt
         self.shortVersion = shortVersion
         self.buildVersion = buildVersion
+        self.isTestRunner = isTestRunner
     }
 }

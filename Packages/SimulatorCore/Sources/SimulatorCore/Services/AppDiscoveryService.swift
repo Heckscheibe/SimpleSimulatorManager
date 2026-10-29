@@ -95,7 +95,8 @@ public final class AppDiscoveryService: Sendable {
                                                    companioniOSAppBundleIdentifier: infoPlist.wkCompanionAppBundleIdentifier,
                                                    contentModifiedAt: timestamp,
                                                    shortVersion: infoPlist.cfBundleShortVersionString,
-                                                   buildVersion: infoPlist.cfBundleVersion)
+                                                   buildVersion: infoPlist.cfBundleVersion,
+                                                   isTestRunner: infoPlist.isTestRunner)
             } else {
                 simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
                                                bundleIdentifier: infoPlist.cfBundleIdentifier,
@@ -105,7 +106,8 @@ public final class AppDiscoveryService: Sendable {
                                                userDefaultsDomains: domains,
                                                contentModifiedAt: timestamp,
                                                shortVersion: infoPlist.cfBundleShortVersionString,
-                                               buildVersion: infoPlist.cfBundleVersion)
+                                               buildVersion: infoPlist.cfBundleVersion,
+                                               isTestRunner: infoPlist.isTestRunner)
             }
 
             // Add to both collections

@@ -23,6 +23,7 @@ struct AppInfoPlist: DecodableURLContainer, Sendable {
         case cfBundleVersion = "CFBundleVersion"
         case platform = "DTPlatformName"
         case wkCompanionAppBundleIdentifier = "WKCompanionAppBundleIdentifier"
+        case sceneManifest = "UIApplicationSceneManifest"
     }
     
     var isWatchApp: Bool {
@@ -38,6 +39,12 @@ struct AppInfoPlist: DecodableURLContainer, Sendable {
     let cfBundleVersion: String?
     let platform: AppTargetPlatform
     let wkCompanionAppBundleIdentifier: String?
+    let sceneManifest: SceneManifest?
+
+    var isTestRunner: Bool {
+        TestRunnerApp.isRunner(bundleIdentifier: cfBundleIdentifier,
+                               sceneDelegateClassName: sceneManifest?.delegateClassName)
+    }
     
     // not decoded attributes
     var hasCompanionWatchApp = false
@@ -56,6 +63,8 @@ struct AppInfoPlist: DecodableURLContainer, Sendable {
         wkCompanionAppBundleIdentifier = try container.decodeIfPresent(String.self, forKey: .wkCompanionAppBundleIdentifier)
         cfBundleShortVersionString = Self.decodeVersion(from: container, forKey: .cfBundleShortVersionString)
         cfBundleVersion = Self.decodeVersion(from: container, forKey: .cfBundleVersion)
+        // `SceneManifest` never throws, so a manifest of any shape leaves the app discoverable.
+        sceneManifest = try container.decodeIfPresent(SceneManifest.self, forKey: .sceneManifest)
     }
 
     private static func decodeVersion(
@@ -73,5 +82,44 @@ struct AppInfoPlist: DecodableURLContainer, Sendable {
         }
 
         return nil
+    }
+}
+
+/// The one value of `UIApplicationSceneManifest` that is read: the application scene's delegate
+/// class, three levels down.
+///
+/// Decoding never throws. A throw here would fail the whole `AppInfoPlist`, and
+/// `AppDiscoveryService.loadAppInfoPlists` answers that by dropping the app from the list, so a
+/// manifest of an unexpected shape would hide a real app. Most apps have no manifest at all.
+struct SceneManifest: Decodable, Sendable {
+    let delegateClassName: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case configurations = "UISceneConfigurations"
+    }
+
+    private enum RoleKeys: String, CodingKey {
+        case windowApplication = "UIWindowSceneSessionRoleApplication"
+    }
+
+    private struct Configuration: Decodable {
+        let delegateClassName: String?
+
+        private enum CodingKeys: String, CodingKey {
+            case delegateClassName = "UISceneDelegateClassName"
+        }
+
+        init(from decoder: Decoder) {
+            delegateClassName = try? decoder.container(keyedBy: CodingKeys.self)
+                .decodeIfPresent(String.self, forKey: .delegateClassName)
+        }
+    }
+
+    init(from decoder: Decoder) {
+        let configurations = try? decoder.container(keyedBy: CodingKeys.self)
+            .nestedContainer(keyedBy: RoleKeys.self, forKey: .configurations)
+            .decodeIfPresent([Configuration].self, forKey: .windowApplication)
+
+        delegateClassName = configurations?.compactMap(\.delegateClassName).first
     }
 }

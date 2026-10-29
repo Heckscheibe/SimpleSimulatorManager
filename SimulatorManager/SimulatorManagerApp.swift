@@ -31,16 +31,17 @@ struct SimulatorManagerApp: App {
     private let menuPresenter: MenuBarMenuPresenting
 
     init() {
-        let deviceManager = DeviceManager()
+        let settings = Settings()
+        let deviceManager = DeviceManager(hidesTestRunnerApps: settings.hideTestRunnerApps)
         let simulatorResetService: SimulatorResetServing = SimulatorResetService()
         let simulatorCleanupService: SimulatorCleanupServing = SimulatorCleanupService()
         let viewModel = SimulatorManagerViewModel(deviceManager: deviceManager,
-                                                  simulatorResetService: simulatorResetService)
+                                                  simulatorResetService: simulatorResetService,
+                                                  settings: settings)
         let cleanupSimulatorsViewModel = CleanupSimulatorsViewModel(cleanupService: simulatorCleanupService,
                                                                     deviceManager: deviceManager)
         let resetSimulatorsViewModel = ResetSimulatorsViewModel(deviceManager: deviceManager,
                                                                 simulatorResetService: simulatorResetService)
-        let settings = Settings()
         let menuPresenter = MenuBarMenuPresenter()
 
         let shortcutController = GlobalShortcutController(settings: settings,
