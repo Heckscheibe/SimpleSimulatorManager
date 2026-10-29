@@ -14,6 +14,7 @@ import SimulatorCore
 /// is rebuilt on every render, once per app row. `now` is a parameter rather than read here so the
 /// result is a function of its inputs, the way the rest of the tree is, and so a test can say what
 /// time it is.
+@MainActor
 final class AppInstallAgeFormatter {
     private let relativeFormatter: RelativeDateTimeFormatter
     private let absoluteFormatter: DateFormatter
@@ -22,7 +23,9 @@ final class AppInstallAgeFormatter {
     /// future after clock skew, "in 1 sec".
     private static let justNowThreshold: TimeInterval = 60
 
-    init(locale: Locale = .current) {
+    /// Defaults follow the system rather than what they were at launch: a menu bar app runs for weeks,
+    /// and a changed region, language or time zone should reach the next date it writes.
+    init(locale: Locale = .autoupdatingCurrent, timeZone: TimeZone = .autoupdatingCurrent) {
         relativeFormatter = RelativeDateTimeFormatter()
         relativeFormatter.unitsStyle = .abbreviated
         relativeFormatter.locale = locale
@@ -31,6 +34,25 @@ final class AppInstallAgeFormatter {
         absoluteFormatter.dateStyle = .medium
         absoluteFormatter.timeStyle = .short
         absoluteFormatter.locale = locale
+        absoluteFormatter.timeZone = timeZone
+    }
+
+    private static let dayCountFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = .day
+        formatter.unitsStyle = .full
+
+        return formatter
+    }()
+
+    /// "1 day", "7 days": pluralised and localised by the system, and the one place the threshold is
+    /// spelled out so the submenu and Preferences cannot disagree.
+    static func dayCount(_ days: Int) -> String {
+        dayCountFormatter.string(from: DateComponents(day: days)) ?? "\(days)"
+    }
+
+    static func dayCount(of interval: TimeInterval) -> String {
+        dayCount(Int((interval / (24 * 60 * 60)).rounded()))
     }
 
     /// `nil` when the app has no bundle date: a missing date shows nothing rather than an epoch or a

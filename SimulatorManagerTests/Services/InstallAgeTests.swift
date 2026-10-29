@@ -167,6 +167,64 @@ struct InstallAgeTests {
         #expect(agedRow.age?.isStale == true)
     }
 
+    @Test("An update that only touched the container is not described as an update")
+    func containerOnlyUpdateHasNoKind() async throws {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        var change = TestDataHelpers.createMockAppChange(app: app(installedAgo: 10 * day), changeType: .updated)
+        change.replacedBundle = false
+        await fixture.setRecentApps([change])
+
+        var builder = fixture.makeBuilder()
+        builder.now = now
+        let row = try #require(builder.makeNodes().node(withID: "recentApp.\(change.id)"))
+
+        #expect(row.age?.kind == nil)
+        #expect(row.children.contains { $0.title.hasPrefix("Last installed: ") })
+    }
+
+    @Test("The stale line follows the verb of the line above it")
+    func staleLineMatchesTheVerb() async throws {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        let change = TestDataHelpers.createMockAppChange(app: app(installedAgo: 10 * day), changeType: .updated)
+        await fixture.setRecentApps([change])
+
+        var builder = fixture.makeBuilder()
+        builder.now = now
+        let row = try #require(builder.makeNodes().node(withID: "recentApp.\(change.id)"))
+        let staleRow = try #require(row.children.first { $0.id.hasSuffix(".age.stale") })
+
+        #expect(staleRow.title.hasPrefix("Stale: updated more than "))
+        #expect(staleRow.title.contains("7 days"))
+    }
+
+    @Test("A flyout is redrawn when only the age on a row changed")
+    func flyoutSignatureCoversTheAge() {
+        let formatter = AppInstallAgeFormatter(locale: Locale(identifier: "en_US"))
+        let freshAge = formatter.age(for: app(installedAgo: 300), changeType: nil, now: now, staleAfter: day)
+        let laterAge = formatter.age(for: app(installedAgo: 600), changeType: nil, now: now, staleAfter: day)
+        #expect(freshAge != laterAge)
+
+        func level(_ age: AppInstallAge?) -> MenuPanelLevel {
+            MenuPanelLevel(title: nil, nodes: [.submenu(id: "app", title: "Weather", age: age, children: [])], depth: 1)
+        }
+
+        let frame = CGRect(x: 0, y: 0, width: 300, height: 22)
+
+        #expect(MenuFlyoutController.signature(of: level(freshAge), anchoredTo: frame, hangingOffFrame: frame)
+            != MenuFlyoutController.signature(of: level(laterAge), anchoredTo: frame, hangingOffFrame: frame))
+    }
+
+    @Test("Day counts are spelled out once, singular and plural")
+    func dayCountText() {
+        #expect(AppInstallAgeFormatter.dayCount(1).contains("1"))
+        #expect(AppInstallAgeFormatter.dayCount(1) != AppInstallAgeFormatter.dayCount(7))
+        #expect(AppInstallAgeFormatter.dayCount(of: 7 * day) == AppInstallAgeFormatter.dayCount(7))
+    }
+
     // MARK: - Settings
 
     @Test("Defaults: ages on, stale after seven days")

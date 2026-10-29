@@ -83,7 +83,8 @@ extension MenuTreeBuilder {
         // plus UDID is not unique in the recent-apps list, so reuse it rather than reintroducing
         // the collision here.
         let identifier = "recentApp.\(appChange.id)"
-        let age = installAge(for: appChange.app, changeType: appChange.changeType)
+        let age = installAge(for: appChange.app,
+                             changeType: appChange.replacedBundle ? appChange.changeType : nil)
 
         return .submenu(id: identifier,
                         title: appChange.app.displayName,

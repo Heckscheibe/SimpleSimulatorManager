@@ -83,7 +83,7 @@ struct PreferencesView: View {
 
                 Stepper(value: settings.staleAfterDaysBinding, in: Settings.staleAfterDaysRange) {
                     LabeledContent("Mark as stale after") {
-                        Text(settings.staleAfterDays == 1 ? "1 day" : "\(settings.staleAfterDays) days")
+                        Text(AppInstallAgeFormatter.dayCount(settings.staleAfterDays))
                             .monospacedDigit()
                     }
                 }

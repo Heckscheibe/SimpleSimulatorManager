@@ -11,11 +11,11 @@ import Foundation
 ///
 /// Derived once per tree build by ``AppInstallAgeFormatter`` so a row only has to place the text it
 /// is given. The strings are final: nothing downstream formats a date.
-struct AppInstallAge: Equatable {
+struct AppInstallAge: Hashable {
     /// Whether the install was the app arriving or the app being replaced. `nil` where the source
     /// does not know — an app listed under its device carries no change type — and the label then
     /// says only that it was installed.
-    enum Kind: Equatable {
+    enum Kind: Hashable {
         case installed
         case updated
     }

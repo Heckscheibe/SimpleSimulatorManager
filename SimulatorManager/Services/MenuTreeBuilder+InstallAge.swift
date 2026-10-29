@@ -9,7 +9,7 @@ import Foundation
 import SimulatorCore
 
 /// The install date of an app row: the short age drawn on the row, and the written-out dates at the
-/// top of its submenu.
+/// bottom of its submenu.
 ///
 /// Both come from the bundle's modification date. The container's date is deliberately not used for
 /// "installed" — it moves whenever the running app writes — and is shown, labelled, as the time the
@@ -39,9 +39,9 @@ extension MenuTreeBuilder {
 
         let label =
             switch age.kind {
-            case .installed: "Installed"
-            case .updated: "Updated"
-            case nil: "Last installed"
+            case .installed: String(localized: "Installed")
+            case .updated: String(localized: "Updated")
+            case nil: String(localized: "Last installed")
             }
         var nodes: [MenuNode] = [
             .divider(id: "\(prefix).age.divider"),
@@ -51,18 +51,21 @@ extension MenuTreeBuilder {
         // Only worth a line when it says something the first one does not.
         if let activeDate = app.contentModifiedAt, activeDate.timeIntervalSince(bundleDate) >= 60 {
             nodes.append(.informational(id: "\(prefix).age.active",
-                                        title: "Last active: \(ageFormatter.absolute(activeDate))"))
+                                        title: String(localized: "Last active: \(ageFormatter.absolute(activeDate))")))
         }
 
         if age.isStale {
-            nodes.append(.informational(id: "\(prefix).age.stale",
-                                        title: "Stale: installed more than \(Self.dayCount(settings.staleAfterDays)) ago"))
+            // Says what the row above says: an updated app is "updated more than N days ago".
+            let threshold = AppInstallAgeFormatter.dayCount(of: age.staleThreshold)
+            let title =
+                switch age.kind {
+                case .updated: String(localized: "Stale: updated more than \(threshold) ago")
+                case .installed, nil: String(localized: "Stale: installed more than \(threshold) ago")
+                }
+
+            nodes.append(.informational(id: "\(prefix).age.stale", title: title))
         }
 
         return nodes
-    }
-
-    private static func dayCount(_ days: Int) -> String {
-        days == 1 ? "1 day" : "\(days) days"
     }
 }

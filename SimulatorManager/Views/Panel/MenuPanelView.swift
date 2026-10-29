@@ -38,9 +38,10 @@ struct MenuPanelView: View {
     @State private var viewModel = MenuPanelViewModel()
     @State private var flyouts = MenuFlyoutController()
     @State private var listHeight: CGFloat = MenuPanelStyle.rowMinimumHeight
-    /// What install ages are measured against. Advanced while the panel is up so a relative age does
-    /// not freeze at the moment the panel opened.
-    @State private var now = Date()
+    /// Bumped once a minute while the panel is up. It carries no value: reading it while the tree is
+    /// built is what makes SwiftUI render again, and the clock itself is read at render time, so an
+    /// age is measured against when it is drawn — including the first render after the panel opens.
+    @State private var ageTick = 0
     /// The tree the last render drew. Not observed, so keeping it costs no render.
     @State private var rootNodesCache = RootNodesCache()
 
@@ -87,8 +88,6 @@ struct MenuPanelView: View {
             flyouts.reset()
             viewModel.reset()
             searchViewModel.clear()
-            // Ready for the next opening, which must not show ages measured when this one began.
-            now = Date()
         }
         .task {
             githubService.startPeriodicUpdateCheck()
@@ -102,17 +101,24 @@ struct MenuPanelView: View {
 // MARK: - Install ages
 
 private extension MenuPanelView {
-    /// Re-measures ages once a minute while the panel is up, the finest unit a relative age shows.
-    /// Tied to the view's lifetime by `.task`, so it stops when the panel closes.
+    /// Re-renders once a minute while the panel is up, the finest unit a relative age shows. Tied to
+    /// the view's lifetime by `.task`, so it stops when the panel closes.
     ///
-    /// It sleeps before its first update on purpose: changing state while the panel is being laid
-    /// out for the first time disturbs the measurement of its rows, and the panel then never reaches
-    /// its size. The age for the first minute is the one taken when the panel last closed.
+    /// It sleeps before its first tick on purpose: changing state while the panel is being laid out
+    /// for the first time disturbs the measurement of its rows, and the panel then never reaches its
+    /// size. Nothing is lost, because the first render already reads the current time.
     func keepAgesCurrent() async {
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(60))
-            now = Date()
+            ageTick &+= 1
         }
+    }
+
+    /// The instant ages are measured against, read when the tree is built.
+    func currentTime() -> Date {
+        _ = ageTick
+
+        return Date()
     }
 }
 
@@ -184,7 +190,7 @@ private extension MenuPanelView {
                         resetViewModel: resetViewModel,
                         settings: settings,
                         githubService: githubService,
-                        now: now,
+                        now: currentTime(),
                         snapshotSaveViewModel: snapshotSaveViewModel,
                         openPreferences: openPreferences,
                         quit: quit)
