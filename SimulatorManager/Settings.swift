@@ -18,6 +18,7 @@ class Settings: ObservableObject {
         case showIOS
         case showWatchOS
         case showRecentApps
+        case showInstallAge
         /// Phrased as "hide" so that the loop below, which writes `true` for every key without a
         /// stored value, makes UI test runners hidden by default.
         case hideTestRunnerApps
@@ -28,6 +29,14 @@ class Settings: ObservableObject {
     private enum ShortcutKeys {
         static let globalShortcut = "globalShortcut"
     }
+
+    /// Numeric preferences, kept apart from ``Keys`` for the same reason: that enum seeds `true`.
+    private enum AgeKeys {
+        static let staleAfterDays = "staleAfterDays"
+    }
+
+    static let defaultStaleAfterDays = 7
+    static let staleAfterDaysRange = 1 ... 365
 
     /// Also outside ``Keys``, for the same reason and the opposite default: caches are left out of
     /// a snapshot unless the user asks for them.
@@ -194,6 +203,38 @@ class Settings: ObservableObject {
         }
     }
 
+    /// Whether app rows show when the app was installed or updated, and flag old installs.
+    var showInstallAge: Bool {
+        get {
+            userDefaults?.bool(forKey: Keys.showInstallAge.rawValue) ?? true
+        }
+        set {
+            objectWillChange.send()
+            userDefaults?.setValue(newValue, forKey: Keys.showInstallAge.rawValue)
+        }
+    }
+
+    /// How many days old an install has to be before it is flagged. Clamped on both read and write
+    /// so a hand-edited preference cannot disable the cue (0) or make it nonsense (negative).
+    var staleAfterDays: Int {
+        get {
+            guard let stored = userDefaults?.object(forKey: AgeKeys.staleAfterDays) as? Int else {
+                return Self.defaultStaleAfterDays
+            }
+
+            return min(max(stored, Self.staleAfterDaysRange.lowerBound), Self.staleAfterDaysRange.upperBound)
+        }
+        set {
+            objectWillChange.send()
+            let clamped = min(max(newValue, Self.staleAfterDaysRange.lowerBound), Self.staleAfterDaysRange.upperBound)
+            userDefaults?.setValue(clamped, forKey: AgeKeys.staleAfterDays)
+        }
+    }
+
+    var staleAfterInterval: TimeInterval {
+        TimeInterval(staleAfterDays) * 24 * 60 * 60
+    }
+
     /// The positive reading of ``hideTestRunnerApps``, so the settings window can keep its
     /// "on means shown" convention.
     var showTestRunnerApps: Bool {
@@ -210,6 +251,11 @@ class Settings: ObservableObject {
     func binding(for keyPath: ReferenceWritableKeyPath<Settings, Bool>) -> Binding<Bool> {
         Binding(get: { self[keyPath: keyPath] },
                 set: { self[keyPath: keyPath] = $0 })
+    }
+
+    var staleAfterDaysBinding: Binding<Int> {
+        Binding(get: { self.staleAfterDays },
+                set: { self.staleAfterDays = $0 })
     }
 }
 

@@ -79,6 +79,23 @@ struct PreferencesView: View {
                 Toggle("UI Test Runner Apps", isOn: settings.binding(for: \.showTestRunnerApps))
             }
 
+            Section("Install Age") {
+                Toggle("Show install age", isOn: settings.binding(for: \.showInstallAge))
+
+                Stepper(value: settings.staleAfterDaysBinding, in: Settings.staleAfterDaysRange) {
+                    LabeledContent("Mark as stale after") {
+                        Text(AppInstallAgeFormatter.dayCount(settings.staleAfterDays))
+                            .monospacedDigit()
+                    }
+                }
+                .disabled(!settings.showInstallAge)
+
+                Text("App rows show when the app was last installed or updated, taken from its app bundle rather than "
+                    + "from the app running. Installs older than the threshold get a clock icon.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
             SnapshotPreferencesSection(settings: settings)
 
             AgentIntegrationSection(viewModel: agentIntegrationViewModel)

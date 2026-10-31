@@ -18,6 +18,11 @@ public protocol SimulatorApp: Identifiable, Sendable {
     /// Most recent modification date of the app's bundle or data container.
     /// Used to detect whether an app actually changed between two discovery runs.
     var contentModifiedAt: Date? { get }
+    /// When the app's `.app` bundle was last written, which happens on install and on update and
+    /// nowhere else. This is the "installed" signal; ``contentModifiedAt`` is not, because the data
+    /// container's date moves whenever the running app writes to it. `nil` when the bundle's date
+    /// could not be read — never a placeholder.
+    var bundleModifiedAt: Date? { get }
     /// Whether this is an XCUITest runner Xcode generated, rather than an app anyone built to be
     /// used. Discovery only flags it; hiding it is each consumer's decision. See ``TestRunnerApp``.
     var isTestRunner: Bool { get }
@@ -57,6 +62,10 @@ extension SimulatorApp {
     }
 
     public var contentModifiedAt: Date? {
+        nil
+    }
+
+    public var bundleModifiedAt: Date? {
         nil
     }
 
@@ -104,6 +113,7 @@ public final class SimulatoriOSApp: SimulatorApp {
     public let appPackageURL: URL?
     public let userDefaultsDomains: [String]
     public let contentModifiedAt: Date?
+    public let bundleModifiedAt: Date?
     public let shortVersion: String?
     public let buildVersion: String?
     public let isTestRunner: Bool
@@ -119,6 +129,7 @@ public final class SimulatoriOSApp: SimulatorApp {
         hasWatchApp: Bool,
         userDefaultsDomains: [String],
         contentModifiedAt: Date? = nil,
+        bundleModifiedAt: Date? = nil,
         shortVersion: String? = nil,
         buildVersion: String? = nil,
         isTestRunner: Bool = false
@@ -130,6 +141,7 @@ public final class SimulatoriOSApp: SimulatorApp {
         self.hasWatchApp = hasWatchApp
         self.userDefaultsDomains = userDefaultsDomains
         self.contentModifiedAt = contentModifiedAt
+        self.bundleModifiedAt = bundleModifiedAt
         self.shortVersion = shortVersion
         self.buildVersion = buildVersion
         self.isTestRunner = isTestRunner
@@ -143,6 +155,7 @@ public final class SimulatorWatchOSApp: SimulatorApp {
     public let userDefaultsDomains: [String]
     public let appPackageURL: URL?
     public let contentModifiedAt: Date?
+    public let bundleModifiedAt: Date?
     public let shortVersion: String?
     public let buildVersion: String?
     public let isTestRunner: Bool
@@ -158,6 +171,7 @@ public final class SimulatorWatchOSApp: SimulatorApp {
         userDefaultsDomains: [String],
         companioniOSAppBundleIdentifier: String?,
         contentModifiedAt: Date? = nil,
+        bundleModifiedAt: Date? = nil,
         shortVersion: String? = nil,
         buildVersion: String? = nil,
         isTestRunner: Bool = false
@@ -169,6 +183,7 @@ public final class SimulatorWatchOSApp: SimulatorApp {
         self.userDefaultsDomains = userDefaultsDomains
         self.companioniOSAppBundleIdentifier = companioniOSAppBundleIdentifier
         self.contentModifiedAt = contentModifiedAt
+        self.bundleModifiedAt = bundleModifiedAt
         self.shortVersion = shortVersion
         self.buildVersion = buildVersion
         self.isTestRunner = isTestRunner
