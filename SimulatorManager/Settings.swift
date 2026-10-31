@@ -19,6 +19,9 @@ class Settings: ObservableObject {
         case showWatchOS
         case showRecentApps
         case showInstallAge
+        /// Phrased as "hide" so that the loop below, which writes `true` for every key without a
+        /// stored value, makes UI test runners hidden by default.
+        case hideTestRunnerApps
     }
 
     /// Stored separately from ``Keys`` because that enum is initialised to `true` for every case,
@@ -44,6 +47,15 @@ class Settings: ObservableObject {
 
     @Published var visiblePlatforms = Set<SimulatorPlatform>()
 
+    /// Whether generated UI test runner apps are left out of the apps and recent-apps lists.
+    /// Published so `SimulatorManagerViewModel` can pass it to `DeviceManager`, which has to apply
+    /// it before the recent-apps cap.
+    @Published var hideTestRunnerApps: Bool {
+        didSet {
+            userDefaults?.setValue(hideTestRunnerApps, forKey: Keys.hideTestRunnerApps.rawValue)
+        }
+    }
+
     /// The shortcut that opens the menu bar menu, or `nil` when the user cleared it.
     @Published private(set) var globalShortcut: GlobalShortcut?
 
@@ -55,6 +67,7 @@ class Settings: ObservableObject {
         for item in Keys.allCases where userDefaults?.value(forKey: item.rawValue) == nil {
             userDefaults?.setValue(true, forKey: item.rawValue)
         }
+        hideTestRunnerApps = userDefaults?.bool(forKey: Keys.hideTestRunnerApps.rawValue) ?? true
         updateVisiblePlatforms()
         globalShortcut = Self.loadGlobalShortcut(from: userDefaults)
     }
@@ -220,6 +233,17 @@ class Settings: ObservableObject {
 
     var staleAfterInterval: TimeInterval {
         TimeInterval(staleAfterDays) * 24 * 60 * 60
+    }
+
+    /// The positive reading of ``hideTestRunnerApps``, so the settings window can keep its
+    /// "on means shown" convention.
+    var showTestRunnerApps: Bool {
+        get {
+            !hideTestRunnerApps
+        }
+        set {
+            hideTestRunnerApps = !newValue
+        }
     }
 
     /// Two-way binding for the boolean preferences, so the settings window and the menu can drive

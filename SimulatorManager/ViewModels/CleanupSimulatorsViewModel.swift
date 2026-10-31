@@ -20,11 +20,15 @@ final class CleanupSimulatorsViewModel {
     }
 
     var cleanupCandidates: [SimulatorCleanupCandidate] = []
+    /// How many simulators the last successful scan examined, or `nil` when it has not run or
+    /// cannot say. It is what turns an empty list into "nothing wrong" rather than "no idea".
+    var checkedSimulatorCount: Int?
     var errorMessage: String?
     var isLoadingCleanupCandidates = false
     var deletingCandidateIDs = Set<String>()
 
     @ObservationIgnored private var hasLoadedCleanupCandidates = false
+    @ObservationIgnored private var rescanRequested = false
     @ObservationIgnored private let cleanupService: SimulatorCleanupServing
     @ObservationIgnored private let deviceManager: DeviceManaging
     @ObservationIgnored private let destructiveActionConfirmer: DestructiveActionConfirming
@@ -63,6 +67,14 @@ final class CleanupSimulatorsViewModel {
         return cleanupCandidates.isEmpty ? "trash.slash" : "exclamationmark.triangle"
     }
 
+    var emptyStateText: String {
+        guard let checkedSimulatorCount else {
+            return "No invalid simulators found"
+        }
+
+        return "No invalid simulators found (\(checkedSimulatorCount) checked)"
+    }
+
     var cleanupCandidateGroups: [CandidateGroup] {
         let groupedCandidates = Dictionary(grouping: cleanupCandidates, by: \.versionGroupTitle)
 
@@ -86,6 +98,17 @@ final class CleanupSimulatorsViewModel {
         refreshCleanupCandidates()
     }
 
+    /// For a change made elsewhere that alters which simulators qualify, such as removing a runtime.
+    /// Does nothing before the list was ever opened — the first open scans anyway — and, while a
+    /// scan is running, asks for another once it ends, because that scan may have read the old state.
+    func rescanAfterExternalChange() {
+        if isLoadingCleanupCandidates {
+            rescanRequested = true
+        } else if hasLoadedCleanupCandidates {
+            refreshCleanupCandidates()
+        }
+    }
+
     func refreshCleanupCandidates() {
         guard !isLoadingCleanupCandidates else {
             os_log("Cleanup scan request ignored because a scan is already in progress")
@@ -100,6 +123,10 @@ final class CleanupSimulatorsViewModel {
             defer {
                 isLoadingCleanupCandidates = false
                 hasLoadedCleanupCandidates = true
+                if rescanRequested {
+                    rescanRequested = false
+                    refreshCleanupCandidates()
+                }
                 os_log(
                     "Cleanup scan finished. candidates=%{public}ld errorPresent=%{public}@",
                     cleanupCandidates.count,
@@ -108,10 +135,13 @@ final class CleanupSimulatorsViewModel {
             }
 
             do {
-                cleanupCandidates = try await cleanupService.loadCleanupCandidates()
+                let scan = try await cleanupService.loadCleanupScan()
+                cleanupCandidates = scan.candidates
+                checkedSimulatorCount = scan.checkedSimulatorCount
                 os_log("Cleanup scan loaded %{public}ld candidates", cleanupCandidates.count)
             } catch {
                 cleanupCandidates = []
+                checkedSimulatorCount = nil
                 errorMessage = error.localizedDescription
                 os_log("Cleanup scan failed: %{public}@", error.localizedDescription)
             }
@@ -219,7 +249,9 @@ final class CleanupSimulatorsViewModel {
             os_log("Cleanup delete triggered device reload")
 
             do {
-                cleanupCandidates = try await cleanupService.loadCleanupCandidates()
+                let scan = try await cleanupService.loadCleanupScan()
+                cleanupCandidates = scan.candidates
+                checkedSimulatorCount = scan.checkedSimulatorCount
                 os_log("Cleanup delete refreshed candidate list to %{public}ld items", cleanupCandidates.count)
             } catch {
                 failureMessages.append(error.localizedDescription)

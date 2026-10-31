@@ -177,7 +177,8 @@ enum TestDataHelpers {
         appDocumentsFolderURL: URL? = nil,
         appPackageURL: URL? = nil,
         userDefaultsDomains: [String] = [],
-        bundleModifiedAt: Date? = nil
+        bundleModifiedAt: Date? = nil,
+        isTestRunner: Bool = false
     ) -> MockSimulatorApp {
         return MockSimulatorApp(
             bundleIdentifier: bundleIdentifier,
@@ -185,7 +186,8 @@ enum TestDataHelpers {
             appDocumentsFolderURL: appDocumentsFolderURL,
             appPackageURL: appPackageURL,
             userDefaultsDomains: userDefaultsDomains,
-            bundleModifiedAt: bundleModifiedAt
+            bundleModifiedAt: bundleModifiedAt,
+            isTestRunner: isTestRunner
         )
     }
     
@@ -237,4 +239,5 @@ struct MockSimulatorApp: SimulatorApp {
     var userDefaultsDomains: [String] = []
     var contentModifiedAt: Date?
     var bundleModifiedAt: Date?
+    var isTestRunner = false
 }

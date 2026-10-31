@@ -98,7 +98,8 @@ public final class AppDiscoveryService: Sendable {
                                                    contentModifiedAt: timestamp,
                                                    bundleModifiedAt: bundleDate,
                                                    shortVersion: infoPlist.cfBundleShortVersionString,
-                                                   buildVersion: infoPlist.cfBundleVersion)
+                                                   buildVersion: infoPlist.cfBundleVersion,
+                                                   isTestRunner: infoPlist.isTestRunner)
             } else {
                 simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
                                                bundleIdentifier: infoPlist.cfBundleIdentifier,
@@ -109,7 +110,8 @@ public final class AppDiscoveryService: Sendable {
                                                contentModifiedAt: timestamp,
                                                bundleModifiedAt: bundleDate,
                                                shortVersion: infoPlist.cfBundleShortVersionString,
-                                               buildVersion: infoPlist.cfBundleVersion)
+                                               buildVersion: infoPlist.cfBundleVersion,
+                                               isTestRunner: infoPlist.isTestRunner)
             }
 
             // Add to both collections

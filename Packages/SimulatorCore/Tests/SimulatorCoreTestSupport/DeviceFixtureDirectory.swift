@@ -94,7 +94,8 @@ public struct DeviceFixtureDirectory {
         userDefaults: [String: [String: Any]] = [:],
         modifiedAt: Date? = nil,
         bundleModifiedAt: Date? = nil,
-        containerModifiedAt: Date? = nil
+        containerModifiedAt: Date? = nil,
+        additionalInfoPlistEntries: [String: Any] = [:]
     ) throws -> InstalledApp {
         let dataFolder = deviceURL(udid: udid).appendingPathComponent(SimulatorPaths.dataFolderName)
 
@@ -106,7 +107,7 @@ public struct DeviceFixtureDirectory {
             "CFBundleIdentifier": bundleIdentifier,
             "CFBundleName": name,
             "DTPlatformName": "iphonesimulator"
-        ], to: bundleURL.appendingPathComponent(Self.infoPlistFileName))
+        ].merging(additionalInfoPlistEntries) { _, additional in additional }, to: bundleURL.appendingPathComponent(Self.infoPlistFileName))
 
         let containerURL = dataFolder
             .appendingPathComponent(SimulatorPaths.appDataApplicationsPath)

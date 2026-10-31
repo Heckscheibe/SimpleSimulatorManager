@@ -31,6 +31,7 @@ struct MenuTreeBuilderTests {
             "settings.open",
             "divider.afterSettings",
             "cleanup",
+            "cleanupRuntimes",
             "divider.afterCleanup",
             "reset",
             "divider.afterReset",
@@ -446,6 +447,47 @@ struct MenuTreeBuilderTests {
         #expect(deleting.node(withID: "cleanup.deleteAll")?.isEnabled == false)
         #expect(deleting.node(withID: "cleanup.deleteAll")?.isSelectable == false)
         #expect(deleting.node(withID: "cleanup.refresh")?.isEnabled == false)
+    }
+
+    @Test("Cleanup runtimes lists candidates as destructive rows, with size and consequences")
+    func cleanupRuntimesReflectsItsViewModel() throws {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        let candidate = SimulatorRuntimeCleanupCandidate(
+            imageIdentifier: "A", runtimeIdentifier: "com.apple.CoreSimulator.SimRuntime.iOS-26-4",
+            platformName: "iOS", version: "26.4", build: "23E1", sizeBytes: 8_000_000_000, lastUsedAt: nil,
+            reasons: [.unused], affectedSimulatorCount: 2, bootedSimulatorCount: 1, detailMessage: "Not used for 120 days."
+        )
+        fixture.cleanupRuntimesViewModel.candidates = [candidate]
+
+        let nodes = fixture.makeBuilder().makeNodes()
+        let deleteAll = try #require(nodes.node(withID: "cleanupRuntimes.deleteAll"))
+
+        #expect(deleteAll.isDestructive)
+        #expect(deleteAll.title.hasPrefix("Remove All Runtimes (1, "))
+        #expect(nodes.node(withID: "cleanupRuntimes.candidate.runtime-A")?.title == "iOS 26.4 (23E1)")
+        #expect(nodes.node(withID: "cleanupRuntimes.candidate.runtime-A.delete")?.isDestructive == true)
+        #expect(nodes.node(withID: "cleanupRuntimes.candidate.runtime-A.affected")?.title == "2 simulators will become unavailable")
+        #expect(nodes.node(withID: "cleanupRuntimes.candidate.runtime-A.booted")?.title == "1 running will be shut down")
+
+        fixture.cleanupRuntimesViewModel.deletingCandidateIDs = [candidate.id]
+
+        let deleting = fixture.makeBuilder().makeNodes()
+        #expect(deleting.node(withID: "cleanupRuntimes.deleteAll")?.isEnabled == false)
+        #expect(deleting.node(withID: "cleanupRuntimes.refresh")?.isEnabled == false)
+    }
+
+    @Test("An empty cleanup scan reports how many simulators were checked")
+    func cleanupEmptyStateNamesTheCount() {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        fixture.cleanupViewModel.checkedSimulatorCount = 43
+
+        let nodes = fixture.makeBuilder().makeNodes()
+
+        #expect(nodes.node(withID: "cleanup.empty")?.title == "No invalid simulators found (43 checked)")
     }
 
     @Test("An empty cleanup scan says so, and offers neither a delete-all nor any groups")

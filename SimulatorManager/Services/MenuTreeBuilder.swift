@@ -18,6 +18,7 @@ struct MenuTreeBuilder {
     let simulatorManagerViewModel: SimulatorManagerViewModel
     let settingsViewModel: SettingsViewModel
     let cleanupViewModel: CleanupSimulatorsViewModel
+    let cleanupRuntimesViewModel: CleanupRuntimesViewModel
     let resetViewModel: ResetSimulatorsViewModel
     let settings: Settings
     let githubService: GithubService
@@ -44,6 +45,7 @@ struct MenuTreeBuilder {
         nodes.append(preferencesNode())
         nodes.append(.divider(id: "divider.afterSettings"))
         nodes.append(cleanupNode())
+        nodes.append(cleanupRuntimesNode())
         nodes.append(.divider(id: "divider.afterCleanup"))
         nodes.append(resetNode())
         nodes.append(.divider(id: "divider.afterReset"))
@@ -217,7 +219,7 @@ extension MenuTreeBuilder {
         // The "Apps" header is drawn only when the device has *no* apps installed. That cannot
         // happen, because the header is reached only from inside the apps submenu, which is itself
         // conditional on apps existing — so the header never appears today.
-        if !viewModel.device.hasAppsInstalled {
+        if !viewModel.hasAppsInstalled {
             nodes.append(.sectionHeader(id: "\(prefix).apps.header", title: "Apps"))
         }
 
@@ -301,6 +303,12 @@ extension MenuTreeBuilder {
         if settingsViewModel.hasIPhoneDevices {
             nodes.append(toggleNode(identifier: "settings.iOS", title: settingsViewModel.showIPhoneText) {
                 settingsViewModel.toggleIOSVisibility()
+            })
+        }
+
+        if settingsViewModel.hasTestRunnerApps {
+            nodes.append(toggleNode(identifier: "settings.testRunners", title: settingsViewModel.showTestRunnersText) {
+                settingsViewModel.toggleTestRunnersVisibility()
             })
         }
 

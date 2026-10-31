@@ -24,6 +24,7 @@ struct MenuPanelView: View {
     let simulatorManagerViewModel: SimulatorManagerViewModel
     let settingsViewModel: SettingsViewModel
     let cleanupViewModel: CleanupSimulatorsViewModel
+    let cleanupRuntimesViewModel: CleanupRuntimesViewModel
     let resetViewModel: ResetSimulatorsViewModel
     let snapshotSaveViewModel: SnapshotSaveViewModel
     @ObservedObject var settings: Settings
@@ -187,6 +188,7 @@ private extension MenuPanelView {
         MenuTreeBuilder(simulatorManagerViewModel: simulatorManagerViewModel,
                         settingsViewModel: settingsViewModel,
                         cleanupViewModel: cleanupViewModel,
+                        cleanupRuntimesViewModel: cleanupRuntimesViewModel,
                         resetViewModel: resetViewModel,
                         settings: settings,
                         githubService: githubService,
