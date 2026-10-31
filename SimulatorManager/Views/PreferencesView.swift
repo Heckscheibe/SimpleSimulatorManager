@@ -76,6 +76,7 @@ struct PreferencesView: View {
                 Toggle("watchOS", isOn: settings.binding(for: \.showWatchOS))
                 Toggle("tvOS", isOn: settings.binding(for: \.showTVOS))
                 Toggle("visionOS", isOn: settings.binding(for: \.showVisionOS))
+                Toggle("UI Test Runner Apps", isOn: settings.binding(for: \.showTestRunnerApps))
             }
 
             SnapshotPreferencesSection(settings: settings)

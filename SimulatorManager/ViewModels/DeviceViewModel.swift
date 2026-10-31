@@ -16,6 +16,10 @@ class DeviceViewModel: ContainerShortcutHandling {
     var device: Device
     private(set) var currentAction: SimulatorDeviceAction?
     private(set) var actionErrorMessage: String?
+    /// Set from the `hideTestRunnerApps` preference. Applied here, where the list is produced,
+    /// rather than at discovery: app groups, change detection and the preference toggling instantly
+    /// all depend on `device.apps` staying complete.
+    var hidesTestRunnerApps: Bool
 
     @ObservationIgnored let containerContent: ContainerContentCopying
 
@@ -26,8 +30,10 @@ class DeviceViewModel: ContainerShortcutHandling {
         device: Device,
         deviceManager: DeviceManaging,
         simulatorResetService: SimulatorResetServing,
-        containerContent: ContainerContentCopying = ContainerContentService()
+        containerContent: ContainerContentCopying = ContainerContentService(),
+        hidesTestRunnerApps: Bool = false
     ) {
+        self.hidesTestRunnerApps = hidesTestRunnerApps
         self.device = device
         self.deviceManager = deviceManager
         self.simulatorResetService = simulatorResetService
@@ -36,8 +42,10 @@ class DeviceViewModel: ContainerShortcutHandling {
     
     // MARK: - Device Properties
     
+    /// Whether there is anything to list, so a device whose only apps are hidden test runners
+    /// reads as having none.
     var hasAppsInstalled: Bool {
-        device.hasAppsInstalled
+        !apps.isEmpty
     }
     
     var osVersion: String {
@@ -45,7 +53,7 @@ class DeviceViewModel: ContainerShortcutHandling {
     }
     
     var apps: [any SimulatorApp] {
-        device.apps
+        hidesTestRunnerApps ? device.apps.filter { !$0.isTestRunner } : device.apps
     }
     
     var appGroups: [AppGroup] {

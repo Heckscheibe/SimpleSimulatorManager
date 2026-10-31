@@ -209,7 +209,7 @@ extension MenuTreeBuilder {
         // The "Apps" header is drawn only when the device has *no* apps installed. That cannot
         // happen, because the header is reached only from inside the apps submenu, which is itself
         // conditional on apps existing — so the header never appears today.
-        if !viewModel.device.hasAppsInstalled {
+        if !viewModel.hasAppsInstalled {
             nodes.append(.sectionHeader(id: "\(prefix).apps.header", title: "Apps"))
         }
 
@@ -290,6 +290,12 @@ extension MenuTreeBuilder {
         if settingsViewModel.hasIPhoneDevices {
             nodes.append(toggleNode(identifier: "settings.iOS", title: settingsViewModel.showIPhoneText) {
                 settingsViewModel.toggleIOSVisibility()
+            })
+        }
+
+        if settingsViewModel.hasTestRunnerApps {
+            nodes.append(toggleNode(identifier: "settings.testRunners", title: settingsViewModel.showTestRunnersText) {
+                settingsViewModel.toggleTestRunnersVisibility()
             })
         }
 
