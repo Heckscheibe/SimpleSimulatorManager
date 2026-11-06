@@ -37,6 +37,7 @@ struct MenuTreeBuilderTests {
             "github.project",
             "github.divider",
             "github.version",
+            "github.checkForUpdates",
             "divider.afterGitHub",
             "quit"
         ])
@@ -484,25 +485,54 @@ struct MenuTreeBuilderTests {
         #expect(explanation[1].id == "cleanup.explanation.intro")
     }
 
-    @Test("An available update replaces the version row with an actionable one")
-    func gitHubSectionFollowsUpdateAvailability() throws {
+    @Test("The GitHub section offers a check for updates beside the version")
+    func gitHubSectionOffersACheck() throws {
         let fixture = MenuTreeFixture()
         defer { fixture.tearDown() }
 
-        #expect(fixture.makeBuilder().makeNodes().node(withID: "github.version")?.title == "Version 1.4.0")
+        let nodes = fixture.makeBuilder().makeNodes()
+        let check = try #require(nodes.node(withID: "github.checkForUpdates"))
 
-        fixture.githubService.isUpdateAvailable = true
+        #expect(nodes.node(withID: "github.version")?.title == "Version 1.4.0")
+        #expect(check.title == "Check for Updates…")
+        #expect(check.isEnabled)
+        #expect(nodes.node(withID: "github.update") == nil)
+
+        check.actions.first?.perform()
+        #expect(fixture.updater.checkForUpdatesCount == 1)
+    }
+
+    @Test("The check is disabled while the updater cannot check")
+    func checkFollowsCanCheckForUpdates() {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        fixture.updater.canCheckForUpdates = false
+
+        #expect(fixture.makeBuilder().makeNodes().node(withID: "github.checkForUpdates")?.isEnabled == false)
+    }
+
+    @Test("A pending update replaces the check with an actionable row")
+    func gitHubSectionFollowsPendingUpdate() throws {
+        let fixture = MenuTreeFixture()
+        defer { fixture.tearDown() }
+
+        fixture.updater.pendingUpdateVersion = "1.5.0"
 
         let nodes = fixture.makeBuilder().makeNodes()
         let update = try #require(nodes.node(withID: "github.update"))
 
         #expect(update.title == "Update Available")
-        #expect(update.subtitle == "Version 1.4.0")
+        #expect(update.subtitle == "Version 1.5.0")
         #expect(update.iconName == "info.circle.fill")
-        #expect(nodes.node(withID: "github.version") == nil)
+        #expect(nodes.node(withID: "github.version")?.title == "Version 1.4.0")
+        #expect(nodes.node(withID: "github.checkForUpdates") == nil)
+
+        update.actions.first?.perform()
+        #expect(fixture.updater.checkForUpdatesCount == 1)
     }
 
-    @Test("Without a bundle version the GitHub section is just the project link")
+    @Test("Without a bundle version the GitHub section has no version row but keeps the update check")
     func gitHubSectionWithoutAVersion() {
         let fixture = MenuTreeFixture()
         defer { fixture.tearDown() }
@@ -510,8 +540,8 @@ struct MenuTreeBuilderTests {
         let nodes = fixture.makeBuilder(appVersion: nil).makeNodes()
 
         #expect(nodes.node(withID: "github.project") != nil)
-        #expect(nodes.node(withID: "github.divider") == nil)
         #expect(nodes.node(withID: "github.version") == nil)
+        #expect(nodes.node(withID: "github.checkForUpdates") != nil)
     }
 
     // MARK: - Device actions in flight

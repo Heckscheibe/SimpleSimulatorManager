@@ -27,7 +27,9 @@ struct MenuPanelView: View {
     let resetViewModel: ResetSimulatorsViewModel
     let snapshotSaveViewModel: SnapshotSaveViewModel
     @ObservedObject var settings: Settings
-    @ObservedObject var githubService: GithubService
+    let githubService: GithubService
+    /// Observed so the "Check for Updates…" row follows `canCheckForUpdates`.
+    @ObservedObject var updater: SparkleAppUpdater
     /// Closing the panel is the same status-item operation as opening it, so it goes through the
     /// abstraction that already isolates that from the rest of the app. It also hands over the
     /// panel's window, which is what the flyouts are positioned against.
@@ -84,9 +86,6 @@ struct MenuPanelView: View {
             flyouts.reset()
             viewModel.reset()
             searchViewModel.clear()
-        }
-        .task {
-            githubService.startPeriodicUpdateCheck()
         }
     }
 }
@@ -159,6 +158,7 @@ private extension MenuPanelView {
                         resetViewModel: resetViewModel,
                         settings: settings,
                         githubService: githubService,
+                        updater: updater,
                         snapshotSaveViewModel: snapshotSaveViewModel,
                         openPreferences: openPreferences,
                         quit: quit)

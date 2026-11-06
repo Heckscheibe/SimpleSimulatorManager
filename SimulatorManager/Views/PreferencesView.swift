@@ -44,6 +44,7 @@ struct PreferencesView: View {
     @ObservedObject var shortcutController: GlobalShortcutController
     let recorderViewModel: ShortcutRecorderViewModel
     let agentIntegrationViewModel: AgentIntegrationViewModel
+    @ObservedObject var updater: SparkleAppUpdater
 
     var body: some View {
         Form {
@@ -76,6 +77,11 @@ struct PreferencesView: View {
                 Toggle("watchOS", isOn: settings.binding(for: \.showWatchOS))
                 Toggle("tvOS", isOn: settings.binding(for: \.showTVOS))
                 Toggle("visionOS", isOn: settings.binding(for: \.showVisionOS))
+            }
+
+            Section("Updates") {
+                Toggle("Automatically check for updates", isOn: Binding(get: { updater.automaticallyChecksForUpdates },
+                                                                        set: { updater.automaticallyChecksForUpdates = $0 }))
             }
 
             SnapshotPreferencesSection(settings: settings)

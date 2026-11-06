@@ -78,7 +78,7 @@ Simple Simulator Manager puts it two clicks from the menu bar.
 
 **Other**
 - Only platforms you actually have simulators for appear
-- Update indicator when a new release is available
+- Updates itself: **Check for Updates…** in the menu, plus a background check about once a day that you can switch off in Settings…
 
 ## Requirements
 
@@ -97,14 +97,27 @@ Homebrew:
 brew install --cask heckscheibe/tap/simple-simulator-manager
 ```
 
-Update later:
-
-```bash
-brew upgrade --cask simple-simulator-manager
-```
+Once installed, the app updates itself (see below), so there is nothing to run later — the cask is
+marked `auto_updates true`, which makes `brew upgrade` leave a self-updated app alone.
 
 Or download the latest notarized build from [Releases](https://github.com/Heckscheibe/SimpleSimulatorManager/releases)
 and move `Simulator Manager.app` to your Applications folder.
+
+## Updates
+
+The app updates itself with [Sparkle](https://sparkle-project.org). **Check for Updates…** at the
+bottom of the menu checks right away and shows the release notes before anything is installed;
+the update is downloaded, its signature verified, and the app relaunches once you confirm.
+
+- **Automatic checks are on by default** — about once a day, in the background. The first-run
+  "check automatically?" prompt is deliberately skipped (`SUEnableAutomaticChecks` in `Info.plist`):
+  this is a menu bar app, so that prompt would open behind whatever you are working in.
+  Turn it off under **Settings… → Updates → Automatically check for updates**.
+- **Nothing is installed without asking.** Automatic *downloading and installing* is off.
+- A background check that finds an update while you are elsewhere never steals focus. The menu shows
+  **Update Available** instead; choose it to see the update.
+- Every update is signed with an EdDSA key whose public half is in the app (`SUPublicEDKey`);
+  an update signed with any other key is rejected.
 
 ## Usage
 

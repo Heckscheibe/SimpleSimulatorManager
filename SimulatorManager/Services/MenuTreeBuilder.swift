@@ -21,6 +21,7 @@ struct MenuTreeBuilder {
     let resetViewModel: ResetSimulatorsViewModel
     let settings: Settings
     let githubService: GithubService
+    let updater: any AppUpdating
     /// Defaults to the running bundle's version, and stays injectable so the version section can
     /// be exercised without depending on whichever bundle the tests happen to run in.
     var appVersion: String? = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
@@ -336,23 +337,29 @@ extension MenuTreeBuilder {
         var nodes: [MenuNode] = [
             .action(id: "github.project",
                     title: "GitHub Project",
-                    actions: [MenuActionItem(title: "GitHub Project") { githubService.openGithubProject() }])
+                    actions: [MenuActionItem(title: "GitHub Project") { githubService.openGithubProject() }]),
+            .divider(id: "github.divider")
         ]
 
-        guard let appVersion else {
-            return nodes
+        if let appVersion {
+            nodes.append(.informational(id: "github.version", title: "Version \(appVersion)"))
         }
 
-        nodes.append(.divider(id: "github.divider"))
+        // Both rows run the same Sparkle call: with an update waiting, it brings that update's
+        // window forward instead of starting a new check.
+        let isEnabled = updater.canCheckForUpdates
 
-        if githubService.isUpdateAvailable {
+        if let pendingUpdateVersion = updater.pendingUpdateVersion {
             nodes.append(.action(id: "github.update",
                                  title: "Update Available",
-                                 subtitle: "Version \(appVersion)",
+                                 subtitle: "Version \(pendingUpdateVersion)",
                                  iconName: "info.circle.fill",
-                                 actions: [MenuActionItem(title: "Update Available") { githubService.openLatestRelease() }]))
+                                 isEnabled: isEnabled,
+                                 actions: [MenuActionItem(title: "Update Available") { updater.checkForUpdates() }]))
         } else {
-            nodes.append(.informational(id: "github.version", title: "Version \(appVersion)"))
+            nodes.append(.action(id: "github.checkForUpdates",
+                                 title: "Check for Updates…",
+                                 isEnabled: isEnabled) { updater.checkForUpdates() })
         }
 
         return nodes

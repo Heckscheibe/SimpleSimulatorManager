@@ -113,12 +113,18 @@ This will:
 
 - build and sign the app
 - notarize and staple the app with Apple
-- create `release/SimulatorManager.zip` from the stapled app bundle
+- create `release/SimulatorManager-<version>.zip` from the stapled app bundle with `ditto` (see
+  [Sparkle appcast](#sparkle-appcast-and-the-eddsa-key)), and check that the app extracted from it still
+  passes `codesign --verify --deep --strict` and `spctl -a -vvv -t install`
+- add the ZIP to the release archive and regenerate `release/appcast.xml`
+- bump the Homebrew cask
 
 ## Lanes Available
 
 - `fastlane mac build` - Build and sign the macOS app for Developer ID distribution
-- `fastlane mac release` - Set the release version, build the app, notarize it, create the ZIP, and open the release folder
+- `fastlane mac release` - Set the release version, build the app, notarize it, create the versioned ZIP and the signed appcast, and bump the Homebrew cask
+- `fastlane mac generate_appcast version:X.Y.Z` - Add `release/SimulatorManager-X.Y.Z.zip` to the archive and regenerate `release/appcast.xml` (also run by `release`)
+- `fastlane mac publish_appcast version:X.Y.Z` - Commit `release/appcast.xml` to `main`, where the app looks for it (run after the GitHub release is published)
 - `fastlane mac update_signing_assets` - One-time/maintenance: push the Developer ID certificate/profile via match to the certs repo (needs push access to [simplesimulatormanager-certificates](https://github.com/Heckscheibe/simplesimulatormanager-certificates)); can't create a brand-new certificate — see below
 
 ## Troubleshooting
@@ -160,9 +166,51 @@ If notarization fails:
 After running `bundle exec fastlane mac release`:
 
 1. Files will be in the `release/` directory
-2. Create a new release on GitHub
-3. Upload `SimulatorManager.zip`
-4. Users can download the ZIP and move the app into their Applications folder
+2. Create a new release on GitHub, tagged `v<version>`
+3. Upload `SimulatorManager-<version>.zip`. The name matters: the appcast's download URL is
+   `…/releases/download/v<version>/SimulatorManager-<version>.zip`
+4. Run `bundle exec fastlane mac publish_appcast version:<version>`. This is what makes installed
+   copies offer the update, so do it only once step 3's asset can be downloaded
+5. New users can still download the ZIP and move the app into their Applications folder
+
+## Sparkle appcast and the EdDSA key
+
+The app updates itself from `appcast.xml`, served from
+`https://raw.githubusercontent.com/Heckscheibe/SimpleSimulatorManager/main/appcast.xml`
+(`SUFeedURL` in `SimulatorManager/Info.plist`). It lives on **`main`** while development happens on
+`develop`, which is why `publish_appcast` commits it through a temporary worktree of `origin/main`.
+
+What `release` does for it:
+
+1. Copies the ZIP into the archive directory (`../simulator-manager-releases` next to this checkout;
+   override with `APPCAST_ARCHIVE_PATH`). `generate_appcast` needs the earlier ZIPs to produce a correct
+   feed, so **keep this directory** — it is outside the repo on purpose.
+2. Writes `SimulatorManager-<version>.html` beside it: the release notes shown in the update window.
+   Defaults to the commit subjects since the last tag; point `RELEASE_NOTES_FILE` at an HTML file to
+   write them by hand.
+3. Runs Sparkle's `generate_appcast --maximum-deltas 0` (no delta assets to upload). It signs each
+   entry and takes `sparkle:version` from `CFBundleVersion` (the **build** number),
+   `sparkle:shortVersionString` from `CFBundleShortVersionString` and
+   `sparkle:minimumSystemVersion` from `LSMinimumSystemVersion`. The tool comes from the Sparkle
+   package Xcode already resolved; set `SPARKLE_BIN` to use another copy.
+
+The ZIP is made with `ditto -c -k --sequesterRsrc --keepParent`, not fastlane's `zip` action: that
+one resolves symlinks instead of storing them, which breaks `Sparkle.framework/Versions/Current`
+and with it the code signature.
+
+### The EdDSA key
+
+Updates are signed with an EdDSA key pair made by Sparkle's `generate_keys`. The **private key lives
+in the maintainer's login Keychain** (item "Private key for signing Sparkle updates"); the public key
+is `SUPublicEDKey` in `Info.plist`. Releases are cut locally, so the key never leaves that Mac.
+
+- Never commit the private key. If you export it (`generate_keys -x <file>`), keep that file outside
+  the repo — `*.sparkle-private-key` is git-ignored as a backstop.
+- Back it up (for example into a password manager) with `generate_keys -x`, and restore it on a new
+  Mac with `generate_keys -f <file>`.
+- **If the key is lost it cannot be recovered.** A new key pair means new `SUPublicEDKey`, and no
+  installed copy will accept an update signed with it: every existing install has to be updated by
+  hand once (download from Releases, or `brew reinstall`). Later updates then work again.
 
 ## Distribution Notes
 
