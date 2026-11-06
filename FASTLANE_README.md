@@ -120,7 +120,7 @@ This will:
   passes `codesign --verify --deep --strict` and `spctl -a -vvv -t install`
 - write the release notes (see [GitHub Release Workflow](#github-release-workflow))
 - ask you to confirm the version and notes, then create the GitHub release and upload the ZIP
-- only after the release was published: regenerate the signed `appcast.xml` and push it to `main`, and bump and push the Homebrew cask
+- only after the release was published: regenerate the signed `appcast.xml` and push it to `develop`, and bump and push the Homebrew cask
 
 The checks that can fail cheaply — `gh` login, `claude` on the `PATH`, `v<version>` not yet existing — run before the build starts.
 
@@ -131,7 +131,7 @@ The checks that can fail cheaply — `gh` login, `claude` on the `PATH`, `v<vers
 - `fastlane mac release_notes` - Write `release/RELEASE_NOTES-<version>.md` only (options: `version`, `target`, `previous_tag`)
 - `fastlane mac github_release` - Confirm and publish the GitHub release for an already built `release/SimulatorManager-<version>.zip` (options: `version`, `target`, `previous_tag`, `regenerate:true`, `dry_run:true`)
 - `fastlane mac generate_appcast version:X.Y.Z` - Add `release/SimulatorManager-X.Y.Z.zip` to the archive and regenerate `release/appcast.xml` (also run by `release`)
-- `fastlane mac publish_appcast version:X.Y.Z` - Commit `release/appcast.xml` to `main`, where the app looks for it; asks you to confirm the GitHub release is live unless called by `release`
+- `fastlane mac publish_appcast version:X.Y.Z` - Commit `release/appcast.xml` to `develop`, where the app looks for it; asks you to confirm the GitHub release is live unless called by `release`
 - `fastlane mac update_signing_assets` - One-time/maintenance: push the Developer ID certificate/profile via match to the certs repo (needs push access to [simplesimulatormanager-certificates](https://github.com/Heckscheibe/simplesimulatormanager-certificates)); can't create a brand-new certificate — see below
 
 ## Troubleshooting
@@ -187,9 +187,14 @@ If notarization fails:
 ## Sparkle appcast and the EdDSA key
 
 The app updates itself from `appcast.xml`, served from
-`https://raw.githubusercontent.com/Heckscheibe/SimpleSimulatorManager/main/appcast.xml`
-(`SUFeedURL` in `SimulatorManager/Info.plist`). It lives on **`main`** while development happens on
-`develop`, which is why `publish_appcast` commits it through a temporary worktree of `origin/main`.
+`https://raw.githubusercontent.com/Heckscheibe/SimpleSimulatorManager/develop/appcast.xml`
+(`SUFeedURL` in `SimulatorManager/Info.plist`). It lives at the root of **`develop`**, the default
+branch, so every release adds an `Appcast for X.Y.Z` commit there. `publish_appcast` makes that commit
+through a temporary worktree of `origin/develop`, so the checkout you release from can be on any branch.
+If `develop` rejects the push (a protected branch), push `release/appcast.xml` there by hand or re-run
+`fastlane mac publish_appcast version:X.Y.Z`. `raw.githubusercontent.com` caches for a few minutes, so a
+fresh feed can take that long to show up. Until the first Sparkle release has published one, the feed
+URL returns 404 and "Check for Updates" reports a download error.
 
 What `release` does for it:
 
