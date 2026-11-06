@@ -52,6 +52,49 @@ struct CleanupSimulatorsViewModelTests {
         #expect(await cleanupService.deletedCandidateIDs == [candidate.id])
     }
 
+    @Test("an outside change does not trigger a scan before the list was ever opened")
+    func externalChangeBeforeFirstOpenDoesNothing() async {
+        let cleanupService = MockSimulatorCleanupService()
+        let viewModel = makeViewModel(cleanupService: cleanupService,
+                                      deviceManager: MockDeviceManager(),
+                                      confirmer: MockDestructiveActionConfirmer())
+
+        viewModel.rescanAfterExternalChange()
+        await Task.yield()
+
+        #expect(await cleanupService.loadCount == 0)
+        #expect(!viewModel.isLoadingCleanupCandidates)
+    }
+
+    @Test("an outside change rescans a list that was already loaded")
+    func externalChangeRescansLoadedList() async {
+        let cleanupService = MockSimulatorCleanupService()
+        let viewModel = makeViewModel(cleanupService: cleanupService,
+                                      deviceManager: MockDeviceManager(),
+                                      confirmer: MockDestructiveActionConfirmer())
+
+        viewModel.refreshCleanupCandidates()
+        await waitForRefreshToFinish(viewModel)
+        viewModel.rescanAfterExternalChange()
+        await waitForRefreshToFinish(viewModel)
+
+        #expect(await cleanupService.loadCount == 2)
+    }
+
+    @Test("an outside change during a scan is not dropped, because that scan may have read the old state")
+    func externalChangeDuringScanRescansAfterwards() async {
+        let cleanupService = MockSimulatorCleanupService()
+        let viewModel = makeViewModel(cleanupService: cleanupService,
+                                      deviceManager: MockDeviceManager(),
+                                      confirmer: MockDestructiveActionConfirmer())
+
+        viewModel.refreshCleanupCandidates()
+        viewModel.rescanAfterExternalChange()
+        await waitForRefreshToFinish(viewModel)
+
+        #expect(await cleanupService.loadCount == 2)
+    }
+
     @Test("groups cleanup candidates by OS version")
     func groupsCleanupCandidatesByOSVersion() async throws {
         let deviceManager = MockDeviceManager()

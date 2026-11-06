@@ -92,7 +92,10 @@ public struct DeviceFixtureDirectory {
         name: String,
         onDeviceWithUdid udid: String,
         userDefaults: [String: [String: Any]] = [:],
-        modifiedAt: Date? = nil
+        modifiedAt: Date? = nil,
+        bundleModifiedAt: Date? = nil,
+        containerModifiedAt: Date? = nil,
+        additionalInfoPlistEntries: [String: Any] = [:]
     ) throws -> InstalledApp {
         let dataFolder = deviceURL(udid: udid).appendingPathComponent(SimulatorPaths.dataFolderName)
 
@@ -104,7 +107,7 @@ public struct DeviceFixtureDirectory {
             "CFBundleIdentifier": bundleIdentifier,
             "CFBundleName": name,
             "DTPlatformName": "iphonesimulator"
-        ], to: bundleURL.appendingPathComponent(Self.infoPlistFileName))
+        ].merging(additionalInfoPlistEntries) { _, additional in additional }, to: bundleURL.appendingPathComponent(Self.infoPlistFileName))
 
         let containerURL = dataFolder
             .appendingPathComponent(SimulatorPaths.appDataApplicationsPath)
@@ -112,9 +115,13 @@ public struct DeviceFixtureDirectory {
         try write(["MCMMetadataIdentifier": bundleIdentifier], to: containerURL.appendingPathComponent(Self.metadataFileName))
         try writePreferences(userDefaults, inContainerAt: containerURL)
 
-        if let modifiedAt {
-            try setModificationDate(modifiedAt, of: containerURL)
-            try setModificationDate(modifiedAt, of: bundleURL)
+        // `modifiedAt` sets both; the specific dates win, so a test can model an app that has been
+        // running (container touched) without having been reinstalled (bundle untouched).
+        if let containerDate = containerModifiedAt ?? modifiedAt {
+            try setModificationDate(containerDate, of: containerURL)
+        }
+        if let bundleDate = bundleModifiedAt ?? modifiedAt {
+            try setModificationDate(bundleDate, of: bundleURL)
         }
 
         return InstalledApp(dataContainerURL: containerURL, bundleURL: bundleURL)

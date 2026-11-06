@@ -44,6 +44,8 @@ class MockDeviceManager: DeviceManaging {
     var getDeviceCalled = false
     var updateRecentAppsCalled = false
     
+    private(set) var lastHidesTestRunnerApps: Bool?
+
     var lastUpdatedDevice: Device?
     var lastQueriedUdid: String?
     var lastAddedChanges: [AppChange] = []
@@ -142,6 +144,10 @@ class MockDeviceManager: DeviceManaging {
         updateRecentAppsCalled = true
         lastAddedChanges = changes
         mockRecentAppChanges.append(contentsOf: changes)
+    }
+
+    func setHidesTestRunnerApps(_ hides: Bool) {
+        lastHidesTestRunnerApps = hides
     }
 
     func setMockRecentAppChanges(_ changes: [AppChange]) {

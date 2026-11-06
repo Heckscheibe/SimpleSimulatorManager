@@ -105,6 +105,7 @@ private extension MenuPanelRowView {
         let isEnabled: Bool
         let isDestructive: Bool
         let actionTitles: [String]
+        let age: AppInstallAge?
         let isSelected: Bool
         let isAwaitingConfirmation: Bool
 
@@ -124,6 +125,7 @@ private extension MenuPanelRowView {
             isEnabled = node.isEnabled
             isDestructive = node.isDestructive
             actionTitles = node.actions.map(\.title)
+            age = node.age
             self.isSelected = isSelected
             self.isAwaitingConfirmation = isAwaitingConfirmation
         }
@@ -138,6 +140,10 @@ private extension MenuPanelRowView {
             labelContent
 
             Spacer(minLength: 4)
+
+            if let age = node.age {
+                ageLabel(for: age)
+            }
 
             if isAwaitingConfirmation {
                 Text("press ↩ again")
@@ -195,6 +201,43 @@ private extension MenuPanelRowView {
             // item does.
             .fixedSize(horizontal: false, vertical: wrapsText)
         }
+    }
+
+    /// The glyph carries the meaning the amber cannot carry alone: a clock where the install is past
+    /// the threshold, otherwise whether the app arrived or was replaced. It differs in shape, not
+    /// only in colour, so it survives greyscale and colour blindness.
+    func ageLabel(for age: AppInstallAge) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: ageSymbolName(for: age))
+                .font(.system(size: 10, weight: .medium))
+            Text(age.relative)
+                .font(MenuPanelStyle.subtitleFont)
+                .fontWeight(age.isStale ? .semibold : .regular)
+        }
+        .lineLimit(1)
+        .fixedSize()
+        .foregroundStyle(ageStyle(for: age))
+        .accessibilityHidden(true)
+    }
+
+    func ageSymbolName(for age: AppInstallAge) -> String {
+        if age.isStale {
+            return "clock.badge.exclamationmark"
+        }
+
+        return switch age.kind {
+        case .installed: "arrow.down.circle"
+        case .updated: "arrow.triangle.2.circlepath"
+        case nil: "clock"
+        }
+    }
+
+    func ageStyle(for age: AppInstallAge) -> AnyShapeStyle {
+        if isHighlighted {
+            return AnyShapeStyle(.white.opacity(0.9))
+        }
+
+        return age.isStale ? AnyShapeStyle(MenuPanelStyle.staleColor) : AnyShapeStyle(.secondary)
     }
 
     var wrapsText: Bool {

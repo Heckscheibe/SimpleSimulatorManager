@@ -14,6 +14,7 @@ struct SimulatorManagerApp: App {
     @StateObject private var deviceManager: DeviceManager
     @State private var viewModel: SimulatorManagerViewModel
     @State private var cleanupSimulatorsViewModel: CleanupSimulatorsViewModel
+    @State private var cleanupRuntimesViewModel: CleanupRuntimesViewModel
     @State private var resetSimulatorsViewModel: ResetSimulatorsViewModel
     @State private var settingsViewModel: SettingsViewModel
     @State private var shortcutRecorderViewModel: ShortcutRecorderViewModel
@@ -32,16 +33,24 @@ struct SimulatorManagerApp: App {
     private let menuPresenter: MenuBarMenuPresenting
 
     init() {
-        let deviceManager = DeviceManager()
+        let settings = Settings()
+        let deviceManager = DeviceManager(hidesTestRunnerApps: settings.hideTestRunnerApps)
         let simulatorResetService: SimulatorResetServing = SimulatorResetService()
         let simulatorCleanupService: SimulatorCleanupServing = SimulatorCleanupService()
         let viewModel = SimulatorManagerViewModel(deviceManager: deviceManager,
-                                                  simulatorResetService: simulatorResetService)
+                                                  simulatorResetService: simulatorResetService,
+                                                  settings: settings)
         let cleanupSimulatorsViewModel = CleanupSimulatorsViewModel(cleanupService: simulatorCleanupService,
                                                                     deviceManager: deviceManager)
+        let cleanupRuntimesViewModel = CleanupRuntimesViewModel(
+            cleanupService: SimulatorRuntimeCleanupService(),
+            deviceManager: deviceManager,
+            // Removing a runtime leaves its simulators unavailable, which the simulator cleanup
+            // list should pick up without waiting for a manual refresh.
+            didDeleteRuntimes: { cleanupSimulatorsViewModel.rescanAfterExternalChange() }
+        )
         let resetSimulatorsViewModel = ResetSimulatorsViewModel(deviceManager: deviceManager,
                                                                 simulatorResetService: simulatorResetService)
-        let settings = Settings()
         let menuPresenter = MenuBarMenuPresenter()
 
         let shortcutController = GlobalShortcutController(settings: settings,
@@ -54,6 +63,7 @@ struct SimulatorManagerApp: App {
         self._deviceManager = StateObject(wrappedValue: deviceManager)
         self._viewModel = State(initialValue: viewModel)
         self._cleanupSimulatorsViewModel = State(initialValue: cleanupSimulatorsViewModel)
+        self._cleanupRuntimesViewModel = State(initialValue: cleanupRuntimesViewModel)
         self._resetSimulatorsViewModel = State(initialValue: resetSimulatorsViewModel)
         self._settingsViewModel = State(initialValue: SettingsViewModel(settings: settings,
                                                                         simulatorManagerViewModel: viewModel))
@@ -69,13 +79,7 @@ struct SimulatorManagerApp: App {
     }
 
     var body: some Scene {
-        // Exactly one of these, chosen at compile time — see ``MenuBarPresentation`` for why this
-        // cannot be a runtime `Bool`.
-        #if LEGACY_MENU_BAR
-            nativeMenuScene
-        #else
-            searchablePanelScene
-        #endif
+        searchablePanelScene
 
         // A `Window` rather than a SwiftUI `Settings` scene: see `PreferencesWindow` for why the
         // latter cannot present in this app.
@@ -101,6 +105,7 @@ private extension SimulatorManagerApp {
             MenuPanelView(simulatorManagerViewModel: viewModel,
                           settingsViewModel: settingsViewModel,
                           cleanupViewModel: cleanupSimulatorsViewModel,
+                          cleanupRuntimesViewModel: cleanupRuntimesViewModel,
                           resetViewModel: resetSimulatorsViewModel,
                           snapshotSaveViewModel: snapshotSaveViewModel,
                           settings: settings,
@@ -110,29 +115,6 @@ private extension SimulatorManagerApp {
                           searchViewModel: menuSearchViewModel)
         }
         .menuBarExtraStyle(.window)
-    }
-
-    /// The menu as it shipped, kept until the panel stops being provisional.
-    var nativeMenuScene: some Scene {
-        MenuBarExtra("SimulatorManager", systemImage: Self.menuBarSymbol) {
-            RecentAppsView(viewModel: viewModel, settings: settings)
-            Divider()
-            DeviceTypeView(viewModel: viewModel, settings: settings)
-            Divider()
-            SettingsView(viewModel: settingsViewModel, settings: settings)
-            OpenPreferencesButton()
-            Divider()
-            CleanupSimulatorsView(viewModel: cleanupSimulatorsViewModel)
-            Divider()
-            ResetSimulatorsView(viewModel: resetSimulatorsViewModel)
-            Divider()
-            GitHubView(githubService: githubService, updater: updater)
-            Divider()
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
-            }
-            .keyboardShortcut("q")
-        }
     }
 
     static let menuBarSymbol = "iphone.gen3"

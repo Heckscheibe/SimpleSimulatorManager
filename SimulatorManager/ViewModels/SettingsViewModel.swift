@@ -23,6 +23,7 @@ class SettingsViewModel {
         static let iOS = "iOS"
         static let watchOS = "watchOS"
         static let recentApps = "Recent Apps"
+        static let testRunners = "UI Test Runners"
     }
     
     init(settings: Settings, simulatorManagerViewModel: SimulatorManagerViewModel) {
@@ -52,6 +53,18 @@ class SettingsViewModel {
 
     var showRecentAppsText: String {
         Self.toggleText(for: PlatformText.recentApps, isVisible: settings.showRecentApps)
+    }
+
+    var showTestRunnersText: String {
+        Self.toggleText(for: PlatformText.testRunners, isVisible: !settings.hideTestRunnerApps)
+    }
+
+    /// Whether any simulator holds a UI test runner, so the entry is only offered to someone who
+    /// has run UI tests.
+    var hasTestRunnerApps: Bool {
+        simulatorManagerViewModel.devices.contains { device in
+            device.apps.contains { $0.isTestRunner }
+        }
     }
 
     var hasAppleTVDevices: Bool {
@@ -96,6 +109,10 @@ class SettingsViewModel {
     
     func toggleRecentAppsVisibility() {
         settings.showRecentApps.toggle()
+    }
+
+    func toggleTestRunnersVisibility() {
+        settings.hideTestRunnerApps.toggle()
     }
 }
 

@@ -25,6 +25,8 @@ class SimulatorManagerViewModel: ContainerShortcutHandling {
     @ObservationIgnored private let deviceManager: DeviceManaging
     @ObservationIgnored private let simulatorResetService: SimulatorResetServing
     @ObservationIgnored private let deviceAppMonitoringService: DeviceAppMonitoring
+    private(set) var hidesTestRunnerApps = false
+
     @ObservationIgnored private var cancellables: Set<AnyCancellable> = []
     @ObservationIgnored private var deviceViewModels: [String: DeviceViewModel] = [:]
     
@@ -32,18 +34,23 @@ class SimulatorManagerViewModel: ContainerShortcutHandling {
         deviceManager: DeviceManaging,
         simulatorResetService: SimulatorResetServing = SimulatorResetService(),
         deviceAppMonitoringService: DeviceAppMonitoring? = nil,
-        containerContent: ContainerContentCopying = ContainerContentService()
+        containerContent: ContainerContentCopying = ContainerContentService(),
+        settings: Settings? = nil
     ) {
         self.deviceManager = deviceManager
         self.simulatorResetService = simulatorResetService
         self.containerContent = containerContent
         self.deviceAppMonitoringService = deviceAppMonitoringService ?? DeviceAppMonitoringService(deviceManager: deviceManager)
         bind()
+        if let settings {
+            bind(to: settings)
+        }
     }
 
     func makeDeviceViewModel(for device: Device) -> DeviceViewModel {
         if let existingViewModel = deviceViewModels[device.udid] {
             existingViewModel.device = device
+            existingViewModel.hidesTestRunnerApps = hidesTestRunnerApps
             return existingViewModel
         }
 
@@ -51,7 +58,8 @@ class SimulatorManagerViewModel: ContainerShortcutHandling {
             device: device,
             deviceManager: deviceManager,
             simulatorResetService: simulatorResetService,
-            containerContent: containerContent
+            containerContent: containerContent,
+            hidesTestRunnerApps: hidesTestRunnerApps
         )
         deviceViewModels[device.udid] = deviceViewModel
         return deviceViewModel
@@ -59,6 +67,25 @@ class SimulatorManagerViewModel: ContainerShortcutHandling {
 }
 
 private extension SimulatorManagerViewModel {
+    /// Hands the test-runner preference to everything that has to apply it. `DeviceManager` needs
+    /// it so runners are dropped before the recent-apps cap; the device view models filter their
+    /// own lists. Nothing reloads, so a change shows up on the next render.
+    func bind(to settings: Settings) {
+        settings.$hideTestRunnerApps
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] hides in
+                guard let self else {
+                    return
+                }
+
+                hidesTestRunnerApps = hides
+                deviceManager.setHidesTestRunnerApps(hides)
+                deviceViewModels.values.forEach { $0.hidesTestRunnerApps = hides }
+            }
+            .store(in: &cancellables)
+    }
+
     func bind() {
         deviceManager.devices
             .receive(on: DispatchQueue.main)

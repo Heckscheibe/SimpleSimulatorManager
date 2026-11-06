@@ -19,8 +19,10 @@ actor MockSimulatorCleanupService: SimulatorCleanupServing {
 
     private(set) var deletedCandidateIDs: [String] = []
     private(set) var attemptedCandidateIDs: [String] = []
+    private(set) var loadCount = 0
 
     func loadCleanupCandidates() async throws -> [SimulatorCleanupCandidate] {
+        loadCount += 1
         await Task.yield()
 
         if let loadError {

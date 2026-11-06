@@ -63,4 +63,11 @@ enum MenuPanelStyle {
     static let titleFont: Font = .system(size: 13)
     static let subtitleFont: Font = .system(size: 11)
     static let disabledOpacity: Double = 0.4
+    /// Amber that holds 4.5:1 against both the light and the dark panel; the stock `.orange` does not
+    /// against white. Never the only signal — the stale age also swaps its glyph and gains weight.
+    static let staleColor = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? NSColor(srgbRed: 1.0, green: 0.72, blue: 0.30, alpha: 1)
+            : NSColor(srgbRed: 0.60, green: 0.29, blue: 0.0, alpha: 1)
+    })
 }

@@ -18,6 +18,7 @@ struct MenuTreeBuilder {
     let simulatorManagerViewModel: SimulatorManagerViewModel
     let settingsViewModel: SettingsViewModel
     let cleanupViewModel: CleanupSimulatorsViewModel
+    let cleanupRuntimesViewModel: CleanupRuntimesViewModel
     let resetViewModel: ResetSimulatorsViewModel
     let settings: Settings
     let githubService: GithubService
@@ -25,6 +26,10 @@ struct MenuTreeBuilder {
     /// Defaults to the running bundle's version, and stays injectable so the version section can
     /// be exercised without depending on whichever bundle the tests happen to run in.
     var appVersion: String? = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    /// The instant ages are measured against. A parameter so the tree stays a pure function of its
+    /// inputs; the panel advances it while open so the ages do not freeze.
+    var now: Date = .init()
+    var ageFormatter: AppInstallAgeFormatter = MenuTreeBuilder.sharedAgeFormatter
     /// Offers Save Snapshot to Folder on every app when set. Optional so a test that is not about
     /// snapshots does not have to build one.
     var snapshotSaveViewModel: SnapshotSaveViewModel?
@@ -41,6 +46,7 @@ struct MenuTreeBuilder {
         nodes.append(preferencesNode())
         nodes.append(.divider(id: "divider.afterSettings"))
         nodes.append(cleanupNode())
+        nodes.append(cleanupRuntimesNode())
         nodes.append(.divider(id: "divider.afterCleanup"))
         nodes.append(resetNode())
         nodes.append(.divider(id: "divider.afterReset"))
@@ -80,15 +86,19 @@ extension MenuTreeBuilder {
         // plus UDID is not unique in the recent-apps list, so reuse it rather than reintroducing
         // the collision here.
         let identifier = "recentApp.\(appChange.id)"
+        let age = installAge(for: appChange.app,
+                             changeType: appChange.replacedBundle ? appChange.changeType : nil)
 
         return .submenu(id: identifier,
                         title: appChange.app.displayName,
                         subtitle: "\(appChange.device.name) \(appChange.device.osVersion)",
                         actions: openActions(for: appChange.app, handler: simulatorManagerViewModel),
+                        age: age,
                         children: shortcutNodes(for: appChange.app,
                                                 handler: simulatorManagerViewModel,
                                                 identifierPrefix: identifier)
-                            + snapshotNodes(for: appChange.app, on: appChange.device, identifierPrefix: identifier))
+                            + snapshotNodes(for: appChange.app, on: appChange.device, identifierPrefix: identifier)
+                            + ageNodes(for: appChange.app, age: age, identifierPrefix: identifier))
     }
 }
 
@@ -207,11 +217,10 @@ extension MenuTreeBuilder {
     private func appNodes(for viewModel: DeviceViewModel, prefix: String) -> [MenuNode] {
         var nodes: [MenuNode] = []
 
-        // Transcribed from `AppsView` as written: it draws the "Apps" header only when the device
-        // has *no* apps installed. That cannot happen, because the header is reached only from
-        // inside the apps submenu, which is itself conditional on apps existing — so the header
-        // never appears today. Kept as-is so the tree matches the menu rather than changing it.
-        if !viewModel.device.hasAppsInstalled {
+        // The "Apps" header is drawn only when the device has *no* apps installed. That cannot
+        // happen, because the header is reached only from inside the apps submenu, which is itself
+        // conditional on apps existing — so the header never appears today.
+        if !viewModel.hasAppsInstalled {
             nodes.append(.sectionHeader(id: "\(prefix).apps.header", title: "Apps"))
         }
 
@@ -219,14 +228,17 @@ extension MenuTreeBuilder {
             // Keyed by install rather than by bundle identifier: two containers can share one, and
             // duplicate row identifiers make `ForEach` misbehave and highlight both rows at once.
             let identifier = "\(prefix).app.\(app.installIdentifier)"
+            let age = installAge(for: app, changeType: nil)
 
             return .submenu(id: identifier,
                             title: app.displayName,
                             actions: openActions(for: app, handler: viewModel),
+                            age: age,
                             children: shortcutNodes(for: app,
                                                     handler: viewModel,
                                                     identifierPrefix: identifier)
-                                + snapshotNodes(for: app, on: viewModel.device, identifierPrefix: identifier))
+                                + snapshotNodes(for: app, on: viewModel.device, identifierPrefix: identifier)
+                                + ageNodes(for: app, age: age, identifierPrefix: identifier))
         })
 
         return nodes
@@ -292,6 +304,12 @@ extension MenuTreeBuilder {
         if settingsViewModel.hasIPhoneDevices {
             nodes.append(toggleNode(identifier: "settings.iOS", title: settingsViewModel.showIPhoneText) {
                 settingsViewModel.toggleIOSVisibility()
+            })
+        }
+
+        if settingsViewModel.hasTestRunnerApps {
+            nodes.append(toggleNode(identifier: "settings.testRunners", title: settingsViewModel.showTestRunnersText) {
+                settingsViewModel.toggleTestRunnersVisibility()
             })
         }
 

@@ -31,7 +31,7 @@ extension MenuTreeBuilder {
         if cleanupViewModel.isLoadingCleanupCandidates {
             nodes.append(.informational(id: "cleanup.loading", title: "Inspecting simulator installations…"))
         } else if cleanupViewModel.cleanupCandidates.isEmpty {
-            nodes.append(.informational(id: "cleanup.empty", title: "No invalid simulators found"))
+            nodes.append(.informational(id: "cleanup.empty", title: cleanupViewModel.emptyStateText))
         }
 
         nodes.append(contentsOf: cleanupCandidateNodes())

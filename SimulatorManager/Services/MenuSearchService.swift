@@ -28,10 +28,12 @@ protocol MenuSearching: AnyObject {
     ///   - visiblePlatforms: Platforms the user has not hidden. A device on a hidden platform, and
     ///     every app installed on it, is left out entirely — search must never surface something
     ///     the browsable menu refuses to show.
+    ///   - hidesTestRunnerApps: Leaves UI test runner apps out, for the same reason.
     func updateIndex(
         devices: [Device],
         recentApps: [AppChange],
-        visiblePlatforms: Set<SimulatorPlatform>
+        visiblePlatforms: Set<SimulatorPlatform>,
+        hidesTestRunnerApps: Bool
     )
 
     /// Ranked hits for `query`, best first.
@@ -39,6 +41,15 @@ protocol MenuSearching: AnyObject {
     /// Returns an empty list for an empty or whitespace-only query: showing everything is the
     /// browsable menu's job, not search's.
     func results(for query: String) -> [MenuSearchResult]
+}
+
+extension MenuSearching {
+    func updateIndex(devices: [Device], recentApps: [AppChange], visiblePlatforms: Set<SimulatorPlatform>) {
+        updateIndex(devices: devices,
+                    recentApps: recentApps,
+                    visiblePlatforms: visiblePlatforms,
+                    hidesTestRunnerApps: false)
+    }
 }
 
 // MARK: - Service
@@ -51,14 +62,15 @@ final class MenuSearchService: MenuSearching {
     func updateIndex(
         devices: [Device],
         recentApps: [AppChange],
-        visiblePlatforms: Set<SimulatorPlatform>
+        visiblePlatforms: Set<SimulatorPlatform>,
+        hidesTestRunnerApps: Bool
     ) {
         let recentRanks = Self.recentRanks(for: recentApps)
 
         entries = devices
             .filter { visiblePlatforms.contains($0.simulatorPlatform) }
             .flatMap { device in
-                [Self.makeEntry(for: device)] + device.apps.map { app in
+                [Self.makeEntry(for: device)] + device.apps.filter { !hidesTestRunnerApps || !$0.isTestRunner }.map { app in
                     Self.makeEntry(for: app, on: device, recentRanks: recentRanks)
                 }
             }

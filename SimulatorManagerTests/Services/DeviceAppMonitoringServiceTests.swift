@@ -13,12 +13,42 @@ struct DeviceAppMonitoringServiceTests {
     private let device = TestDataHelpers.createMockDevice()
     private let now = Date()
 
-    private func app(_ bundleIdentifier: String, modifiedAt: Date? = nil) -> MockSimulatorApp {
+    private func app(_ bundleIdentifier: String, modifiedAt: Date? = nil, bundleModifiedAt: Date? = nil) -> MockSimulatorApp {
         MockSimulatorApp(
             bundleIdentifier: bundleIdentifier,
             displayName: bundleIdentifier,
-            contentModifiedAt: modifiedAt
+            contentModifiedAt: modifiedAt,
+            bundleModifiedAt: bundleModifiedAt
         )
+    }
+
+    @Test("An app writing to its container is still an update, but did not replace its bundle")
+    func containerWriteDoesNotReplaceTheBundle() {
+        let installed = now.addingTimeInterval(-86400)
+        let changes = DeviceAppMonitoringService.computeAppChanges(
+            previousApps: [app("com.test.running", modifiedAt: installed, bundleModifiedAt: installed)],
+            currentApps: [app("com.test.running", modifiedAt: now.addingTimeInterval(-1), bundleModifiedAt: installed)],
+            device: device,
+            now: now
+        )
+
+        #expect(changes.first?.changeType == .updated)
+        #expect(changes.first?.replacedBundle == false)
+    }
+
+    @Test("A reinstall replaces the bundle")
+    func reinstallReplacesTheBundle() {
+        let installed = now.addingTimeInterval(-86400)
+        let reinstalled = now.addingTimeInterval(-1)
+        let changes = DeviceAppMonitoringService.computeAppChanges(
+            previousApps: [app("com.test.rebuilt", modifiedAt: installed, bundleModifiedAt: installed)],
+            currentApps: [app("com.test.rebuilt", modifiedAt: reinstalled, bundleModifiedAt: reinstalled)],
+            device: device,
+            now: now
+        )
+
+        #expect(changes.first?.changeType == .updated)
+        #expect(changes.first?.replacedBundle == true)
     }
 
     @Test("Newly installed apps are detected")

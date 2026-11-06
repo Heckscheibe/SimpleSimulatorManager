@@ -84,7 +84,9 @@ public class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
                 changes.append(AppChange(app: currentApp,
                                          device: device,
                                          changeType: .updated,
-                                         timestamp: currentDate))
+                                         timestamp: currentDate,
+                                         replacedBundle: (currentApp.bundleModifiedAt ?? .distantPast)
+                                             > (previousApp.bundleModifiedAt ?? .distantPast)))
             }
         }
 

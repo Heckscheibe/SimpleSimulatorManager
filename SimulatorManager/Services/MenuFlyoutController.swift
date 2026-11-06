@@ -253,7 +253,9 @@ private extension MenuFlyoutController {
     /// actions' closures are left out on purpose: they close over view models by reference, so a
     /// row keeps doing the right thing without the window being rebuilt to hear about it. Their
     /// titles are not, because a row gaining or losing an action is a change to the row.
-    static func signature(of level: MenuPanelLevel, anchoredTo anchor: CGRect, hangingOffFrame parent: CGRect) -> Int {
+    ///
+    /// Internal rather than private so a test can pin what it covers.
+    internal static func signature(of level: MenuPanelLevel, anchoredTo anchor: CGRect, hangingOffFrame parent: CGRect) -> Int {
         var hasher = Hasher()
 
         hasher.combine(anchor.minX)
@@ -272,6 +274,9 @@ private extension MenuFlyoutController {
             hasher.combine(node.isEnabled)
             hasher.combine(node.isDestructive)
             hasher.combine(node.actions.map(\.title))
+            // An age moves with the clock and with the preferences while a flyout is open; leaving it
+            // out kept the old text on screen until the flyout was closed and opened again.
+            hasher.combine(node.age)
         }
 
         return hasher.finalize()

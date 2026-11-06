@@ -9,6 +9,8 @@ This document describes the current Fastlane workflow for building and signing t
 3. **Access to the certificates repo**: [Heckscheibe/simplesimulatormanager-certificates](https://github.com/Heckscheibe/simplesimulatormanager-certificates) (private) — this is where match stores the encrypted certificate and provisioning profile; you need read access via git (SSH) plus the shared `MATCH_PASSWORD` to decrypt them
 4. **Ruby**: the version pinned in [.ruby-version](.ruby-version) (currently 4.0.6). macOS's pre-installed Ruby is not sufficient — see [Install Ruby](#1-install-ruby) below
 5. **Xcode Command Line Tools**: Install with `xcode-select --install`
+6. **GitHub CLI** (`brew install gh`, then `gh auth login`) with push access to this repo: the release lane creates the GitHub release with your own login, so no token goes into `.env`
+7. **Claude Code** (`claude` on your `PATH`, signed in): the release lane uses `claude -p` to write the release notes. Set `CLAUDE_CLI` to use a different binary and `RELEASE_NOTES_MODEL` to pick a model
 
 ## Initial Setup
 
@@ -116,15 +118,20 @@ This will:
 - create `release/SimulatorManager-<version>.zip` from the stapled app bundle with `ditto` (see
   [Sparkle appcast](#sparkle-appcast-and-the-eddsa-key)), and check that the app extracted from it still
   passes `codesign --verify --deep --strict` and `spctl -a -vvv -t install`
-- add the ZIP to the release archive and regenerate `release/appcast.xml`
-- bump the Homebrew cask
+- write the release notes (see [GitHub Release Workflow](#github-release-workflow))
+- ask you to confirm the version and notes, then create the GitHub release and upload the ZIP
+- only after the release was published: regenerate the signed `appcast.xml` and push it to `main`, and bump and push the Homebrew cask
+
+The checks that can fail cheaply — `gh` login, `claude` on the `PATH`, `v<version>` not yet existing — run before the build starts.
 
 ## Lanes Available
 
 - `fastlane mac build` - Build and sign the macOS app for Developer ID distribution
-- `fastlane mac release` - Set the release version, build the app, notarize it, create the versioned ZIP and the signed appcast, and bump the Homebrew cask
+- `fastlane mac release` - Set the release version, build the app, notarize it, create the versioned ZIP, write the release notes, publish the GitHub release after confirmation, then publish the signed appcast and bump the Homebrew cask
+- `fastlane mac release_notes` - Write `release/RELEASE_NOTES-<version>.md` only (options: `version`, `target`, `previous_tag`)
+- `fastlane mac github_release` - Confirm and publish the GitHub release for an already built `release/SimulatorManager-<version>.zip` (options: `version`, `target`, `previous_tag`, `regenerate:true`, `dry_run:true`)
 - `fastlane mac generate_appcast version:X.Y.Z` - Add `release/SimulatorManager-X.Y.Z.zip` to the archive and regenerate `release/appcast.xml` (also run by `release`)
-- `fastlane mac publish_appcast version:X.Y.Z` - Commit `release/appcast.xml` to `main`, where the app looks for it (run after the GitHub release is published)
+- `fastlane mac publish_appcast version:X.Y.Z` - Commit `release/appcast.xml` to `main`, where the app looks for it; asks you to confirm the GitHub release is live unless called by `release`
 - `fastlane mac update_signing_assets` - One-time/maintenance: push the Developer ID certificate/profile via match to the certs repo (needs push access to [simplesimulatormanager-certificates](https://github.com/Heckscheibe/simplesimulatormanager-certificates)); can't create a brand-new certificate — see below
 
 ## Troubleshooting
@@ -163,15 +170,19 @@ If notarization fails:
 
 ## GitHub Release Workflow
 
-After running `bundle exec fastlane mac release`:
+`bundle exec fastlane mac release` publishes the GitHub release itself, after the build and before the appcast is published and the Homebrew cask is bumped (both point at the release asset, so the asset has to exist first).
 
-1. Files will be in the `release/` directory
-2. Create a new release on GitHub, tagged `v<version>`
-3. Upload `SimulatorManager-<version>.zip`. The name matters: the appcast's download URL is
-   `…/releases/download/v<version>/SimulatorManager-<version>.zip`
-4. Run `bundle exec fastlane mac publish_appcast version:<version>`. This is what makes installed
-   copies offer the update, so do it only once step 3's asset can be downloaded
-5. New users can still download the ZIP and move the app into their Applications folder
+**Release notes.** They keep the style of GitHub's auto-generated notes. The `* <PR title> by @<author> in <PR url>` lines and the `Full Changelog` link come verbatim from GitHub's `generate-notes` API for the range *latest release → target commit*. Claude reads each PR's title, body and labels and returns a category and a user-facing summary of at most three sentences; the lane groups the entries under **Features**, **Improvements** and **Bugfixes** (in that order, empty groups omitted) and indents the summary under its entry. Claude gets no tools and the PR text is passed as data. The result is saved as `release/RELEASE_NOTES-<version>.md`; the lane warns about a missing summary or one over three sentences.
+
+**Confirmation.** Before anything is uploaded the lane prints the repository, the tag `v<version>` and the commit it will point at, the ZIP and its size, and the full notes, then asks:
+
+1. *Publish* — creates the release `<version>` (tag `v<version>`, marked latest) and uploads `SimulatorManager-<version>.zip`
+2. *Edit release notes* — opens the file in `$VISUAL`/`$EDITOR` (default: TextEdit; use `code --wait` style commands for editors that return immediately), then shows the prompt again
+3. *Cancel* — uploads nothing and leaves the Homebrew cask and the appcast untouched
+
+**The tag points at `HEAD`** (override with `target:<branch-or-sha>`), which must be pushed. The release lane bumps the version in the working tree without committing it, so the lane warns when the tree is dirty: commit and push the bump first if the tagged commit should contain it.
+
+**Resuming.** If you cancel or the upload fails, nothing else has changed. Run `bundle exec fastlane mac github_release version:X.Y.Z` (reuses the saved notes, `regenerate:true` rewrites them; `dry_run:true` shows the `gh release create` command without running it), then `bundle exec fastlane mac generate_appcast version:X.Y.Z`, `bump_homebrew_cask version:X.Y.Z` and `publish_appcast version:X.Y.Z`.
 
 ## Sparkle appcast and the EdDSA key
 
@@ -185,9 +196,9 @@ What `release` does for it:
 1. Copies the ZIP into the archive directory (`../simulator-manager-releases` next to this checkout;
    override with `APPCAST_ARCHIVE_PATH`). `generate_appcast` needs the earlier ZIPs to produce a correct
    feed, so **keep this directory** — it is outside the repo on purpose.
-2. Writes `SimulatorManager-<version>.html` beside it: the release notes shown in the update window.
-   Defaults to the commit subjects since the last tag; point `RELEASE_NOTES_FILE` at an HTML file to
-   write them by hand.
+2. Writes `SimulatorManager-<version>.html` beside it: the release notes shown in the update window,
+   converted from `release/RELEASE_NOTES-<version>.md`. Point `RELEASE_NOTES_FILE` at an HTML file to
+   write them by hand; without any notes file the commit subjects since the last tag are listed.
 3. Runs Sparkle's `generate_appcast --maximum-deltas 0` (no delta assets to upload). It signs each
    entry and takes `sparkle:version` from `CFBundleVersion` (the **build** number),
    `sparkle:shortVersionString` from `CFBundleShortVersionString` and

@@ -16,6 +16,7 @@ final class MockMenuSearchService: MenuSearching {
     private(set) var lastDevices: [Device] = []
     private(set) var lastRecentApps: [AppChange] = []
     private(set) var lastVisiblePlatforms: Set<SimulatorPlatform> = []
+    private(set) var lastHidesTestRunnerApps = false
     private(set) var queries: [String] = []
 
     /// Returned for any non-empty query.
@@ -24,12 +25,14 @@ final class MockMenuSearchService: MenuSearching {
     func updateIndex(
         devices: [Device],
         recentApps: [AppChange],
-        visiblePlatforms: Set<SimulatorPlatform>
+        visiblePlatforms: Set<SimulatorPlatform>,
+        hidesTestRunnerApps: Bool
     ) {
         indexUpdateCount += 1
         lastDevices = devices
         lastRecentApps = recentApps
         lastVisiblePlatforms = visiblePlatforms
+        lastHidesTestRunnerApps = hidesTestRunnerApps
     }
 
     func results(for query: String) -> [MenuSearchResult] {

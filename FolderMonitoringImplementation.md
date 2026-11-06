@@ -44,8 +44,8 @@ The extracted service that handles:
 - **App group discovery**: finds and processes app groups
 
 ### 6. User Interface Integration
-- **RecentAppsView**: SwiftUI view that displays recent app installations and removals
-- **Menu bar integration**: shows at the top of the menu bar app
+- **Recent Apps section**: `MenuTreeBuilder` turns the recent apps into rows of the menu bar panel's `MenuNode` tree, which the panel renders
+- **Menu bar integration**: shows at the top of the menu bar panel
 - **Reactive updates**: automatically refreshes when published properties change
 
 ## File Structure
@@ -57,13 +57,11 @@ FolderMonitor/
 
 Services/
 ├── AppDiscoveryService.swift          # App discovery and metadata extraction
-└── DeviceAppMonitoringService.swift   # Per-device monitor lifecycle + change diffing
+├── DeviceAppMonitoringService.swift   # Per-device monitor lifecycle + change diffing
+└── MenuTreeBuilder.swift              # Builds the panel's Recent Apps rows
 
 ViewModels/
 └── SimulatorManagerViewModel.swift    # Binds device and recent-app state for the UI
-
-Views/
-└── RecentAppsView.swift               # UI for displaying recent changes
 
 DeviceManager.swift                    # Device discovery, coordination, refreshes
 ```

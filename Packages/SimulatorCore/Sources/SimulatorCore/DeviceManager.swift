@@ -30,6 +30,10 @@ public protocol DeviceManaging: AnyObject, Sendable {
     func refreshDevice(_ device: Device) async -> Device?
     func getDevice(withUdid udid: String) -> Device?
     func updateRecentApps(_ changes: [AppChange])
+    /// Whether UI test runner apps are left out of the recent-apps list. They are dropped before
+    /// the list is capped, so they never take a slot from a real app, and changing this re-derives
+    /// the published list without reloading anything.
+    func setHidesTestRunnerApps(_ hides: Bool)
 }
 
 /// State lives in thread-safe `CurrentValueSubject`s; publisher values are only
@@ -51,6 +55,10 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
     private let devicesPublisher: CurrentValueSubject<[Device], Never> = .init([])
     private let recentInstalledAppsPublisher: CurrentValueSubject<[AppChange], Never> = .init([])
     private var deviceTypeBinding: AnyCancellable?
+    /// The recent-apps list before test runners are filtered out of it; see ``RecentApps/retained(from:limit:)``.
+    /// Main-queue only, like the publishers.
+    private var retainedRecentApps: [AppChange] = []
+    private var hidesTestRunnerApps: Bool
     /// Serial queue for reloading single devices off the main thread.
     private let refreshQueue = DispatchQueue(label: "DeviceManager.refreshQueue", qos: .userInitiated)
 
@@ -58,7 +66,11 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
     /// against a fixture directory instead of the machine's own simulators.
     private let deviceLoader: DeviceLoader
 
-    public init(devicesDirectoryURL: URL? = SimulatorPaths.coreSimulatorDevicesDirectoryURL()) {
+    public init(
+        devicesDirectoryURL: URL? = SimulatorPaths.coreSimulatorDevicesDirectoryURL(),
+        hidesTestRunnerApps: Bool = false
+    ) {
+        self.hidesTestRunnerApps = hidesTestRunnerApps
         self.deviceLoader = DeviceLoader(devicesDirectoryURL: devicesDirectoryURL)
         loadDevices()
         bindDeviceTypes()
@@ -130,6 +142,21 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
         return devicesPublisher.value.first { $0.udid == udid }
     }
     
+    public func setHidesTestRunnerApps(_ hides: Bool) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.setHidesTestRunnerApps(hides)
+            }
+            return
+        }
+        guard hides != hidesTestRunnerApps else {
+            return
+        }
+
+        hidesTestRunnerApps = hides
+        publishRecentApps()
+    }
+
     public func updateRecentApps(_ changes: [AppChange]) {
         // Publisher values are only mutated on the main queue (see the @unchecked Sendable
         // note on the type). DeviceManaging is Sendable, so a caller may invoke this off-main;
@@ -141,7 +168,7 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
             return
         }
 
-        var currentInstalledApps = recentInstalledAppsPublisher.value
+        var currentInstalledApps = retainedRecentApps
         
         for change in changes {
             let appKey = RecentApps.key(for: change)
@@ -163,12 +190,10 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
         // Sort by timestamp (most recent first)
         currentInstalledApps.sort { $0.timestamp > $1.timestamp }
 
-        // Limit to max recent installed apps
-        if currentInstalledApps.count > RecentApps.maxCount {
-            currentInstalledApps = Array(currentInstalledApps.prefix(RecentApps.maxCount))
-        }
-        
-        recentInstalledAppsPublisher.value = currentInstalledApps
+        // Limit to max recent installed apps. Test runners are capped on their own, so hiding them
+        // later cannot leave the list short and showing them again can bring them back.
+        retainedRecentApps = RecentApps.retained(from: currentInstalledApps)
+        publishRecentApps()
     }
 }
 
@@ -180,7 +205,13 @@ private extension DeviceManager {
         // Always assign, even when no apps were found: a reload has to replace whatever the
         // previous snapshot left behind, and doing it here keeps the whole recent-apps
         // replacement to a single emission.
-        recentInstalledAppsPublisher.value = RecentApps.initial(from: appChanges)
+        retainedRecentApps = RecentApps.retained(from: RecentApps.initial(from: appChanges, limit: .max))
+        publishRecentApps()
+    }
+
+    func publishRecentApps() {
+        recentInstalledAppsPublisher.value = RecentApps.visible(from: retainedRecentApps,
+                                                                hidingTestRunners: hidesTestRunnerApps)
     }
     
     func bindDeviceTypes() {

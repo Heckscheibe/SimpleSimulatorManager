@@ -7,12 +7,18 @@ public protocol SimulatorCleanupServing: AnyObject, Sendable {
     ///   example to check one still qualifies; walking every directory to size it is skipped and
     ///   `diskUsageBytes` is only what `simctl` reports.
     func loadCleanupCandidates(includingDiskUsage: Bool) async throws -> [SimulatorCleanupCandidate]
+    /// Like ``loadCleanupCandidates()``, but also reports how many simulators were examined.
+    func loadCleanupScan() async throws -> SimulatorCleanupScan
     func deleteCleanupCandidate(_ candidate: SimulatorCleanupCandidate) async throws
 }
 
 public extension SimulatorCleanupServing {
     func loadCleanupCandidates(includingDiskUsage: Bool) async throws -> [SimulatorCleanupCandidate] {
         try await loadCleanupCandidates()
+    }
+
+    func loadCleanupScan() async throws -> SimulatorCleanupScan {
+        try SimulatorCleanupScan(candidates: await loadCleanupCandidates(), checkedSimulatorCount: nil)
     }
 }
 
@@ -93,6 +99,14 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
     }
 
     public func loadCleanupCandidates(includingDiskUsage: Bool) async throws -> [SimulatorCleanupCandidate] {
+        try await loadCleanupScan(includingDiskUsage: includingDiskUsage).candidates
+    }
+
+    public func loadCleanupScan() async throws -> SimulatorCleanupScan {
+        try await loadCleanupScan(includingDiskUsage: true)
+    }
+
+    private func loadCleanupScan(includingDiskUsage: Bool) async throws -> SimulatorCleanupScan {
         os_log("Cleanup service started loading candidates")
         async let simctlDevices = loadSimctlDevices()
         async let availableRuntimeIdentifiers = loadAvailableRuntimeIdentifiers()
@@ -123,7 +137,14 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
         }
 
         os_log("Cleanup service built %{public}ld candidates", candidates.count)
-        return candidates
+
+        let registeredUDIDs = Set(loadedSimctlDevices.map(\.udid))
+        let unregisteredDirectoryCount = Set(loadedDirectoryRecords.map(\.udid)).subtracting(registeredUDIDs).count
+
+        return SimulatorCleanupScan(
+            candidates: candidates,
+            checkedSimulatorCount: registeredUDIDs.count + unregisteredDirectoryCount
+        )
     }
 
     public func deleteCleanupCandidate(_ candidate: SimulatorCleanupCandidate) async throws {
