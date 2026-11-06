@@ -115,19 +115,23 @@ This will:
 
 - build and sign the app
 - notarize and staple the app with Apple
-- create `release/SimulatorManager.zip` from the stapled app bundle
+- create `release/SimulatorManager-<version>.zip` from the stapled app bundle with `ditto` (see
+  [Sparkle appcast](#sparkle-appcast-and-the-eddsa-key)), and check that the app extracted from it still
+  passes `codesign --verify --deep --strict` and `spctl -a -vvv -t install`
 - write the release notes (see [GitHub Release Workflow](#github-release-workflow))
 - ask you to confirm the version and notes, then create the GitHub release and upload the ZIP
-- bump and push the Homebrew cask (only after the release was published)
+- only after the release was published: regenerate the signed `appcast.xml` and push it to `main`, and bump and push the Homebrew cask
 
 The checks that can fail cheaply — `gh` login, `claude` on the `PATH`, `v<version>` not yet existing — run before the build starts.
 
 ## Lanes Available
 
 - `fastlane mac build` - Build and sign the macOS app for Developer ID distribution
-- `fastlane mac release` - Set the release version, build the app, notarize it, create the ZIP, write the release notes, publish the GitHub release after confirmation, and bump the Homebrew cask
+- `fastlane mac release` - Set the release version, build the app, notarize it, create the versioned ZIP, write the release notes, publish the GitHub release after confirmation, then publish the signed appcast and bump the Homebrew cask
 - `fastlane mac release_notes` - Write `release/RELEASE_NOTES-<version>.md` only (options: `version`, `target`, `previous_tag`)
-- `fastlane mac github_release` - Confirm and publish the GitHub release for an already built `release/SimulatorManager.zip` (options: `version`, `target`, `previous_tag`, `regenerate:true`, `dry_run:true`)
+- `fastlane mac github_release` - Confirm and publish the GitHub release for an already built `release/SimulatorManager-<version>.zip` (options: `version`, `target`, `previous_tag`, `regenerate:true`, `dry_run:true`)
+- `fastlane mac generate_appcast version:X.Y.Z` - Add `release/SimulatorManager-X.Y.Z.zip` to the archive and regenerate `release/appcast.xml` (also run by `release`)
+- `fastlane mac publish_appcast version:X.Y.Z` - Commit `release/appcast.xml` to `main`, where the app looks for it; asks you to confirm the GitHub release is live unless called by `release`
 - `fastlane mac update_signing_assets` - One-time/maintenance: push the Developer ID certificate/profile via match to the certs repo (needs push access to [simplesimulatormanager-certificates](https://github.com/Heckscheibe/simplesimulatormanager-certificates)); can't create a brand-new certificate — see below
 
 ## Troubleshooting
@@ -166,19 +170,58 @@ If notarization fails:
 
 ## GitHub Release Workflow
 
-`bundle exec fastlane mac release` publishes the GitHub release itself, after the build and before the Homebrew cask is bumped (the cask URL points at the release asset, so the asset has to exist first).
+`bundle exec fastlane mac release` publishes the GitHub release itself, after the build and before the appcast is published and the Homebrew cask is bumped (both point at the release asset, so the asset has to exist first).
 
 **Release notes.** They keep the style of GitHub's auto-generated notes. The `* <PR title> by @<author> in <PR url>` lines and the `Full Changelog` link come verbatim from GitHub's `generate-notes` API for the range *latest release → target commit*. Claude reads each PR's title, body and labels and returns a category and a user-facing summary of at most three sentences; the lane groups the entries under **Features**, **Improvements** and **Bugfixes** (in that order, empty groups omitted) and indents the summary under its entry. Claude gets no tools and the PR text is passed as data. The result is saved as `release/RELEASE_NOTES-<version>.md`; the lane warns about a missing summary or one over three sentences.
 
 **Confirmation.** Before anything is uploaded the lane prints the repository, the tag `v<version>` and the commit it will point at, the ZIP and its size, and the full notes, then asks:
 
-1. *Publish* — creates the release `<version>` (tag `v<version>`, marked latest) and uploads `SimulatorManager.zip`
+1. *Publish* — creates the release `<version>` (tag `v<version>`, marked latest) and uploads `SimulatorManager-<version>.zip`
 2. *Edit release notes* — opens the file in `$VISUAL`/`$EDITOR` (default: TextEdit; use `code --wait` style commands for editors that return immediately), then shows the prompt again
-3. *Cancel* — uploads nothing and leaves the Homebrew cask untouched
+3. *Cancel* — uploads nothing and leaves the Homebrew cask and the appcast untouched
 
 **The tag points at `HEAD`** (override with `target:<branch-or-sha>`), which must be pushed. The release lane bumps the version in the working tree without committing it, so the lane warns when the tree is dirty: commit and push the bump first if the tagged commit should contain it.
 
-**Resuming.** If you cancel or the upload fails, nothing else has changed. Run `bundle exec fastlane mac github_release version:X.Y.Z` (reuses the saved notes, `regenerate:true` rewrites them; `dry_run:true` shows the `gh release create` command without running it), then `bundle exec fastlane mac bump_homebrew_cask version:X.Y.Z`.
+**Resuming.** If you cancel or the upload fails, nothing else has changed. Run `bundle exec fastlane mac github_release version:X.Y.Z` (reuses the saved notes, `regenerate:true` rewrites them; `dry_run:true` shows the `gh release create` command without running it), then `bundle exec fastlane mac generate_appcast version:X.Y.Z`, `bump_homebrew_cask version:X.Y.Z` and `publish_appcast version:X.Y.Z`.
+
+## Sparkle appcast and the EdDSA key
+
+The app updates itself from `appcast.xml`, served from
+`https://raw.githubusercontent.com/Heckscheibe/SimpleSimulatorManager/main/appcast.xml`
+(`SUFeedURL` in `SimulatorManager/Info.plist`). It lives on **`main`** while development happens on
+`develop`, which is why `publish_appcast` commits it through a temporary worktree of `origin/main`.
+
+What `release` does for it:
+
+1. Copies the ZIP into the archive directory (`../simulator-manager-releases` next to this checkout;
+   override with `APPCAST_ARCHIVE_PATH`). `generate_appcast` needs the earlier ZIPs to produce a correct
+   feed, so **keep this directory** — it is outside the repo on purpose.
+2. Writes `SimulatorManager-<version>.html` beside it: the release notes shown in the update window,
+   converted from `release/RELEASE_NOTES-<version>.md`. Point `RELEASE_NOTES_FILE` at an HTML file to
+   write them by hand; without any notes file the commit subjects since the last tag are listed.
+3. Runs Sparkle's `generate_appcast --maximum-deltas 0` (no delta assets to upload). It signs each
+   entry and takes `sparkle:version` from `CFBundleVersion` (the **build** number),
+   `sparkle:shortVersionString` from `CFBundleShortVersionString` and
+   `sparkle:minimumSystemVersion` from `LSMinimumSystemVersion`. The tool comes from the Sparkle
+   package Xcode already resolved; set `SPARKLE_BIN` to use another copy.
+
+The ZIP is made with `ditto -c -k --sequesterRsrc --keepParent`, not fastlane's `zip` action: that
+one resolves symlinks instead of storing them, which breaks `Sparkle.framework/Versions/Current`
+and with it the code signature.
+
+### The EdDSA key
+
+Updates are signed with an EdDSA key pair made by Sparkle's `generate_keys`. The **private key lives
+in the maintainer's login Keychain** (item "Private key for signing Sparkle updates"); the public key
+is `SUPublicEDKey` in `Info.plist`. Releases are cut locally, so the key never leaves that Mac.
+
+- Never commit the private key. If you export it (`generate_keys -x <file>`), keep that file outside
+  the repo — `*.sparkle-private-key` is git-ignored as a backstop.
+- Back it up (for example into a password manager) with `generate_keys -x`, and restore it on a new
+  Mac with `generate_keys -f <file>`.
+- **If the key is lost it cannot be recovered.** A new key pair means new `SUPublicEDKey`, and no
+  installed copy will accept an update signed with it: every existing install has to be updated by
+  hand once (download from Releases, or `brew reinstall`). Later updates then work again.
 
 ## Distribution Notes
 

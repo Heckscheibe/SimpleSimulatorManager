@@ -23,7 +23,8 @@ struct SimulatorManagerApp: App {
     @State private var agentIntegrationViewModel = AgentIntegrationViewModel()
     @StateObject private var settings: Settings
     @StateObject private var shortcutController: GlobalShortcutController
-    @StateObject private var githubService = GithubService()
+    @StateObject private var updater: SparkleAppUpdater
+    private let githubService = GithubService()
 
     private let simulatorResetService: SimulatorResetServing
     private let simulatorCleanupService: SimulatorCleanupServing
@@ -72,6 +73,9 @@ struct SimulatorManagerApp: App {
         self._snapshotSaveViewModel = State(initialValue: SnapshotSaveViewModel(settings: settings))
         self._settings = StateObject(wrappedValue: settings)
         self._shortcutController = StateObject(wrappedValue: shortcutController)
+        // Created once for the app's lifetime. A hosted unit test run must not start it: it would
+        // check the feed and could put an update window in front of the test.
+        self._updater = StateObject(wrappedValue: SparkleAppUpdater(startsUpdater: !Self.isHostingUnitTests))
     }
 
     var body: some Scene {
@@ -83,7 +87,8 @@ struct SimulatorManagerApp: App {
             PreferencesView(settings: settings,
                             shortcutController: shortcutController,
                             recorderViewModel: shortcutRecorderViewModel,
-                            agentIntegrationViewModel: agentIntegrationViewModel)
+                            agentIntegrationViewModel: agentIntegrationViewModel,
+                            updater: updater)
         }
         .windowResizability(.contentSize)
         .defaultPosition(.center)
@@ -105,6 +110,7 @@ private extension SimulatorManagerApp {
                           snapshotSaveViewModel: snapshotSaveViewModel,
                           settings: settings,
                           githubService: githubService,
+                          updater: updater,
                           menuPresenter: menuPresenter,
                           searchViewModel: menuSearchViewModel)
         }
@@ -112,4 +118,8 @@ private extension SimulatorManagerApp {
     }
 
     static let menuBarSymbol = "iphone.gen3"
+
+    static var isHostingUnitTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
 }

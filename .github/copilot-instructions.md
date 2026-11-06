@@ -29,7 +29,7 @@ Simple Simulator Manager is a SwiftUI macOS app with a lightweight MVVM structur
 - Put discovery, monitoring, reset, and filesystem logic in services or managers, not directly in views
 - Two observation patterns coexist **by layer**; follow the one that matches where you are:
   - View models in `SimulatorManager/ViewModels/` are `@MainActor @Observable`. Mark injected dependencies and non-UI state `@ObservationIgnored` (see `SimulatorManagerViewModel`)
-  - The model and service layer (`DeviceManager`, `Device`, `Settings`, `GithubService`, `DeviceAppMonitoringService`) stays `ObservableObject` with `@Published` and Combine, consumed via `@StateObject`/`@ObservedObject`
+  - The model and service layer (`DeviceManager`, `Device`, `Settings`, `SparkleAppUpdater`, `DeviceAppMonitoringService`) stays `ObservableObject` with `@Published` and Combine, consumed via `@StateObject`/`@ObservedObject`
 - Do not unify the two: never convert a view model to `ObservableObject`, and never convert the model or service layer to `@Observable`, without a clear architectural reason
 - For UI-facing Combine pipelines, receive on the main queue before assigning observed state
 - Store subscriptions in `Set<AnyCancellable>` (`@ObservationIgnored` inside an `@Observable` view model)

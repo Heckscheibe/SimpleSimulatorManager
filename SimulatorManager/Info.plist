@@ -40,6 +40,12 @@
 	<string>1640</string>
 	<key>DTXcodeBuild</key>
 	<string>16F6</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/Heckscheibe/SimpleSimulatorManager/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>GpcVPyrUZgV5tsD1IxMMYGjPVaB+ZkknJ8Df/KGMxI4=</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.developer-tools</string>
 	<key>LSMinimumSystemVersion</key>

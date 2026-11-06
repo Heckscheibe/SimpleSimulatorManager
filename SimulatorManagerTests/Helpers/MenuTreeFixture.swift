@@ -22,6 +22,7 @@ final class MenuTreeFixture {
     let cleanupRuntimesViewModel: CleanupRuntimesViewModel
     let resetViewModel: ResetSimulatorsViewModel
     let githubService = GithubService()
+    let updater = MockAppUpdater()
 
     private(set) var openPreferencesCount = 0
     private(set) var quitCount = 0
@@ -70,6 +71,7 @@ final class MenuTreeFixture {
                         resetViewModel: resetViewModel,
                         settings: settings,
                         githubService: githubService,
+                        updater: updater,
                         appVersion: appVersion,
                         snapshotSaveViewModel: snapshotSaveViewModel,
                         openPreferences: { [weak self] in self?.openPreferencesCount += 1 },

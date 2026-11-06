@@ -11,6 +11,7 @@
 		3C99C0032F00000100C0DE99 /* SimulatorCore in Frameworks */ = {isa = PBXBuildFile; productRef = 3C99C0022F00000100C0DE99 /* SimulatorCore */; };
 		3C99C1072F00000100C0DE99 /* SimulatorMCPServer in Frameworks */ = {isa = PBXBuildFile; productRef = 3C99C1062F00000100C0DE99 /* SimulatorMCPServer */; };
 		3C99C10E2F00000100C0DE99 /* simple-simulator-mcp in Embed MCP Server */ = {isa = PBXBuildFile; fileRef = 3C99C1022F00000100C0DE99 /* simple-simulator-mcp */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		3C99C2032F00000100C0DE99 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 3C99C2022F00000100C0DE99 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -88,6 +89,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3C99C0032F00000100C0DE99 /* SimulatorCore in Frameworks */,
+				3C99C2032F00000100C0DE99 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,6 +166,7 @@
 			name = "Simulator Manager";
 			packageProductDependencies = (
 				3C99C0022F00000100C0DE99 /* SimulatorCore */,
+				3C99C2022F00000100C0DE99 /* Sparkle */,
 			);
 			productName = SimulatorManager;
 			productReference = 37F1DA532AD6E48F00C059DB /* Simulator Manager.app */;
@@ -266,6 +269,7 @@
 			mainGroup = 37F1DA4A2AD6E48E00C059DB;
 			packageReferences = (
 				3C99C0012F00000100C0DE99 /* XCLocalSwiftPackageReference "Packages/SimulatorCore" */,
+				3C99C2012F00000100C0DE99 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 37F1DA542AD6E48F00C059DB /* Products */;
@@ -799,7 +803,23 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		3C99C2012F00000100C0DE99 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		3C99C2022F00000100C0DE99 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3C99C2012F00000100C0DE99 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
 		3C99C0022F00000100C0DE99 /* SimulatorCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SimulatorCore;

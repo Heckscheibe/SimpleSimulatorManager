@@ -13,6 +13,7 @@
 # Uncomment the line if you want fastlane to automatically update itself
 # update_fastlane
 
+
 # App and archive names
 APP_NAME = "Simulator Manager"
 ZIP_NAME = "SimulatorManager"
@@ -31,6 +32,8 @@ MCP_SERVER_VERSION_FILE = File.join(PROJECT_ROOT, "Packages/SimulatorCore/Source
 GITHUB_REPO = "Heckscheibe/SimpleSimulatorManager"
 
 require "shellwords"
+require "tmpdir"
+require_relative "appcast"
 require_relative "release_notes"
 
 # Homebrew tap (Heckscheibe/homebrew-tap). Defaults to a clone sitting next to this
@@ -38,6 +41,81 @@ require_relative "release_notes"
 # the maintainer's own git credentials, so no CI secret is required.
 HOMEBREW_TAP_PATH = ENV["HOMEBREW_TAP_PATH"] || File.expand_path("homebrew-tap", File.dirname(PROJECT_ROOT))
 HOMEBREW_CASK_FILE = File.join(HOMEBREW_TAP_PATH, "Casks", "simple-simulator-manager.rb")
+
+# Sparkle's `generate_appcast` builds the feed from every release ZIP it finds in one directory, so
+# the previous releases have to be kept somewhere that survives `rm -rf release/`. Outside the repo
+# (like the tap) so the ZIPs are never committed; override with APPCAST_ARCHIVE_PATH.
+APPCAST_ARCHIVE_PATH = ENV["APPCAST_ARCHIVE_PATH"] || File.expand_path("simulator-manager-releases", File.dirname(PROJECT_ROOT))
+# The feed lives on `main` — that is the branch SUFeedURL in Info.plist points at — while
+# development happens on `develop`, so it is published to `main` explicitly (see publish_appcast).
+APPCAST_FILE_NAME = "appcast.xml"
+APPCAST_BRANCH = "main"
+RELEASE_DOWNLOAD_URL_PREFIX = "https://github.com/#{GITHUB_REPO}/releases/download/"
+
+# Release assets carry their version: `generate_appcast` tells releases apart by file name, so a
+# constant name would make every release overwrite the last one in the archive.
+def zip_file_name(version)
+  "#{ZIP_NAME}-#{version}.zip"
+end
+
+# Sparkle's command line tools come with the Sparkle package Xcode has already resolved. Set
+# SPARKLE_BIN to use a different copy.
+def sparkle_tool(name)
+  candidates = []
+  candidates << File.join(ENV["SPARKLE_BIN"], name) unless ENV["SPARKLE_BIN"].to_s.empty?
+  relative = File.join("SourcePackages", "artifacts", "sparkle", "Sparkle", "bin", name)
+  candidates += Dir.glob(File.join(Dir.home, "Library", "Developer", "Xcode", "DerivedData", "SimulatorManager-*", relative))
+  candidates += Dir.glob(File.join(PROJECT_ROOT, "DerivedData", "*", relative))
+  tool = candidates.find { |candidate| File.executable?(candidate) }
+  UI.user_error!("Sparkle's #{name} not found. Build the app once in Xcode so the Sparkle package is resolved, or set SPARKLE_BIN to Sparkle's bin directory.") unless tool
+  tool
+end
+
+# Release notes for the update window: Sparkle embeds an HTML file sitting next to the ZIP and
+# named like it as the item's <description>. A release page URL would load GitHub's whole chrome
+# into a small panel. The notes are the ones the GitHub release was published with
+# (release/RELEASE_NOTES-<version>.md), converted to HTML; RELEASE_NOTES_FILE points at an HTML file
+# to use instead, and without either the commit subjects since the previous tag are listed.
+def release_notes_html(version)
+  override = ENV["RELEASE_NOTES_FILE"].to_s
+  return File.read(override) unless override.empty?
+
+  notes_path = release_notes_path(version)
+  return ReleaseNotes.to_html(File.read(notes_path, encoding: "UTF-8"), version) if File.exist?(notes_path)
+
+  require "cgi"
+  last_tag = `git -C '#{PROJECT_ROOT}' describe --tags --abbrev=0 2>/dev/null`.strip
+  range = last_tag.empty? ? "HEAD" : "#{last_tag}..HEAD"
+  subjects = `git -C '#{PROJECT_ROOT}' log #{range} --no-merges --pretty=format:%s`.split("\n").reject(&:empty?)
+  items = subjects.map { |subject| "  <li>#{CGI.escapeHTML(subject)}</li>" }.join("\n")
+  "<h2>Simulator Manager #{version}</h2>\n<ul>\n#{items}\n</ul>\n"
+end
+
+# Sparkle can't offer an update whose ZIP was damaged on the way to the archive, and a ZIP that
+# lost the symlinks inside Sparkle.framework (Versions/Current) no longer passes code signing.
+# Extracts the ZIP the way a user's Mac would and checks the app that comes out.
+def verify_release_zip(zip_path)
+  Dir.mktmpdir("simulator-manager-zip-check") do |dir|
+    sh("ditto -x -k '#{zip_path}' '#{dir}'")
+    extracted_app = File.join(dir, "#{APP_NAME}.app")
+    UI.user_error!("#{APP_NAME}.app is not at the top level of #{zip_path}") unless File.directory?(extracted_app)
+
+    current = File.join(extracted_app, "Contents", "Frameworks", "Sparkle.framework", "Versions", "Current")
+    UI.user_error!("Sparkle.framework/Versions/Current lost its symlink in #{zip_path}") unless File.symlink?(current)
+
+    sh("codesign --verify --deep --strict '#{extracted_app}'")
+    sh("spctl -a -vvv -t install '#{extracted_app}'")
+  end
+end
+
+# Makes the cask follow the renamed, versioned release asset, and tells Homebrew the app updates
+# itself — without `auto_updates true`, `brew upgrade` would reinstall over a newer self-updated app.
+def adapt_cask_to_sparkle(cask_contents)
+  contents = cask_contents.gsub(/#{ZIP_NAME}(?:-\#\{version\})?\.zip/, "#{ZIP_NAME}-\#{version}.zip")
+  contents = contents.sub(/^(?<indent>[ \t]*)version "[^"]*"\n/) { |line| "#{line}#{Regexp.last_match[:indent]}auto_updates true\n" } unless contents.match?(/^\s*auto_updates true/)
+  UI.important("⚠️  The cask's url does not reference #{ZIP_NAME}.zip; update it to #{ZIP_NAME}-\#{version}.zip by hand.") unless contents.include?("#{ZIP_NAME}-\#{version}.zip")
+  contents
+end
 
 # Shared App Store Connect API key, used both for notarization and to authenticate `match`
 # against the Apple Developer Portal (no Apple ID/password login, no interactive 2FA prompt).
@@ -108,8 +186,8 @@ def release_notes_path(version)
   File.join(RELEASE_DIR, "RELEASE_NOTES-#{version}.md")
 end
 
-def release_zip_path
-  File.join(RELEASE_DIR, "#{ZIP_NAME}.zip")
+def release_zip_path(version)
+  File.join(RELEASE_DIR, zip_file_name(version))
 end
 
 # Runs the GitHub CLI with the maintainer's own login (like the Homebrew tap push, so no CI secret
@@ -162,6 +240,26 @@ def ensure_release_publishable(version)
   end
 end
 
+# The appcast is the last thing a release touches, after the GitHub release is public, so everything
+# it needs is checked before the build: Sparkle's tools, the signing key that matches the public key
+# in the app, and push access to the feed branch.
+def ensure_appcast_publishable
+  sparkle_tool("generate_appcast")
+  keys_tool = sparkle_tool("generate_keys")
+  keychain_key = `'#{keys_tool}' -p 2>/dev/null`.strip
+  UI.user_error!("No Sparkle EdDSA private key in the login Keychain (generate_keys -p printed nothing). Restore it with `generate_keys -f <file>`; see FASTLANE_README.md.") if keychain_key.empty?
+
+  app_key = File.read(File.join(PROJECT_ROOT, "SimulatorManager", "Info.plist"))[%r{<key>SUPublicEDKey</key>\s*<string>([^<]+)</string>}, 1]
+  if app_key.nil? || app_key.strip != keychain_key
+    UI.user_error!("The Keychain's Sparkle key (#{keychain_key}) is not the SUPublicEDKey in Info.plist (#{app_key || 'missing'}); installed apps would reject every update signed with it.")
+  end
+
+  git_output("fetch", "origin", APPCAST_BRANCH)
+  unless system("git", "-C", PROJECT_ROOT, "push", "--dry-run", "origin", "origin/#{APPCAST_BRANCH}:refs/heads/#{APPCAST_BRANCH}", out: File::NULL, err: File::NULL)
+    UI.user_error!("Cannot push to origin/#{APPCAST_BRANCH}, where the appcast is published.")
+  end
+end
+
 # GitHub's generated "What's Changed" lines for previous release → target, grouped and summarised
 # by Claude, written to release/RELEASE_NOTES-<version>.md. Returns that path.
 def generate_release_notes(version:, target:, previous_tag: nil)
@@ -198,7 +296,7 @@ end
 # Shows version, target, asset and notes; the maintainer can edit the notes before publishing.
 # Returns true once the release has been created, false if the maintainer cancelled.
 def confirm_and_publish_release(version:, target:, notes_path:, dry_run: false)
-  zip_path = release_zip_path
+  zip_path = release_zip_path(version)
   UI.user_error!("#{zip_path} not found — run the release lane first.") unless File.exist?(zip_path)
 
   tag = release_tag(version)
@@ -294,6 +392,7 @@ platform :mac do
 
     # Fail before the long build if the release cannot be published afterwards.
     ensure_release_publishable(release_version)
+    ensure_appcast_publishable
 
     sh("rm -rf '#{BUILD_DIR}' '#{RELEASE_DIR}'")
     
@@ -342,39 +441,53 @@ platform :mac do
     )
     UI.success("✅ Notarization completed successfully!")
 
-    # Create a zip file for GitHub releases
-    zip_path = File.join(BUILD_DIR, "#{ZIP_NAME}.zip")
-    zip(
-      path: app_path,
-      output_path: zip_path
-    )
+    # Create a zip file for GitHub releases. `ditto` rather than fastlane's `zip`, which resolves
+    # symlinks instead of storing them and so corrupts Sparkle.framework's Versions/Current layout.
+    zip_name = zip_file_name(release_version)
+    zip_path = File.join(BUILD_DIR, zip_name)
+    sh("ditto -c -k --sequesterRsrc --keepParent '#{app_path}' '#{zip_path}'")
 
     unless File.exist?(zip_path)
-      UI.error("❌ Could not find #{ZIP_NAME}.zip after ZIP creation")
+      UI.error("❌ Could not find #{zip_name} after ZIP creation")
       sh("find '#{BUILD_DIR}' -name '*.zip' -type f")
       raise "ZIP not found in build directory"
     end
 
     UI.message("📦 Found ZIP at: #{zip_path}")
+    verify_release_zip(zip_path)
 
     # Copy files to a release directory
     sh("mkdir -p '#{RELEASE_DIR}'")
-    sh("cp '#{zip_path}' '#{File.join(RELEASE_DIR, "#{ZIP_NAME}.zip")}'")
+    release_zip = release_zip_path(release_version)
+    sh("cp '#{zip_path}' '#{release_zip}'")
 
     UI.success("🎉 Build and notarization completed successfully!")
     UI.message("Files available in ./release/:")
-    UI.message("- #{ZIP_NAME}.zip (notarized)")
+    UI.message("- #{zip_name} (notarized)")
     UI.message("")
 
-    # Publish before touching the cask: the cask URL points at this release's asset, so it must
-    # exist by the time `brew install` can see the new version. If the maintainer cancels, the
-    # cask is left alone.
+    # Publish before touching the cask or the feed: both point at this release's asset, so it must
+    # exist by the time `brew install` or an installed copy can see the new version. If the
+    # maintainer cancels, the cask and the feed are left alone.
     if github_release(version: release_version)
-      bump_homebrew_cask(version: release_version, zip_path: release_zip_path)
+      # The release is public from here on, so a failure below must say how to finish by hand.
+      begin
+        generate_appcast(version: release_version, zip_path: release_zip)
+        bump_homebrew_cask(version: release_version, zip_path: release_zip)
+        publish_appcast(version: release_version, confirmed: true)
+      rescue StandardError
+        UI.important("The GitHub release v#{release_version} is already published. Finish with whichever of these did not run:")
+        UI.important("  bundle exec fastlane mac generate_appcast version:#{release_version}")
+        UI.important("  bundle exec fastlane mac bump_homebrew_cask version:#{release_version}")
+        UI.important("  bundle exec fastlane mac publish_appcast version:#{release_version}")
+        raise
+      end
     else
-      UI.important("GitHub release not published, so the Homebrew cask was not bumped. To finish later:")
+      UI.important("GitHub release not published, so the Homebrew cask and the appcast were not touched. To finish later:")
       UI.important("  bundle exec fastlane mac github_release version:#{release_version}")
+      UI.important("  bundle exec fastlane mac generate_appcast version:#{release_version}")
       UI.important("  bundle exec fastlane mac bump_homebrew_cask version:#{release_version}")
+      UI.important("  bundle exec fastlane mac publish_appcast version:#{release_version}")
     end
 
     # Open the release folder in Finder
@@ -393,7 +506,7 @@ platform :mac do
     path
   end
 
-  desc "Create the GitHub release v<version> from release/#{ZIP_NAME}.zip after confirming version and " \
+  desc "Create the GitHub release v<version> from release/#{ZIP_NAME}-<version>.zip after confirming version and " \
        "notes. Reuses release/RELEASE_NOTES-<version>.md if present (regenerate:true to rewrite). " \
        "Options: version, target, previous_tag, regenerate, dry_run. Returns whether it was published"
   lane :github_release do |options|
@@ -412,10 +525,80 @@ platform :mac do
     confirm_and_publish_release(version: version, target: target, notes_path: notes_path, dry_run: dry_run)
   end
 
+  desc "Add a release ZIP to the archive and regenerate the signed Sparkle appcast (release/appcast.xml)"
+  lane :generate_appcast do |options|
+    release_version = options[:version] || prompt(text: "Release version (e.g. 1.2.3):")
+    zip_path = options[:zip_path] || File.join(RELEASE_DIR, zip_file_name(release_version))
+    UI.user_error!("ZIP not found at #{zip_path}") unless File.exist?(zip_path)
+
+    sh("mkdir -p '#{APPCAST_ARCHIVE_PATH}' '#{RELEASE_DIR}'")
+    archived_zip = File.join(APPCAST_ARCHIVE_PATH, File.basename(zip_path))
+    sh("cp '#{zip_path}' '#{archived_zip}'")
+    File.write(archived_zip.sub(/\.zip\z/, ".html"), release_notes_html(release_version))
+
+    # The signature is made with the EdDSA private key in the login Keychain (see
+    # FASTLANE_README.md). --maximum-deltas 0: delta updates would be extra assets to upload.
+    appcast_path = File.join(RELEASE_DIR, APPCAST_FILE_NAME)
+    sh("'#{sparkle_tool('generate_appcast')}' --download-url-prefix '#{RELEASE_DOWNLOAD_URL_PREFIX}' --maximum-deltas 0 -o '#{appcast_path}' '#{APPCAST_ARCHIVE_PATH}'")
+    rewritten = Appcast.point_enclosures_at_release_tags(File.read(appcast_path), url_prefix: RELEASE_DOWNLOAD_URL_PREFIX,
+                                                                                  zip_name: ZIP_NAME, tag_for: method(:release_tag))
+    File.write(appcast_path, rewritten)
+
+    expected_url = Appcast.enclosure_url(url_prefix: RELEASE_DOWNLOAD_URL_PREFIX, tag: release_tag(release_version),
+                                         zip_file_name: zip_file_name(release_version))
+    UI.user_error!("The appcast has no enclosure #{expected_url}") unless rewritten.include?(expected_url)
+    UI.success("📰 Appcast written to #{appcast_path}")
+  end
+
+  desc "Publish release/appcast.xml to the #{APPCAST_BRANCH} branch, which SUFeedURL points at"
+  lane :publish_appcast do |options|
+    release_version = options[:version] || prompt(text: "Release version whose appcast to publish (e.g. 1.2.3):")
+    appcast_path = File.join(RELEASE_DIR, APPCAST_FILE_NAME)
+    UI.user_error!("#{appcast_path} not found — run the release lane (or generate_appcast) first.") unless File.exist?(appcast_path)
+
+    unless options[:confirmed] || UI.confirm("Is GitHub release v#{release_version} published with #{zip_file_name(release_version)} attached? (Installed apps start downloading from it as soon as the feed is live.)")
+      UI.user_error!("Publish the release first, then run: fastlane publish_appcast version:#{release_version}")
+    end
+
+    # The checkout is usually on `develop`, so `main` is updated through a throwaway worktree. A push
+    # that loses a race is retried from the new tip; only the appcast file is ever replaced.
+    pushed = false
+    Dir.mktmpdir("simulator-manager-appcast") do |dir|
+      worktree = File.join(dir, "main")
+      sh("git -C '#{PROJECT_ROOT}' worktree add --detach '#{worktree}' origin/#{APPCAST_BRANCH}")
+      begin
+        3.times do |attempt|
+          sh("git -C '#{PROJECT_ROOT}' fetch origin #{APPCAST_BRANCH}")
+          sh("git -C '#{worktree}' reset --hard origin/#{APPCAST_BRANCH}")
+          sh("cp '#{appcast_path}' '#{File.join(worktree, APPCAST_FILE_NAME)}'")
+          sh("git -C '#{worktree}' add #{APPCAST_FILE_NAME}")
+
+          if system("git -C '#{worktree}' diff --cached --quiet")
+            UI.message("#{APPCAST_FILE_NAME} on #{APPCAST_BRANCH} already matches; nothing to publish.")
+            pushed = true
+            break
+          end
+
+          sh("git -C '#{worktree}' commit -m 'Appcast for #{release_version}'")
+          if system("git -C '#{worktree}' push origin HEAD:#{APPCAST_BRANCH}")
+            pushed = true
+            break
+          end
+          UI.important("Push to #{APPCAST_BRANCH} was rejected (attempt #{attempt + 1}/3).")
+        end
+      ensure
+        sh("git -C '#{PROJECT_ROOT}' worktree remove --force '#{worktree}'")
+      end
+    end
+    UI.user_error!("Could not push the appcast to #{APPCAST_BRANCH} (protected branch?). Push release/#{APPCAST_FILE_NAME} there by hand, or re-run: fastlane mac publish_appcast version:#{release_version}") unless pushed
+
+    UI.success("📰 Appcast for #{release_version} pushed to #{APPCAST_BRANCH}.")
+  end
+
   desc "Update and push the Homebrew cask (version + sha256) for a given release"
   lane :bump_homebrew_cask do |options|
     cask_version = options[:version] || prompt(text: "Cask version (e.g. 1.2.3):")
-    zip_path = options[:zip_path] || File.join(RELEASE_DIR, "#{ZIP_NAME}.zip")
+    zip_path = options[:zip_path] || File.join(RELEASE_DIR, zip_file_name(cask_version))
 
     UI.user_error!("ZIP not found at #{zip_path}") unless File.exist?(zip_path)
 
@@ -433,6 +616,7 @@ platform :mac do
     contents = contents.sub(/version "[^"]*"/, "version \"#{cask_version}\"")
     contents = contents.sub(/sha256 "[^"]*"/, "sha256 \"#{sha}\"")
     contents = add_mcp_binary_stanza(contents)
+    contents = adapt_cask_to_sparkle(contents)
     File.write(HOMEBREW_CASK_FILE, contents)
 
     sh("git -C '#{HOMEBREW_TAP_PATH}' add Casks/simple-simulator-manager.rb")
@@ -440,7 +624,7 @@ platform :mac do
     sh("git -C '#{HOMEBREW_TAP_PATH}' push")
 
     UI.success("🍺 Homebrew cask updated to #{cask_version} and pushed.")
-    UI.important("ℹ️  Make sure the GitHub release asset SimulatorManager.zip exists for v#{cask_version} so the cask URL resolves (the release lane publishes it first).")
+    UI.important("ℹ️  Make sure the GitHub release asset #{zip_file_name(cask_version)} exists for v#{cask_version} so the cask URL resolves (the release lane publishes it first).")
   end
 
   end
