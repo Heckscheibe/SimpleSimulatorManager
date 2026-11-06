@@ -560,6 +560,8 @@ struct MenuTreeBuilderTests {
         defer { fixture.tearDown() }
 
         fixture.updater.pendingUpdateVersion = "1.5.0"
+        // The session holding the pending update is in progress, so Sparkle may report false.
+        fixture.updater.canCheckForUpdates = false
 
         let nodes = fixture.makeBuilder().makeNodes()
         let update = try #require(nodes.node(withID: "github.update"))
@@ -567,6 +569,7 @@ struct MenuTreeBuilderTests {
         #expect(update.title == "Update Available")
         #expect(update.subtitle == "Version 1.5.0")
         #expect(update.iconName == "info.circle.fill")
+        #expect(update.isEnabled)
         #expect(nodes.node(withID: "github.version")?.title == "Version 1.4.0")
         #expect(nodes.node(withID: "github.checkForUpdates") == nil)
 

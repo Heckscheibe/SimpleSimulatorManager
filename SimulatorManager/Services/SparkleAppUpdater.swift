@@ -64,6 +64,12 @@ final class SparkleAppUpdater: NSObject, ObservableObject, AppUpdating {
     }
 
     func checkForUpdates() {
+        // Activating first is only right when Sparkle is going to show something: a check that
+        // cannot start would pull the app forward and leave the activation unreleased.
+        guard canCheckForUpdates || pendingUpdateVersion != nil else {
+            return
+        }
+
         presentation.activateForUserInitiatedCheck()
         updater.checkForUpdates()
     }

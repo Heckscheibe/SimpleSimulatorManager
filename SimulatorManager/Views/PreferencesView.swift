@@ -39,12 +39,12 @@ enum PreferencesWindow {
 /// The menu keeps its own quick toggles; this window is the place for preferences that cannot be
 /// expressed as a menu item, such as the shortcut recorder. Both surfaces observe the same
 /// ``Settings`` instance, so they always agree.
-struct PreferencesView: View {
+struct PreferencesView<Updater: AppUpdating>: View {
     @ObservedObject var settings: Settings
     @ObservedObject var shortcutController: GlobalShortcutController
     let recorderViewModel: ShortcutRecorderViewModel
     let agentIntegrationViewModel: AgentIntegrationViewModel
-    @ObservedObject var updater: SparkleAppUpdater
+    @ObservedObject var updater: Updater
 
     var body: some View {
         Form {

@@ -364,20 +364,19 @@ extension MenuTreeBuilder {
         }
 
         // Both rows run the same Sparkle call: with an update waiting, it brings that update's
-        // window forward instead of starting a new check.
-        let isEnabled = updater.canCheckForUpdates
-
+        // window forward instead of starting a new check. The reminder stays enabled whatever
+        // `canCheckForUpdates` says: the session that holds the pending update is itself in
+        // progress, and it is the only way back to that update.
         if let pendingUpdateVersion = updater.pendingUpdateVersion {
             nodes.append(.action(id: "github.update",
                                  title: "Update Available",
                                  subtitle: "Version \(pendingUpdateVersion)",
                                  iconName: "info.circle.fill",
-                                 isEnabled: isEnabled,
                                  actions: [MenuActionItem(title: "Update Available") { updater.checkForUpdates() }]))
         } else {
             nodes.append(.action(id: "github.checkForUpdates",
                                  title: "Check for Updates…",
-                                 isEnabled: isEnabled) { updater.checkForUpdates() })
+                                 isEnabled: updater.canCheckForUpdates) { updater.checkForUpdates() })
         }
 
         return nodes

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "cgi"
 require "json"
 require "open3"
 require "tmpdir"
@@ -165,6 +166,54 @@ module ReleaseNotes
     end
 
     ["## What's Changed", *sections, generated.new_contributors, generated.footer].compact.join("\n\n") + "\n"
+  end
+
+  # Just enough Markdown for what `render` writes (`##`/`###` headings, `*`/`-` list items where an
+  # indented line continues the item above, plain paragraphs) as HTML for Sparkle's update window.
+  # Everything is escaped first; `code`, **bold** and bare URLs are then restored as markup.
+  def to_html(markdown, version)
+    html = ["<h2>Simulator Manager #{CGI.escapeHTML(version)}</h2>"]
+    item = nil
+    list_open = false
+
+    flush_item = lambda do
+      html << "<li>#{item}</li>" if item
+      item = nil
+    end
+    close_list = lambda do
+      flush_item.call
+      html << "</ul>" if list_open
+      list_open = false
+    end
+
+    markdown.each_line do |raw|
+      line = raw.rstrip
+      if line.strip.empty?
+        next
+      elsif (heading = line.match(/\A#+\s+(.*)\z/))
+        close_list.call
+        html << "<h3>#{inline_html(heading[1])}</h3>"
+      elsif (bullet = line.match(/\A[*-]\s+(.*)\z/))
+        flush_item.call
+        html << "<ul>" unless list_open
+        list_open = true
+        item = inline_html(bullet[1])
+      elsif item && line.start_with?(" ")
+        item += "<br>#{inline_html(line.strip)}"
+      else
+        close_list.call
+        html << "<p>#{inline_html(line.strip)}</p>"
+      end
+    end
+    close_list.call
+    html.join("\n") + "\n"
+  end
+
+  def inline_html(text)
+    CGI.escapeHTML(text)
+       .gsub(/`([^`]+)`/, '<code>\1</code>')
+       .gsub(/\*\*(.+?)\*\*/, '<strong>\1</strong>')
+       .gsub(%r{(?<![">=])(https?://[^\s<]+)}) { %(<a href="#{Regexp.last_match(1)}">#{Regexp.last_match(1)}</a>) }
   end
 
   def render_entry(entry, classification)

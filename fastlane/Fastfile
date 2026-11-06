@@ -33,6 +33,7 @@ GITHUB_REPO = "Heckscheibe/SimpleSimulatorManager"
 
 require "shellwords"
 require "tmpdir"
+require_relative "appcast"
 require_relative "release_notes"
 
 # Homebrew tap (Heckscheibe/homebrew-tap). Defaults to a clone sitting next to this
@@ -80,7 +81,7 @@ def release_notes_html(version)
   return File.read(override) unless override.empty?
 
   notes_path = release_notes_path(version)
-  return markdown_notes_to_html(File.read(notes_path, encoding: "UTF-8"), version) if File.exist?(notes_path)
+  return ReleaseNotes.to_html(File.read(notes_path, encoding: "UTF-8"), version) if File.exist?(notes_path)
 
   require "cgi"
   last_tag = `git -C '#{PROJECT_ROOT}' describe --tags --abbrev=0 2>/dev/null`.strip
@@ -88,39 +89,6 @@ def release_notes_html(version)
   subjects = `git -C '#{PROJECT_ROOT}' log #{range} --no-merges --pretty=format:%s`.split("\n").reject(&:empty?)
   items = subjects.map { |subject| "  <li>#{CGI.escapeHTML(subject)}</li>" }.join("\n")
   "<h2>Simulator Manager #{version}</h2>\n<ul>\n#{items}\n</ul>\n"
-end
-
-# Just enough Markdown for the notes ReleaseNotes.render writes: `##`/`###` headings, `*`/`-` list
-# items (an indented line continues the item above) and plain paragraphs. Everything is escaped.
-def markdown_notes_to_html(markdown, version)
-  require "cgi"
-  html = ["<h2>Simulator Manager #{CGI.escapeHTML(version)}</h2>"]
-  in_list = false
-  close_list = lambda do
-    html << "</ul>" if in_list
-    in_list = false
-  end
-
-  markdown.each_line do |raw|
-    line = raw.rstrip
-    if line.strip.empty?
-      next
-    elsif (heading = line.match(/\A#+\s+(.*)\z/))
-      close_list.call
-      html << "<h3>#{CGI.escapeHTML(heading[1])}</h3>"
-    elsif (item = line.match(/\A[*-]\s+(.*)\z/))
-      html << "<ul>" unless in_list
-      in_list = true
-      html << "<li>#{CGI.escapeHTML(item[1])}"
-    elsif in_list && line.start_with?(" ")
-      html << "<br>#{CGI.escapeHTML(line.strip)}"
-    else
-      close_list.call
-      html << "<p>#{CGI.escapeHTML(line.strip)}</p>"
-    end
-  end
-  close_list.call
-  html.join("\n").gsub(%r{(<li>.*?)(?=\n<li>|\n</ul>)}m, "\\1</li>") + "\n"
 end
 
 # Sparkle can't offer an update whose ZIP was damaged on the way to the archive, and a ZIP that
@@ -138,18 +106,6 @@ def verify_release_zip(zip_path)
     sh("codesign --verify --deep --strict '#{extracted_app}'")
     sh("spctl -a -vvv -t install '#{extracted_app}'")
   end
-end
-
-# Rewrites the enclosure URLs `generate_appcast` produced. It applies a single --download-url-prefix
-# to every archive, but each release's asset lives under its own tag
-# (…/download/v1.5.0/SimulatorManager-1.5.0.zip), so the tag is derived from the file name.
-def point_enclosures_at_release_tags(appcast_path)
-  prefix = Regexp.escape(RELEASE_DOWNLOAD_URL_PREFIX)
-  contents = File.read(appcast_path)
-  rewritten = contents.gsub(%r{url="#{prefix}(#{ZIP_NAME}-([^"/]+)\.zip)"}) do
-    %(url="#{RELEASE_DOWNLOAD_URL_PREFIX}v#{Regexp.last_match(2)}/#{Regexp.last_match(1)}")
-  end
-  File.write(appcast_path, rewritten)
 end
 
 # Makes the cask follow the renamed, versioned release asset, and tells Homebrew the app updates
@@ -281,6 +237,26 @@ def ensure_release_publishable(version)
   claude = ENV["CLAUDE_CLI"] || "claude"
   unless system("command -v #{Shellwords.escape(claude)} > /dev/null 2>&1")
     UI.user_error!("`#{claude}` not found. Install Claude Code (it writes the release notes) or set CLAUDE_CLI.")
+  end
+end
+
+# The appcast is the last thing a release touches, after the GitHub release is public, so everything
+# it needs is checked before the build: Sparkle's tools, the signing key that matches the public key
+# in the app, and push access to the feed branch.
+def ensure_appcast_publishable
+  sparkle_tool("generate_appcast")
+  keys_tool = sparkle_tool("generate_keys")
+  keychain_key = `'#{keys_tool}' -p 2>/dev/null`.strip
+  UI.user_error!("No Sparkle EdDSA private key in the login Keychain (generate_keys -p printed nothing). Restore it with `generate_keys -f <file>`; see FASTLANE_README.md.") if keychain_key.empty?
+
+  app_key = File.read(File.join(PROJECT_ROOT, "SimulatorManager", "Info.plist"))[%r{<key>SUPublicEDKey</key>\s*<string>([^<]+)</string>}, 1]
+  if app_key.nil? || app_key.strip != keychain_key
+    UI.user_error!("The Keychain's Sparkle key (#{keychain_key}) is not the SUPublicEDKey in Info.plist (#{app_key || 'missing'}); installed apps would reject every update signed with it.")
+  end
+
+  git_output("fetch", "origin", APPCAST_BRANCH)
+  unless system("git", "-C", PROJECT_ROOT, "push", "--dry-run", "origin", "origin/#{APPCAST_BRANCH}:refs/heads/#{APPCAST_BRANCH}", out: File::NULL, err: File::NULL)
+    UI.user_error!("Cannot push to origin/#{APPCAST_BRANCH}, where the appcast is published.")
   end
 end
 
@@ -416,6 +392,7 @@ platform :mac do
 
     # Fail before the long build if the release cannot be published afterwards.
     ensure_release_publishable(release_version)
+    ensure_appcast_publishable
 
     sh("rm -rf '#{BUILD_DIR}' '#{RELEASE_DIR}'")
     
@@ -493,9 +470,18 @@ platform :mac do
     # exist by the time `brew install` or an installed copy can see the new version. If the
     # maintainer cancels, the cask and the feed are left alone.
     if github_release(version: release_version)
-      generate_appcast(version: release_version, zip_path: release_zip)
-      bump_homebrew_cask(version: release_version, zip_path: release_zip)
-      publish_appcast(version: release_version, confirmed: true)
+      # The release is public from here on, so a failure below must say how to finish by hand.
+      begin
+        generate_appcast(version: release_version, zip_path: release_zip)
+        bump_homebrew_cask(version: release_version, zip_path: release_zip)
+        publish_appcast(version: release_version, confirmed: true)
+      rescue StandardError
+        UI.important("The GitHub release v#{release_version} is already published. Finish with whichever of these did not run:")
+        UI.important("  bundle exec fastlane mac generate_appcast version:#{release_version}")
+        UI.important("  bundle exec fastlane mac bump_homebrew_cask version:#{release_version}")
+        UI.important("  bundle exec fastlane mac publish_appcast version:#{release_version}")
+        raise
+      end
     else
       UI.important("GitHub release not published, so the Homebrew cask and the appcast were not touched. To finish later:")
       UI.important("  bundle exec fastlane mac github_release version:#{release_version}")
@@ -554,9 +540,13 @@ platform :mac do
     # FASTLANE_README.md). --maximum-deltas 0: delta updates would be extra assets to upload.
     appcast_path = File.join(RELEASE_DIR, APPCAST_FILE_NAME)
     sh("'#{sparkle_tool('generate_appcast')}' --download-url-prefix '#{RELEASE_DOWNLOAD_URL_PREFIX}' --maximum-deltas 0 -o '#{appcast_path}' '#{APPCAST_ARCHIVE_PATH}'")
-    point_enclosures_at_release_tags(appcast_path)
+    rewritten = Appcast.point_enclosures_at_release_tags(File.read(appcast_path), url_prefix: RELEASE_DOWNLOAD_URL_PREFIX,
+                                                                                  zip_name: ZIP_NAME, tag_for: method(:release_tag))
+    File.write(appcast_path, rewritten)
 
-    UI.user_error!("The appcast has no entry for #{release_version}") unless File.read(appcast_path).include?("#{zip_file_name(release_version)}")
+    expected_url = Appcast.enclosure_url(url_prefix: RELEASE_DOWNLOAD_URL_PREFIX, tag: release_tag(release_version),
+                                         zip_file_name: zip_file_name(release_version))
+    UI.user_error!("The appcast has no enclosure #{expected_url}") unless rewritten.include?(expected_url)
     UI.success("📰 Appcast written to #{appcast_path}")
   end
 
@@ -570,20 +560,37 @@ platform :mac do
       UI.user_error!("Publish the release first, then run: fastlane publish_appcast version:#{release_version}")
     end
 
-    # The checkout is usually on `develop`, so `main` is updated through a throwaway worktree.
+    # The checkout is usually on `develop`, so `main` is updated through a throwaway worktree. A push
+    # that loses a race is retried from the new tip; only the appcast file is ever replaced.
+    pushed = false
     Dir.mktmpdir("simulator-manager-appcast") do |dir|
       worktree = File.join(dir, "main")
-      sh("git -C '#{PROJECT_ROOT}' fetch origin #{APPCAST_BRANCH}")
       sh("git -C '#{PROJECT_ROOT}' worktree add --detach '#{worktree}' origin/#{APPCAST_BRANCH}")
       begin
-        sh("cp '#{appcast_path}' '#{File.join(worktree, APPCAST_FILE_NAME)}'")
-        sh("git -C '#{worktree}' add #{APPCAST_FILE_NAME}")
-        sh("git -C '#{worktree}' commit -m 'Appcast for #{release_version}'")
-        sh("git -C '#{worktree}' push origin HEAD:#{APPCAST_BRANCH}")
+        3.times do |attempt|
+          sh("git -C '#{PROJECT_ROOT}' fetch origin #{APPCAST_BRANCH}")
+          sh("git -C '#{worktree}' reset --hard origin/#{APPCAST_BRANCH}")
+          sh("cp '#{appcast_path}' '#{File.join(worktree, APPCAST_FILE_NAME)}'")
+          sh("git -C '#{worktree}' add #{APPCAST_FILE_NAME}")
+
+          if system("git -C '#{worktree}' diff --cached --quiet")
+            UI.message("#{APPCAST_FILE_NAME} on #{APPCAST_BRANCH} already matches; nothing to publish.")
+            pushed = true
+            break
+          end
+
+          sh("git -C '#{worktree}' commit -m 'Appcast for #{release_version}'")
+          if system("git -C '#{worktree}' push origin HEAD:#{APPCAST_BRANCH}")
+            pushed = true
+            break
+          end
+          UI.important("Push to #{APPCAST_BRANCH} was rejected (attempt #{attempt + 1}/3).")
+        end
       ensure
         sh("git -C '#{PROJECT_ROOT}' worktree remove --force '#{worktree}'")
       end
     end
+    UI.user_error!("Could not push the appcast to #{APPCAST_BRANCH} (protected branch?). Push release/#{APPCAST_FILE_NAME} there by hand, or re-run: fastlane mac publish_appcast version:#{release_version}") unless pushed
 
     UI.success("📰 Appcast for #{release_version} pushed to #{APPCAST_BRANCH}.")
   end
