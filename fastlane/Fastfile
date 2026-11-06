@@ -46,10 +46,11 @@ HOMEBREW_CASK_FILE = File.join(HOMEBREW_TAP_PATH, "Casks", "simple-simulator-man
 # the previous releases have to be kept somewhere that survives `rm -rf release/`. Outside the repo
 # (like the tap) so the ZIPs are never committed; override with APPCAST_ARCHIVE_PATH.
 APPCAST_ARCHIVE_PATH = ENV["APPCAST_ARCHIVE_PATH"] || File.expand_path("simulator-manager-releases", File.dirname(PROJECT_ROOT))
-# The feed lives on `main` — that is the branch SUFeedURL in Info.plist points at — while
-# development happens on `develop`, so it is published to `main` explicitly (see publish_appcast).
+# The feed lives on `develop` — the default branch, and the one SUFeedURL in Info.plist points at.
+# The release checkout is not necessarily on it, so it is published through a throwaway worktree
+# (see publish_appcast).
 APPCAST_FILE_NAME = "appcast.xml"
-APPCAST_BRANCH = "main"
+APPCAST_BRANCH = "develop"
 RELEASE_DOWNLOAD_URL_PREFIX = "https://github.com/#{GITHUB_REPO}/releases/download/"
 
 # Release assets carry their version: `generate_appcast` tells releases apart by file name, so a
@@ -560,11 +561,12 @@ platform :mac do
       UI.user_error!("Publish the release first, then run: fastlane publish_appcast version:#{release_version}")
     end
 
-    # The checkout is usually on `develop`, so `main` is updated through a throwaway worktree. A push
-    # that loses a race is retried from the new tip; only the appcast file is ever replaced.
+    # The checkout may be on another branch or have local changes, so #{APPCAST_BRANCH} is updated through
+    # a throwaway worktree. A push that loses a race is retried from the new tip; only the appcast file
+    # is ever replaced.
     pushed = false
     Dir.mktmpdir("simulator-manager-appcast") do |dir|
-      worktree = File.join(dir, "main")
+      worktree = File.join(dir, APPCAST_BRANCH)
       sh("git -C '#{PROJECT_ROOT}' worktree add --detach '#{worktree}' origin/#{APPCAST_BRANCH}")
       begin
         3.times do |attempt|
