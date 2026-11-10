@@ -431,6 +431,9 @@ private extension AppSnapshotService {
 
     /// What ``capture(_:label:scope:isSafetySnapshot:progress:)`` would refuse, found without copying:
     /// no container at all, or a narrower scope with nothing in it.
+    ///
+    /// Runs before the app is stopped, so its walk is only an existence check; the capture lists
+    /// the containers again afterwards.
     static func checkCapturable(_ target: AppSnapshotTarget, scope: SnapshotScope) throws {
         let containerURLs = ([target.dataContainerURL] + target.appGroupContainers.map(\.url))
             .filter { FileManager.default.directoryExistsAtURL($0) }
@@ -468,18 +471,21 @@ private extension AppSnapshotService {
             sources.append((.appGroup(identifier: group.identifier), group.url, "app-group-\(index)"))
         }
 
-        // Sizing up front costs one extra walk but is what makes progress a fraction rather than a
-        // spinner, and a container large enough to need progress is large enough to warrant it.
-        // The same walk also counts the files, which is how a narrower snapshot that found nothing
-        // is caught before a manifest is written for it.
-        let sizes = sources.map { SnapshotContainerFiles.fileSizesByRelativePath(in: $0.url, scope: scope) }
-        let totalByteCount = sizes.reduce(Int64(0)) { $0 + $1.values.reduce(0, +) }
+        // Every container is listed before anything is copied, which is what makes progress a
+        // fraction rather than a spinner. The copy then works through that same list, so a scoped
+        // capture reads each file's header once. The listing also counts the files, which is how a
+        // narrower snapshot that found nothing is caught before a manifest is written for it.
+        //
+        // Listed here, after any terminate, and never reused from ``checkCapturable(_:scope:)``:
+        // stopping the app changes the very files being captured — a SQLite `-wal` or `-shm`
+        // appearing or going, Realm's auxiliary files.
+        let listings = sources.map { SnapshotContainerFiles.listContainer(at: $0.url, scope: scope) }
+        let totalByteCount = listings.reduce(Int64(0)) { $0 + $1.fileByteCount }
 
-        let containers = try sources.map { source in
+        let containers = try zip(sources, listings).map { source, listing in
             let byteSize = try SnapshotContainerFiles.copyContainer(
-                at: source.url,
+                listing,
                 to: containersDirectoryURL.appendingPathComponent(source.payloadDirectoryName, isDirectory: true),
-                scope: scope,
                 totalByteCount: totalByteCount,
                 progress: progress
             )
@@ -489,7 +495,7 @@ private extension AppSnapshotService {
                                      byteSize: byteSize)
         }
 
-        return (containers, sizes.reduce(0) { $0 + $1.count })
+        return (containers, listings.reduce(0) { $0 + $1.fileCount })
     }
 }
 
