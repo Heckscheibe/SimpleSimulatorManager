@@ -48,8 +48,10 @@ public final class AppDiscoveryService: Sendable {
                 return nil
             }
         }
+        // Only groups an installed app uses are listed, which is also what keeps Apple's own
+        // (`group.com.apple.*`) out: no installed app is entitled to them or named after them.
         .filter { (appGroup: AppGroup) in
-            device.apps.contains { appGroup.belongs(toAppWithBundleIdentifier: $0.bundleIdentifier) }
+            device.apps.contains { appGroup.belongs(to: $0) }
         }
     }
     
@@ -87,6 +89,9 @@ public final class AppDiscoveryService: Sendable {
             let timestamp = [container.modificationDate, bundleDate].compactMap { $0 }.max() ?? Date.distantPast
 
             let domains = userDefaultsDomains(inContainerAt: container.folderURL)
+            // Read here, once per load, so associating groups later never touches the binary.
+            let applicationGroupIdentifiers = infoPlist.executableURL
+                .flatMap(MachOEntitlementsReader.applicationGroupIdentifiers(ofExecutableAt:))
             let simulatorApp: any SimulatorApp
             if infoPlist.isWatchApp {
                 simulatorApp = SimulatorWatchOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
@@ -99,7 +104,8 @@ public final class AppDiscoveryService: Sendable {
                                                    bundleModifiedAt: bundleDate,
                                                    shortVersion: infoPlist.cfBundleShortVersionString,
                                                    buildVersion: infoPlist.cfBundleVersion,
-                                                   isTestRunner: infoPlist.isTestRunner)
+                                                   isTestRunner: infoPlist.isTestRunner,
+                                                   applicationGroupIdentifiers: applicationGroupIdentifiers)
             } else {
                 simulatorApp = SimulatoriOSApp(displayName: infoPlist.cfBundleDisplayName ?? infoPlist.cfBundleName,
                                                bundleIdentifier: infoPlist.cfBundleIdentifier,
@@ -111,7 +117,8 @@ public final class AppDiscoveryService: Sendable {
                                                bundleModifiedAt: bundleDate,
                                                shortVersion: infoPlist.cfBundleShortVersionString,
                                                buildVersion: infoPlist.cfBundleVersion,
-                                               isTestRunner: infoPlist.isTestRunner)
+                                               isTestRunner: infoPlist.isTestRunner,
+                                               applicationGroupIdentifiers: applicationGroupIdentifiers)
             }
 
             // Add to both collections
