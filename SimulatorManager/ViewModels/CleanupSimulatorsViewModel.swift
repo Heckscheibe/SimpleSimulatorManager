@@ -206,6 +206,7 @@ final class CleanupSimulatorsViewModel {
 
         Task {
             var failureMessages: [String] = []
+            var deletedIDs = Set<String>()
 
             defer {
                 for candidate in candidatesToDelete {
@@ -231,6 +232,7 @@ final class CleanupSimulatorsViewModel {
             for candidate in candidatesToDelete {
                 do {
                     try await cleanupService.deleteCleanupCandidate(candidate)
+                    deletedIDs.insert(candidate.id)
                     os_log("Cleanup delete succeeded for candidate %{public}@", candidate.id)
                 } catch {
                     failureMessages.append("\(candidate.name): \(error.localizedDescription)")
@@ -254,6 +256,9 @@ final class CleanupSimulatorsViewModel {
                 checkedSimulatorCount = scan.checkedSimulatorCount
                 os_log("Cleanup delete refreshed candidate list to %{public}ld items", cleanupCandidates.count)
             } catch {
+                // The rescan failed, but the deletions did not: drop what was removed rather than
+                // leave rows that would offer to delete a simulator that is already gone.
+                cleanupCandidates.removeAll { deletedIDs.contains($0.id) }
                 failureMessages.append(error.localizedDescription)
                 os_log("Cleanup delete could not refresh candidates: %{public}@", error.localizedDescription)
             }

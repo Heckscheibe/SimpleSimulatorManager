@@ -16,6 +16,8 @@ actor MockSimulatorCleanupService: SimulatorCleanupServing {
     var deleteError: Error?
     /// Candidate IDs whose deletion should fail, so tests can exercise partial-failure batches.
     var failingCandidateIDs: Set<String> = []
+    /// Makes every scan after the first successful deletion fail, to exercise the refresh-failed path.
+    var failLoadsAfterDelete = false
 
     private(set) var deletedCandidateIDs: [String] = []
     private(set) var attemptedCandidateIDs: [String] = []
@@ -27,6 +29,10 @@ actor MockSimulatorCleanupService: SimulatorCleanupServing {
 
         if let loadError {
             throw loadError
+        }
+
+        if failLoadsAfterDelete, !deletedCandidateIDs.isEmpty {
+            throw MockError(candidateID: "rescan")
         }
 
         return cleanupCandidates
