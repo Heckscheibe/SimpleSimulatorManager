@@ -215,7 +215,7 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
 
     private func loadSimctlDevices() async throws -> [SimctlDeviceRecord] {
         os_log("Cleanup service loading simctl devices")
-        let output = try await runSimctlCommand(arguments: ["list", "devices", "--json"])
+        let output = try await runSimctlCommand(arguments: ["list", "devices", "--json"], timeout: SimctlTimeout.listing)
         let data = Data(output.utf8)
         let response = try JSONDecoder().decode(SimctlDevicesResponse.self, from: data)
 
@@ -241,7 +241,7 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
 
     private func loadAvailableRuntimeIdentifiers() async throws -> Set<String> {
         os_log("Cleanup service loading available runtimes")
-        let output = try await runSimctlCommand(arguments: ["list", "runtimes", "--json"])
+        let output = try await runSimctlCommand(arguments: ["list", "runtimes", "--json"], timeout: SimctlTimeout.listing)
         let data = Data(output.utf8)
         let response = try JSONDecoder().decode(SimctlRuntimesResponse.self, from: data)
 
@@ -274,11 +274,13 @@ public final class SimulatorCleanupService: SimulatorCleanupServing {
         }
     }
 
-    private func runSimctlCommand(arguments: [String]) async throws -> String {
+    /// `timeout` is `nil` for `delete`, which can take a while on a large simulator and must not
+    /// be stopped halfway.
+    private func runSimctlCommand(arguments: [String], timeout: TimeInterval? = nil) async throws -> String {
         os_log("Cleanup service running simctl command: %{public}@", arguments.joined(separator: " "))
 
         let output = try await Self.workQueue.perform {
-            try Process.execute(command: "/usr/bin/xcrun", arguments: ["simctl"] + arguments)
+            try Process.execute(command: "/usr/bin/xcrun", arguments: ["simctl"] + arguments, timeout: timeout)
         }
 
         os_log(
