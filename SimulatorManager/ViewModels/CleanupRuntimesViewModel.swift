@@ -3,9 +3,10 @@ import Observation
 import os
 import SimulatorCore
 
-/// Drives the "Cleanup Runtimes" submenu. Mirrors ``CleanupSimulatorsViewModel`` deliberately —
-/// same reservation of in-flight deletions, same continue-after-failure batches — so the two
-/// cleanup surfaces behave alike. Every runtime deletion is permanent and confirmed first.
+/// Drives the "Cleanup Runtimes" submenu. Deletes through the same ``CleanupBatch`` as
+/// ``CleanupSimulatorsViewModel`` — same reservation of in-flight deletions, same
+/// continue-after-failure batches — so the two cleanup surfaces behave alike. Every runtime
+/// deletion is permanent and confirmed first.
 @MainActor
 @Observable
 final class CleanupRuntimesViewModel {
@@ -33,6 +34,12 @@ final class CleanupRuntimesViewModel {
     @ObservationIgnored private let cleanupService: SimulatorRuntimeCleanupServing
     @ObservationIgnored private let deviceManager: DeviceManaging
     @ObservationIgnored private let destructiveActionConfirmer: DestructiveActionConfirming
+    @ObservationIgnored private let deletionBatch = CleanupBatch<CleanupRuntimesViewModel, SimulatorRuntimeCleanupCandidate>(
+        reservedIDs: \.deletingCandidateIDs,
+        listedCandidates: \.candidates,
+        errorMessage: \.errorMessage,
+        logLabel: "Runtime cleanup"
+    )
     /// Deleting a runtime changes which simulators are usable, so whoever shows the simulator
     /// cleanup list needs to look again.
     @ObservationIgnored private let didDeleteRuntimes: @MainActor () -> Void
@@ -151,12 +158,7 @@ final class CleanupRuntimesViewModel {
     }
 
     private func delete(candidates requested: [SimulatorRuntimeCleanupCandidate]) {
-        // Reserve before confirming, so a second click while the alert is up cannot queue the same
-        // runtime twice, and count only what this batch will really delete.
-        var toDelete: [SimulatorRuntimeCleanupCandidate] = []
-        for candidate in requested where deletingCandidateIDs.insert(candidate.id).inserted {
-            toDelete.append(candidate)
-        }
+        let toDelete = deletionBatch.reserve(requested, on: self)
 
         guard !toDelete.isEmpty else {
             return
@@ -173,56 +175,29 @@ final class CleanupRuntimesViewModel {
             simulatorCount: affectedSimulatorCount,
             bootedSimulatorCount: bootedSimulatorCount
         ) else {
-            for candidate in toDelete {
-                deletingCandidateIDs.remove(candidate.id)
-            }
+            deletionBatch.release(toDelete, on: self)
             os_log("Runtime cleanup delete cancelled by the user")
             return
         }
 
-        errorMessage = nil
-
-        Task {
-            var failureMessages: [String] = []
-            var deletedIDs = Set<String>()
-
-            defer {
-                for candidate in toDelete {
-                    deletingCandidateIDs.remove(candidate.id)
-                }
-                // Only ever set the message, so one batch cannot wipe another's failure.
-                if !failureMessages.isEmpty {
-                    errorMessage = failureMessages.joined(separator: "\n")
-                }
-            }
-
-            for candidate in toDelete {
-                do {
-                    try await cleanupService.deleteRuntimeCandidate(candidate)
-                    deletedIDs.insert(candidate.id)
-                    os_log("Runtime cleanup deleted %{public}@", candidate.id)
-                } catch {
-                    failureMessages.append("\(candidate.name): \(error.localizedDescription)")
-                    os_log("Runtime cleanup failed for %{public}@: %{public}@", candidate.id, error.localizedDescription)
-                }
-            }
-
-            // Whatever was removed changes which simulators are usable, whether or not the rest
-            // of the batch succeeded.
-            await deviceManager.resetAndLoadDevices()
-            didDeleteRuntimes()
-
-            do {
+        deletionBatch.run(
+            toDelete,
+            on: self,
+            delete: { [cleanupService] candidate in
+                try await cleanupService.deleteRuntimeCandidate(candidate)
+            },
+            afterDeletions: { [deviceManager, didDeleteRuntimes] in
+                // Whatever was removed changes which simulators are usable, whether or not the
+                // rest of the batch succeeded.
+                await deviceManager.resetAndLoadDevices()
+                didDeleteRuntimes()
+            },
+            rescan: { [self] in
                 let scan = try await cleanupService.loadRuntimeCleanupScan()
                 candidates = scan.candidates
                 checkedRuntimeCount = scan.checkedRuntimeCount
-            } catch {
-                // The rescan failed, but the deletions did not: drop what was removed rather than
-                // leave rows that would offer to delete a runtime that is already gone.
-                candidates.removeAll { deletedIDs.contains($0.id) }
-                failureMessages.append(error.localizedDescription)
             }
-        }
+        )
     }
 
     private func compareCandidates(lhs: SimulatorRuntimeCleanupCandidate, rhs: SimulatorRuntimeCleanupCandidate) -> Bool {
