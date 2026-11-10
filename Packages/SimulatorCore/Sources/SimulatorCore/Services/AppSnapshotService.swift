@@ -211,10 +211,11 @@ public final class AppSnapshotService: AppSnapshotting {
         }
 
         // Every payload is checked before a single byte is written. A restore that fails halfway
-        // leaves a container that is neither the old state nor the new one.
+        // leaves a container that is neither the old state nor the new one. A payload reached
+        // through a symlink counts as missing: it is not the snapshot's data.
         try await Self.workQueue.perform {
             for container in manifest.containers {
-                guard FileManager.default.directoryExistsAtURL(snapshot.payloadURL(for: container)) else {
+                guard snapshot.hasPayloadDirectory(for: container) else {
                     throw AppSnapshotError.missingPayload(containerName: container.kind.displayName)
                 }
             }

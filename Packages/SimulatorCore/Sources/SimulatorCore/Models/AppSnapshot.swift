@@ -38,6 +38,27 @@ public struct CapturedContainer: Codable, Sendable, Equatable, Identifiable {
     }
 }
 
+extension CapturedContainer {
+    /// The payload directory name is the one manifest field that becomes a path, and a manifest is
+    /// plain JSON that travels with a snapshot saved to a folder. A name that is not exactly one
+    /// directory inside `containers` is refused here, so no decoded manifest can carry one.
+    ///
+    /// Refused rather than sanitised: a sanitised name would not find the payload it stood for.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        kind = try container.decode(SnapshotContainerKind.self, forKey: .kind)
+        payloadDirectoryName = try container.decode(String.self, forKey: .payloadDirectoryName)
+        byteSize = try container.decode(Int64.self, forKey: .byteSize)
+
+        guard SimulatorPaths.isSinglePathComponent(payloadDirectoryName) else {
+            throw DecodingError.dataCorruptedError(forKey: .payloadDirectoryName,
+                                                   in: container,
+                                                   debugDescription: "\(payloadDirectoryName) is not a single path component")
+        }
+    }
+}
+
 /// What a snapshot recorded about the app, the device and itself.
 ///
 /// Written as JSON beside the payload. It is the only thing that survives every other part of the
@@ -92,6 +113,13 @@ extension AppSnapshotManifest {
         totalByteSize = try container.decode(Int64.self, forKey: .totalByteSize)
         containers = try container.decode([CapturedContainer].self, forKey: .containers)
         isSafetySnapshot = try container.decode(Bool.self, forKey: .isSafetySnapshot)
+
+        // Two containers sharing a payload would restore one container's data into the other.
+        guard Set(containers.map(\.payloadDirectoryName)).count == containers.count else {
+            throw DecodingError.dataCorruptedError(forKey: .containers,
+                                                   in: container,
+                                                   debugDescription: "Two containers share a payload directory")
+        }
     }
 
     /// The scope a restore or a live diff of this snapshot works on.
@@ -135,6 +163,29 @@ public struct AppSnapshot: Sendable, Equatable, Identifiable {
 
     func payloadURL(for container: CapturedContainer) -> URL {
         containersDirectoryURL.appendingPathComponent(container.payloadDirectoryName, isDirectory: true)
+    }
+
+    /// Whether the container's payload is a real directory inside this snapshot.
+    ///
+    /// The payload name is already a single path component (see ``CapturedContainer``), but either
+    /// the payload or `containers` itself could be a symlink — a folder copied into the store keeps
+    /// them — and following one would restore, or report, files from anywhere on the disk.
+    func hasPayloadDirectory(for container: CapturedContainer) -> Bool {
+        let payloadURL = payloadURL(for: container)
+
+        guard FileManager.default.directoryExistsAtURL(payloadURL) else {
+            return false
+        }
+
+        // Resolving both sides and comparing catches a symlink anywhere below the snapshot
+        // directory, including one that points at another directory inside it.
+        let snapshotPath = directoryURL.resolvingSymlinksInPath().standardizedFileURL.path
+        let resolvedPayloadPath = payloadURL.resolvingSymlinksInPath().standardizedFileURL.path
+        let expectedPayloadPath = (snapshotPath as NSString)
+            .appendingPathComponent(AppSnapshotManifest.containersDirectoryName)
+            .appending("/\(container.payloadDirectoryName)")
+
+        return resolvedPayloadPath == expectedPayloadPath
     }
 }
 

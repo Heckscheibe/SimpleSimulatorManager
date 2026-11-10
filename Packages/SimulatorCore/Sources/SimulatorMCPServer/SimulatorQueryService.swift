@@ -309,7 +309,7 @@ extension SimulatorQueryService {
         guard deviceLoader.devicesDirectoryURL != nil else {
             throw SimulatorQueryError.devicesDirectoryUnavailable
         }
-        guard Self.isSinglePathComponent(udid),
+        guard SimulatorPaths.isSinglePathComponent(udid),
               let device = deviceLoader.loadDevice(withUdid: udid, includingAppGroups: includingAppGroups),
               Self.isSameUdid(device.udid, udid) else {
             throw SimulatorQueryError.unknownDevice(udid: udid)
@@ -322,9 +322,5 @@ extension SimulatorQueryService {
     /// lowercased UDID names the same simulator.
     static func isSameUdid(_ lhs: String, _ rhs: String) -> Bool {
         lhs.caseInsensitiveCompare(rhs) == .orderedSame
-    }
-
-    static func isSinglePathComponent(_ name: String) -> Bool {
-        !name.isEmpty && name != "." && name != ".." && !name.contains("/")
     }
 }
