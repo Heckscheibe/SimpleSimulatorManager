@@ -74,59 +74,64 @@ enum SnapshotContainerFiles {
         return entriesByRelativePath
     }
 
+    /// Every entry of `containerURL` in `scope`, in walk order, from a single walk.
+    ///
+    /// What a capture sizes and what it copies are the same list, so a scoped capture reads each
+    /// file's header once rather than once to size and again to copy.
+    static func listContainer(at containerURL: URL, scope: SnapshotScope) -> ContainerListing {
+        var entries: [ContainerListing.Item] = []
+
+        enumerateContainer(at: containerURL, scope: scope) { url, relativePath, entry in
+            entries.append(ContainerListing.Item(url: url, relativePath: relativePath, entry: entry))
+        }
+
+        return ContainerListing(items: entries)
+    }
+
     // MARK: - Copying
 
-    /// Copies the captured part of `containerURL` into `destinationURL`, which must not exist yet.
+    /// Copies a listed container into `destinationURL`, which must not exist yet.
+    ///
+    /// The listing should be taken just before the copy: a file that disappears in between is
+    /// skipped and logged, but one that appears is not picked up.
     /// - Returns: The number of bytes written.
     @discardableResult
     static func copyContainer(
-        at containerURL: URL,
+        _ listing: ContainerListing,
         to destinationURL: URL,
-        scope: SnapshotScope,
         totalByteCount: Int64,
         progress: (@Sendable (SnapshotProgress) -> Void)? = nil
     ) throws -> Int64 {
         try FileManager.default.createDirectory(at: destinationURL, withIntermediateDirectories: true)
 
         var copiedByteCount: Int64 = 0
-        var failure: Error?
 
-        enumerateContainer(at: containerURL, scope: scope) { url, relativePath, entry in
-            guard failure == nil else {
-                return
-            }
-
-            let target = destinationURL.appendingPathComponent(relativePath)
+        for item in listing.items {
+            let target = destinationURL.appendingPathComponent(item.relativePath)
 
             do {
-                if entry.isDirectory {
+                if item.entry.isDirectory {
                     try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
                 } else {
                     try FileManager.default.createDirectory(at: target.deletingLastPathComponent(),
                                                             withIntermediateDirectories: true)
-                    try FileManager.default.copyItem(at: url, to: target)
-                    copiedByteCount += entry.byteSize
+                    try FileManager.default.copyItem(at: item.url, to: target)
+                    copiedByteCount += item.entry.byteSize
                 }
             } catch {
                 // A file the simulator deleted mid-copy is routine and costs nothing worth
                 // reporting; anything else means the payload would be incomplete, and an
                 // incomplete snapshot is worse than none because it will be restored one day.
                 guard isMissingFileError(error) else {
-                    failure = error
-
-                    return
+                    throw error
                 }
 
-                os_log("Snapshot skipped %{public}@; it disappeared while copying", relativePath)
+                os_log("Snapshot skipped %{public}@; it disappeared while copying", item.relativePath)
             }
 
             progress?(SnapshotProgress(copiedByteCount: copiedByteCount,
                                        totalByteCount: totalByteCount,
-                                       currentRelativePath: relativePath))
-        }
-
-        if let failure {
-            throw failure
+                                       currentRelativePath: item.relativePath))
         }
 
         return copiedByteCount
@@ -277,6 +282,25 @@ extension SnapshotContainerFiles {
         }
     }
 
+    /// A container's entries in scope, in the deterministic order of the walk that found them.
+    struct ContainerListing {
+        struct Item {
+            let url: URL
+            let relativePath: String
+            let entry: ContainerEntry
+        }
+
+        let items: [Item]
+
+        var fileCount: Int {
+            items.count { $0.entry.isFile }
+        }
+
+        var fileByteCount: Int64 {
+            items.reduce(0) { $0 + ($1.entry.isFile ? $1.entry.byteSize : 0) }
+        }
+    }
+
     /// Walks `containerURL`, skipping excluded subtrees without descending into them, and hands
     /// each entry in `scope` its path relative to that root.
     ///
@@ -294,7 +318,7 @@ extension SnapshotContainerFiles {
     ///
     /// Special files are skipped here, so capture, restore and diff all agree that they do not
     /// exist — see ``isSpecialFile(_:)``. The same goes for scope: a narrower snapshot's rules are
-    /// applied here and nowhere else — see ``memberships(of:contents:)``. A directory outside the
+    /// applied here and nowhere else — see ``memberships(of:contents:walkCounter:)``. A directory outside the
     /// scope is still searched, since a database can sit anywhere, but is not reported.
     static func enumerateContainer(
         at containerURL: URL,
@@ -302,6 +326,9 @@ extension SnapshotContainerFiles {
         body: (URL, String, ContainerEntry) -> Void
     ) {
         let resourceKeys = entryResourceKeys.union([.fileSizeKey])
+        let walkCounter = SnapshotWalkCounting.counter(for: containerURL)
+        walkCounter?.recordWalk()
+
         var pending: [(url: URL, relativePrefix: String, isWhollyInScope: Bool)] = [
             (containerURL, "", scope.contents == .everything)
         ]
@@ -359,7 +386,9 @@ extension SnapshotContainerFiles {
                 ))
             }
 
-            let memberships = directory.isWhollyInScope ? [:] : memberships(of: candidates, contents: scope.contents)
+            let memberships = directory.isWhollyInScope
+                ? [:]
+                : memberships(of: candidates, contents: scope.contents, walkCounter: walkCounter)
 
             for candidate in candidates {
                 var entry = candidate.entry
@@ -418,7 +447,11 @@ extension SnapshotContainerFiles {
     /// uses to read them key by key. Databases are found by content: each regular file's first
     /// ``SnapshotDatabaseFormat/headerByteCount`` bytes, never more, are checked against
     /// ``SnapshotDatabaseFormat/all``.
-    private static func memberships(of candidates: [WalkCandidate], contents: SnapshotContents) -> [String: Membership] {
+    private static func memberships(
+        of candidates: [WalkCandidate],
+        contents: SnapshotContents,
+        walkCounter: SnapshotWalkCounting.Counter?
+    ) -> [String: Membership] {
         var memberships: [String: Membership] = [:]
 
         if contents.includes(.userDefaults) {
@@ -436,6 +469,7 @@ extension SnapshotContainerFiles {
 
         for candidate in candidates where candidate.isRegularFile && memberships[candidate.relativePath] == nil {
             let fileName = candidate.url.lastPathComponent
+            walkCounter?.recordHeaderRead()
 
             guard let format = SnapshotDatabaseFormat.format(ofFileNamed: fileName,
                                                              header: header(of: candidate.url)) else {

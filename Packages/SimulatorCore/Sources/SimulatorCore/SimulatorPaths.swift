@@ -37,6 +37,16 @@ public enum SimulatorPaths {
             .appendingPathComponent(snapshotsFolderName, isDirectory: true)
     }
 
+    /// Whether `name` names exactly one entry inside a directory, so appending it to that
+    /// directory's URL cannot climb out of it or reach further down.
+    ///
+    /// Every externally supplied value that becomes a path component — a bundle identifier, a UDID,
+    /// a snapshot manifest's payload directory name — goes through this one check. Anything that
+    /// fails it is refused rather than sanitised: a sanitised name no longer names what it did.
+    public static func isSinglePathComponent(_ name: String) -> Bool {
+        !name.isEmpty && name != "." && name != ".." && !name.contains("/")
+    }
+
     public static func formattedOSVersion(from runtimeIdentifier: String) -> String {
         guard let lastComponent = runtimeIdentifier.split(separator: ".").last else {
             return runtimeIdentifier

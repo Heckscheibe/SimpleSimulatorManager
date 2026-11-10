@@ -110,6 +110,33 @@ struct SnapshotToolTests {
         #expect(fixture.storedSnapshotCount() == 1)
     }
 
+    @Test("A snapshot whose manifest points a payload outside the snapshot is not listed and cannot be used")
+    func refusesTraversingManifest() async throws {
+        defer { fixture.remove() }
+
+        let registry = fixture.registry()
+        let id = try await captureId(registry)
+        let manifestURL = fixture.storeURL
+            .appendingPathComponent(Sample.appBundleId, isDirectory: true)
+            .appendingPathComponent(id, isDirectory: true)
+            .appendingPathComponent("manifest.json")
+        var manifest = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+        var containers = try #require(manifest["containers"] as? [[String: Any]])
+        containers[0]["payloadDirectoryName"] = "../../../../.ssh"
+        manifest["containers"] = containers
+        try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
+
+        let listed = try #require(try await registry.json("list_snapshots", [:])["snapshots"] as? [[String: Any]])
+
+        #expect(listed.isEmpty)
+
+        let diff = await registry.call("diff_snapshot", arguments: ["snapshot_id": .string(id), "against_live": true])
+        let restore = await registry.call("restore_snapshot", arguments: ["snapshot_id": .string(id)])
+
+        #expect(diff.failed && diff.text.contains("No snapshot with id \(id)"))
+        #expect(restore.failed && restore.text.contains("No snapshot with id \(id)"))
+    }
+
     @Test("list_snapshots needs no flag")
     func listIsUngated() async {
         defer { fixture.remove() }

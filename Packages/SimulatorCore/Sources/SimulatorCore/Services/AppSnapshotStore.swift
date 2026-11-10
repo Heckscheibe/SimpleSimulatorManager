@@ -205,11 +205,7 @@ private extension AppSnapshotStore {
     /// so they are used as directory names as-is. Anything that would escape the root is refused
     /// rather than sanitised, because a sanitised name cannot be mapped back to its app.
     func directoryURL(forBundleIdentifier bundleIdentifier: String) -> URL? {
-        guard let rootURL,
-              !bundleIdentifier.isEmpty,
-              !bundleIdentifier.contains("/"),
-              bundleIdentifier != ".",
-              bundleIdentifier != ".." else {
+        guard let rootURL, SimulatorPaths.isSinglePathComponent(bundleIdentifier) else {
             return nil
         }
 
@@ -218,7 +214,8 @@ private extension AppSnapshotStore {
 
     /// A directory whose manifest cannot be read is skipped rather than reported as a snapshot: it
     /// is not restorable, and offering it would only produce a failure later, at the point where
-    /// the user is expecting their data back.
+    /// the user is expecting their data back. That includes a manifest whose payload directory
+    /// names would leave the snapshot, which decoding refuses.
     func loadSnapshots(in bundleDirectoryURL: URL) -> [AppSnapshot] {
         guard FileManager.default.directoryExistsAtURL(bundleDirectoryURL) else {
             return []
