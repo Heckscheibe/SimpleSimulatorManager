@@ -48,7 +48,7 @@ struct AppSnapshotManifestValidationTests {
         #expect(await environment.service.allSnapshots().isEmpty)
     }
 
-    @Test("A payload directory that is a symlink out of the snapshot cannot be restored")
+    @Test("A payload directory that is a symlink out of the snapshot cannot be restored or diffed")
     func refusesSymlinkedPayload() async throws {
         let environment = try SnapshotTestEnvironment(includeAppGroup: false)
         let outside = try ContainerFixtureDirectory(name: "outside")
@@ -72,6 +72,13 @@ struct AppSnapshotManifestValidationTests {
 
         await #expect(throws: AppSnapshotError.missingPayload(containerName: container.kind.displayName)) {
             try await environment.service.prepareRestore(of: listed, to: environment.target)
+        }
+        // A diff lists file names and sizes, so it must not walk the symlink either.
+        await #expect(throws: AppSnapshotError.missingPayload(containerName: container.kind.displayName)) {
+            try await environment.service.diff(listed, againstLiveContainersOf: environment.target)
+        }
+        await #expect(throws: AppSnapshotError.missingPayload(containerName: container.kind.displayName)) {
+            try await environment.service.diff(listed, against: listed)
         }
     }
 
