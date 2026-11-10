@@ -18,6 +18,7 @@ struct DeviceManagerReloadTests {
         try fixture.writeDevice(udid: "11111111-1111-1111-1111-111111111111", name: "iPhone 16 Pro")
 
         let deviceManager = DeviceManager(devicesDirectoryURL: fixture.url)
+        await deviceManager.waitForInitialLoad()
         var cancellables: Set<AnyCancellable> = []
         var publishedDevices: [[Device]] = []
 
@@ -51,6 +52,7 @@ struct DeviceManagerReloadTests {
         try fixture.writeDevice(udid: "33333333-3333-3333-3333-333333333333", name: "iPhone 16 Pro")
 
         let deviceManager = DeviceManager(devicesDirectoryURL: fixture.url)
+        await deviceManager.waitForInitialLoad()
         var cancellables: Set<AnyCancellable> = []
         var publishThreadWasMain: [Bool] = []
 

@@ -16,6 +16,9 @@ class MockDeviceManager: DeviceManaging {
     private let deviceTypesSubject = CurrentValueSubject<[DeviceType], Never>([])
     private let devicesSubject = CurrentValueSubject<[Device], Never>([])
     private let recentInstalledAppsSubject = CurrentValueSubject<[AppChange], Never>([])
+    /// `false` by default: a mock has nothing to load, and tests that build the menu straight away
+    /// expect the loaded state.
+    private let isLoadingInitialDevicesSubject = CurrentValueSubject<Bool, Never>(false)
     
     var deviceTypes: AnyPublisher<[DeviceType], Never> {
         deviceTypesSubject.eraseToAnyPublisher()
@@ -27,6 +30,10 @@ class MockDeviceManager: DeviceManaging {
     
     var recentInstalledApps: AnyPublisher<[AppChange], Never> {
         recentInstalledAppsSubject.eraseToAnyPublisher()
+    }
+
+    var isLoadingInitialDevices: AnyPublisher<Bool, Never> {
+        isLoadingInitialDevicesSubject.eraseToAnyPublisher()
     }
     
     // MARK: - Mock Data
@@ -60,6 +67,10 @@ class MockDeviceManager: DeviceManaging {
         deviceTypesSubject.send(deviceTypes)
     }
     
+    func setMockIsLoadingInitialDevices(_ isLoading: Bool) {
+        isLoadingInitialDevicesSubject.send(isLoading)
+    }
+
     func setMockRecentInstalledApps(_ apps: [AppChange]) {
         mockRecentInstalledApps = apps
         recentInstalledAppsSubject.send(apps)

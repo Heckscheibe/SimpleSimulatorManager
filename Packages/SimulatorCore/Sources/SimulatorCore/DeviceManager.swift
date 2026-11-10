@@ -18,6 +18,10 @@ public protocol DeviceManaging: AnyObject, Sendable {
     var deviceTypes: AnyPublisher<[DeviceType], Never> { get }
     var devices: AnyPublisher<[Device], Never> { get }
     var recentInstalledApps: AnyPublisher<[AppChange], Never> { get }
+    /// `true` until the load started at construction has published, so a menu opened right after
+    /// launch can say it is still loading instead of showing an empty list as the real state.
+    /// Later reloads replace the published devices in place and do not set it again.
+    var isLoadingInitialDevices: AnyPublisher<Bool, Never> { get }
 
     /// Reloads every device from disk off the main thread and publishes the result.
     /// Returns once the reloaded devices have been published, so callers can keep a
@@ -51,16 +55,22 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
     public var recentInstalledApps: AnyPublisher<[AppChange], Never> {
         recentInstalledAppsPublisher.eraseToAnyPublisher()
     }
+
+    public var isLoadingInitialDevices: AnyPublisher<Bool, Never> {
+        isLoadingInitialDevicesPublisher.eraseToAnyPublisher()
+    }
     
     private let deviceTypesPublisher: CurrentValueSubject<[DeviceType], Never> = .init([])
     private let devicesPublisher: CurrentValueSubject<[Device], Never> = .init([])
     private let recentInstalledAppsPublisher: CurrentValueSubject<[AppChange], Never> = .init([])
+    private let isLoadingInitialDevicesPublisher: CurrentValueSubject<Bool, Never> = .init(true)
     private var deviceTypeBinding: AnyCancellable?
     /// The recent-apps list before test runners are filtered out of it; see ``RecentApps/retained(from:limit:)``.
     /// Main-queue only, like the publishers.
     private var retainedRecentApps: [AppChange] = []
     private var hidesTestRunnerApps: Bool
-    /// Serial queue for reloading single devices off the main thread.
+    /// Serial queue for every disk load — the initial one, full reloads and single devices — so a
+    /// load that was started earlier always publishes before one that was started later.
     private let refreshQueue = DispatchQueue(label: "DeviceManager.refreshQueue", qos: .userInitiated)
 
     /// Reads devices from disk. `devicesDirectoryURL` is injectable so loading can be exercised
@@ -73,8 +83,16 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
     ) {
         self.hidesTestRunnerApps = hidesTestRunnerApps
         self.deviceLoader = DeviceLoader(devicesDirectoryURL: devicesDirectoryURL)
-        loadDevices()
         bindDeviceTypes()
+        loadInitialDevices()
+    }
+
+    /// Returns once the load started by `init` has published (or found no devices directory).
+    /// Tests await it instead of guessing a delay; the app observes ``isLoadingInitialDevices``.
+    func waitForInitialLoad() async {
+        for await isLoading in isLoadingInitialDevicesPublisher.values where !isLoading {
+            return
+        }
     }
     
     public func resetAndLoadDevices() async {
@@ -233,12 +251,26 @@ private extension DeviceManager {
             .assign(to: \.deviceTypesPublisher.value, on: self)
     }
     
-    func loadDevices() {
-        guard let loadedDevices = deviceLoader.loadDevices() else {
-            return
-        }
+    /// The first load. `SimulatorManagerApp` constructs the manager on the main thread at launch,
+    /// and a full load decodes every device, app and app-group plist, so it runs on `refreshQueue`
+    /// like every other load and only the publish comes back to the main queue. Enqueued here,
+    /// synchronously, so it is ahead of any reload or refresh requested after `init` returns.
+    func loadInitialDevices() {
+        refreshQueue.async { [weak self] in
+            let loadedDevices = self?.deviceLoader.loadDevices()
 
-        publish(loadedDevices)
+            DispatchQueue.main.async { [weak self] in
+                guard let self else {
+                    return
+                }
+
+                if let loadedDevices {
+                    publish(loadedDevices)
+                }
+                // Last, so a subscriber that hides a loading state sees the devices already there.
+                isLoadingInitialDevicesPublisher.value = false
+            }
+        }
     }
 
     /// Publishes a loaded snapshot. Must run on the main queue.

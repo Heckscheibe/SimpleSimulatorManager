@@ -93,7 +93,7 @@ private final class Recorder {
 
     init(fixture: DeviceFixtureDirectory) async {
         manager = DeviceManager(devicesDirectoryURL: fixture.url)
-        await manager.resetAndLoadDevices()
+        await manager.waitForInitialLoad()
         cancellable = manager.recentInstalledApps.sink { [weak self] changes in
             self?.latestRecentApps = changes
             self?.recentAppsEmissions += 1

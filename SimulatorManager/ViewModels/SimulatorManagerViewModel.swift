@@ -18,6 +18,11 @@ class SimulatorManagerViewModel: ContainerShortcutHandling {
     var deviceTypes: [DeviceType] = []
     var devices: [Device] = []
     var recentInstalledApps: [AppChange] = []
+    /// Whether the device manager's first load is still running, so the menu can say so instead of
+    /// presenting the empty lists as the real state. Starts `false` and follows the manager a
+    /// main-queue turn later, like every other value here: that turn passes before anything is
+    /// drawn, and a manager that has nothing to load (a mock) never reports `true`.
+    private(set) var isLoadingInitialDevices = false
     
     @ObservationIgnored let containerContent: ContainerContentCopying
 
@@ -101,6 +106,14 @@ private extension SimulatorManagerViewModel {
             }
             .store(in: &cancellables)
         
+        deviceManager.isLoadingInitialDevices
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                self?.isLoadingInitialDevices = isLoading
+            }
+            .store(in: &cancellables)
+
         deviceManager.recentInstalledApps
             .receive(on: DispatchQueue.main)
             .sink { [weak self] recentInstalledApps in
