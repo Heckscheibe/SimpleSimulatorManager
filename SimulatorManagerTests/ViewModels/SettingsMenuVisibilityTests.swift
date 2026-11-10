@@ -81,6 +81,8 @@ struct SettingsMenuVisibilityTests {
         deviceManager: DeviceManager? = nil
     ) async throws -> SettingsViewModel {
         let deviceManager = deviceManager ?? DeviceManager(devicesDirectoryURL: fixture.url)
+        // The first load runs off the main thread; await it rather than guess how long it takes.
+        await deviceManager.waitForInitialLoad()
         let simulatorManagerViewModel = SimulatorManagerViewModel(
             deviceManager: deviceManager,
             simulatorResetService: MockSimulatorDeviceActionService(),

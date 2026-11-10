@@ -88,6 +88,11 @@ final class MenuTreeFixture {
         await settle()
     }
 
+    func setLoadingInitialDevices(_ isLoading: Bool) async {
+        deviceManager.setMockIsLoadingInitialDevices(isLoading)
+        await settle()
+    }
+
     func setRecentApps(_ recentApps: [AppChange]) async {
         deviceManager.setMockRecentInstalledApps(recentApps)
         await settle()

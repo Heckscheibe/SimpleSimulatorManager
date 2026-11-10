@@ -18,14 +18,19 @@ public protocol DeviceManaging: AnyObject, Sendable {
     var deviceTypes: AnyPublisher<[DeviceType], Never> { get }
     var devices: AnyPublisher<[Device], Never> { get }
     var recentInstalledApps: AnyPublisher<[AppChange], Never> { get }
+    /// `true` until the load started at construction has published, so a menu opened right after
+    /// launch can say it is still loading instead of showing an empty list as the real state.
+    /// Later reloads replace the published devices in place and do not set it again.
+    var isLoadingInitialDevices: AnyPublisher<Bool, Never> { get }
 
-    func updateDevices()
     /// Reloads every device from disk off the main thread and publishes the result.
     /// Returns once the reloaded devices have been published, so callers can keep a
     /// progress indicator up for as long as the list is still stale.
     func resetAndLoadDevices() async
     /// Reloads the given device from disk off the main thread, publishes the result,
-    /// and returns the refreshed device (or nil if reloading failed).
+    /// and returns the refreshed device (or nil if reloading failed). The apps that were installed,
+    /// updated or removed since the previously published snapshot are applied to the recent-apps
+    /// list here, whoever asked for the refresh.
     @discardableResult
     func refreshDevice(_ device: Device) async -> Device?
     func getDevice(withUdid udid: String) -> Device?
@@ -50,16 +55,22 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
     public var recentInstalledApps: AnyPublisher<[AppChange], Never> {
         recentInstalledAppsPublisher.eraseToAnyPublisher()
     }
+
+    public var isLoadingInitialDevices: AnyPublisher<Bool, Never> {
+        isLoadingInitialDevicesPublisher.eraseToAnyPublisher()
+    }
     
     private let deviceTypesPublisher: CurrentValueSubject<[DeviceType], Never> = .init([])
     private let devicesPublisher: CurrentValueSubject<[Device], Never> = .init([])
     private let recentInstalledAppsPublisher: CurrentValueSubject<[AppChange], Never> = .init([])
+    private let isLoadingInitialDevicesPublisher: CurrentValueSubject<Bool, Never> = .init(true)
     private var deviceTypeBinding: AnyCancellable?
     /// The recent-apps list before test runners are filtered out of it; see ``RecentApps/retained(from:limit:)``.
     /// Main-queue only, like the publishers.
     private var retainedRecentApps: [AppChange] = []
     private var hidesTestRunnerApps: Bool
-    /// Serial queue for reloading single devices off the main thread.
+    /// Serial queue for every disk load — the initial one, full reloads and single devices — so a
+    /// load that was started earlier always publishes before one that was started later.
     private let refreshQueue = DispatchQueue(label: "DeviceManager.refreshQueue", qos: .userInitiated)
 
     /// Reads devices from disk. `devicesDirectoryURL` is injectable so loading can be exercised
@@ -72,12 +83,16 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
     ) {
         self.hidesTestRunnerApps = hidesTestRunnerApps
         self.deviceLoader = DeviceLoader(devicesDirectoryURL: devicesDirectoryURL)
-        loadDevices()
         bindDeviceTypes()
+        loadInitialDevices()
     }
-    
-    public func updateDevices() {
-        loadDevices()
+
+    /// Returns once the load started by `init` has published (or found no devices directory).
+    /// Tests await it instead of guessing a delay; the app observes ``isLoadingInitialDevices``.
+    func waitForInitialLoad() async {
+        for await isLoading in isLoadingInitialDevicesPublisher.values where !isLoading {
+            return
+        }
     }
     
     public func resetAndLoadDevices() async {
@@ -125,12 +140,24 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
         // resurrect it — publish nothing and report the refresh as failed so callers
         // stop tracking it instead of recreating monitors for a gone device.
         let didApply = await MainActor.run { () -> Bool in
-            guard devicesPublisher.value.contains(where: { $0.udid == refreshedDevice.udid }) else {
+            guard let previousDevice = devicesPublisher.value.first(where: { $0.udid == refreshedDevice.udid }) else {
                 return false
             }
 
             devicesPublisher.value = devicesPublisher.value.map { device in
                 device.udid == refreshedDevice.udid ? refreshedDevice : device
+            }
+
+            // Diff against what was published, not against a snapshot some caller kept: Erase
+            // Simulator refreshes the device itself, which advances the folder monitor's snapshot
+            // before its debounce fires, so a diff there saw empty against empty and the erased
+            // apps stayed in Recent Apps. Deriving the changes here makes every refresh report
+            // them exactly once.
+            let changes = DeviceAppMonitoringService.computeAppChanges(previousApps: previousDevice.apps,
+                                                                       currentApps: refreshedDevice.apps,
+                                                                       device: refreshedDevice)
+            if !changes.isEmpty {
+                updateRecentApps(changes)
             }
             return true
         }
@@ -224,12 +251,26 @@ private extension DeviceManager {
             .assign(to: \.deviceTypesPublisher.value, on: self)
     }
     
-    func loadDevices() {
-        guard let loadedDevices = deviceLoader.loadDevices() else {
-            return
-        }
+    /// The first load. `SimulatorManagerApp` constructs the manager on the main thread at launch,
+    /// and a full load decodes every device, app and app-group plist, so it runs on `refreshQueue`
+    /// like every other load and only the publish comes back to the main queue. Enqueued here,
+    /// synchronously, so it is ahead of any reload or refresh requested after `init` returns.
+    func loadInitialDevices() {
+        refreshQueue.async { [weak self] in
+            let loadedDevices = self?.deviceLoader.loadDevices()
 
-        publish(loadedDevices)
+            DispatchQueue.main.async { [weak self] in
+                guard let self else {
+                    return
+                }
+
+                if let loadedDevices {
+                    publish(loadedDevices)
+                }
+                // Last, so a subscriber that hides a loading state sees the devices already there.
+                isLoadingInitialDevicesPublisher.value = false
+            }
+        }
     }
 
     /// Publishes a loaded snapshot. Must run on the main queue.

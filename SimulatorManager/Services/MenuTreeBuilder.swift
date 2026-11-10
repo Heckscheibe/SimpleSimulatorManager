@@ -37,7 +37,7 @@ struct MenuTreeBuilder {
     let quit: @MainActor () -> Void
 
     func makeNodes() -> [MenuNode] {
-        var nodes = recentAppsNodes()
+        var nodes = simulatorManagerViewModel.isLoadingInitialDevices ? loadingNodes() : recentAppsNodes()
 
         nodes.append(.divider(id: "divider.afterRecentApps"))
         nodes.append(contentsOf: deviceTypeNodes())
@@ -61,6 +61,14 @@ struct MenuTreeBuilder {
 // MARK: - Recent apps
 
 extension MenuTreeBuilder {
+    /// Stands in for Recent Apps until the first device load has published, whether or not Recent
+    /// Apps is shown, so a panel opened right after launch says it is still loading rather than
+    /// "No Recent Apps" over a menu without devices. An informational row like the other status
+    /// rows: never selectable, and VoiceOver reads its title as static text.
+    func loadingNodes() -> [MenuNode] {
+        [.informational(id: "devices.loading", title: "Loading simulators…")]
+    }
+
     func recentAppsNodes() -> [MenuNode] {
         guard settings.showRecentApps else {
             return []

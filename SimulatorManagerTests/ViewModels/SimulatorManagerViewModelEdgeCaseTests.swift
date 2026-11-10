@@ -94,10 +94,10 @@ struct SimulatorManagerViewModelEdgeCaseTests {
         try? await Task.sleep(nanoseconds: 300_000_000)
         
         // Then
-        #expect(viewModel.recentAppChanges.count == 100)
+        #expect(viewModel.recentInstalledApps.count == 100)
         
         // Verify data integrity
-        let bundleIds = viewModel.recentAppChanges.map(\.app.bundleIdentifier)
+        let bundleIds = viewModel.recentInstalledApps.map(\.app.bundleIdentifier)
         #expect(bundleIds.contains("com.test.app0"))
         #expect(bundleIds.contains("com.test.app99"))
     }
@@ -131,9 +131,8 @@ struct SimulatorManagerViewModelEdgeCaseTests {
         try? await Task.sleep(nanoseconds: 200_000_000)
 
         // Then — ViewModel passes through without modification
-        #expect(viewModel.recentAppChanges.count == 2)
         #expect(viewModel.recentInstalledApps.count == 2)
-        #expect(viewModel.recentAppChanges.map(\.timestamp).count == 2)
+        #expect(viewModel.recentInstalledApps.map(\.timestamp).count == 2)
     }
     
     @Test("ViewModel handles mixed device platforms")
@@ -180,7 +179,7 @@ struct SimulatorManagerViewModelEdgeCaseTests {
                 await MainActor.run {
                     _ = viewModel.devices
                     _ = viewModel.deviceTypes
-                    _ = viewModel.recentAppChanges
+                    _ = viewModel.recentInstalledApps
                 }
             }
             
