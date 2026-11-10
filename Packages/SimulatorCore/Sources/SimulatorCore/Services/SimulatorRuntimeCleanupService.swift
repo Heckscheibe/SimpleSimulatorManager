@@ -61,8 +61,8 @@ public final class SimulatorRuntimeCleanupService: SimulatorRuntimeCleanupServin
 
     public func loadRuntimeCleanupScan() async throws -> SimulatorRuntimeCleanupScan {
         os_log("Runtime cleanup started loading")
-        async let imageOutput = runSimctl(["runtime", "list", "-j"])
-        async let deviceOutput = runSimctl(["list", "devices", "--json"])
+        async let imageOutput = runSimctl(["runtime", "list", "-j"], timeout: SimctlTimeout.listing)
+        async let deviceOutput = runSimctl(["list", "devices", "--json"], timeout: SimctlTimeout.listing)
 
         let images = try Self.parseRuntimeImages(from: Data(await imageOutput.utf8))
         let simulators = try Self.parseSimulators(from: Data(await deviceOutput.utf8))
@@ -96,11 +96,13 @@ public final class SimulatorRuntimeCleanupService: SimulatorRuntimeCleanupServin
         os_log("Runtime cleanup deleted %{public}@", candidate.imageIdentifier)
     }
 
-    private func runSimctl(_ arguments: [String]) async throws -> String {
+    /// `timeout` is `nil` for `runtime delete`, which removes a multi-gigabyte image and must not
+    /// be stopped halfway.
+    private func runSimctl(_ arguments: [String], timeout: TimeInterval? = nil) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             Self.workQueue.async {
                 continuation.resume(with: Result {
-                    try Process.execute(command: "/usr/bin/xcrun", arguments: ["simctl"] + arguments)
+                    try Process.execute(command: "/usr/bin/xcrun", arguments: ["simctl"] + arguments, timeout: timeout)
                 })
             }
         }

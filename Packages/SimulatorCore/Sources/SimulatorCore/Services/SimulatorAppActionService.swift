@@ -54,7 +54,8 @@ public final class SimulatorAppActionService: SimulatorAppActionServing, Sendabl
         do {
             let output = try await Self.workQueue.perform {
                 try Process.execute(command: "/usr/bin/xcrun",
-                                    arguments: ["simctl", "terminate", deviceUdid, bundleIdentifier])
+                                    arguments: ["simctl", "terminate", deviceUdid, bundleIdentifier],
+                                    timeout: SimctlTimeout.terminate)
             }
 
             os_log("Terminated %{public}@ on %{public}@: %{public}@", bundleIdentifier, deviceUdid, output)
@@ -71,7 +72,7 @@ public final class SimulatorAppActionService: SimulatorAppActionServing, Sendabl
         }
     }
 
-    private static func isBenignTerminationFailure(_ error: Error) -> Bool {
+    static func isBenignTerminationFailure(_ error: Error) -> Bool {
         let message = error.localizedDescription.lowercased()
 
         return benignFailureFragments.contains { message.contains($0) }
