@@ -17,9 +17,10 @@ import SimulatorCore
 protocol MenuSearching: AnyObject {
     /// Rebuilds the searchable index.
     ///
-    /// Cheap enough to call whenever devices, recent apps or platform visibility change, and far
-    /// too expensive to call per keystroke: every searchable string is normalised and tokenised
-    /// here so that ``results(for:)`` only ever compares prepared strings.
+    /// Far too expensive to call per keystroke, and not cheap enough to call on every change
+    /// either: every searchable string is normalised and tokenised here so that ``results(for:)``
+    /// only ever compares prepared strings. Callers rebuild lazily — ``MenuSearchViewModel`` marks
+    /// the index stale on a change and calls this only once a query needs it.
     ///
     /// - Parameters:
     ///   - devices: The devices to index, with their apps already loaded.
