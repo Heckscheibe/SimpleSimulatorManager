@@ -45,6 +45,7 @@ public final class SimulatorRuntimeCleanupService: SimulatorRuntimeCleanupServin
     private let now: @Sendable () -> Date
 
     /// Blocking process launches stay off the cooperative pool, as in ``SimulatorCleanupService``.
+    /// Concurrent, so the two listings a scan needs still run in parallel.
     private static let workQueue = DispatchQueue(
         label: "SimulatorRuntimeCleanupService.workQueue",
         qos: .userInitiated,
@@ -99,12 +100,8 @@ public final class SimulatorRuntimeCleanupService: SimulatorRuntimeCleanupServin
     /// `timeout` is `nil` for `runtime delete`, which removes a multi-gigabyte image and must not
     /// be stopped halfway.
     private func runSimctl(_ arguments: [String], timeout: TimeInterval? = nil) async throws -> String {
-        try await withCheckedThrowingContinuation { continuation in
-            Self.workQueue.async {
-                continuation.resume(with: Result {
-                    try Process.execute(command: "/usr/bin/xcrun", arguments: ["simctl"] + arguments, timeout: timeout)
-                })
-            }
+        try await Self.workQueue.perform {
+            try Process.execute(command: "/usr/bin/xcrun", arguments: ["simctl"] + arguments, timeout: timeout)
         }
     }
 }
