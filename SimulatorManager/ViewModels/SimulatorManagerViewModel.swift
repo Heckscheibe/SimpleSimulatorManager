@@ -17,7 +17,6 @@ import SimulatorCore
 class SimulatorManagerViewModel: ContainerShortcutHandling {
     var deviceTypes: [DeviceType] = []
     var devices: [Device] = []
-    var recentAppChanges: [AppChange] = []
     var recentInstalledApps: [AppChange] = []
     
     @ObservationIgnored let containerContent: ContainerContentCopying
@@ -106,7 +105,6 @@ private extension SimulatorManagerViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] recentInstalledApps in
                 self?.recentInstalledApps = recentInstalledApps
-                self?.recentAppChanges = recentInstalledApps
             }
             .store(in: &cancellables)
         
@@ -122,7 +120,6 @@ private extension SimulatorManagerViewModel {
                 Task {
                     await deviceManager.resetAndLoadDevices()
                 }
-//                self?.deviceAppMonitoringService.resetMonitoring()
             }
             .store(in: &cancellables)
     }

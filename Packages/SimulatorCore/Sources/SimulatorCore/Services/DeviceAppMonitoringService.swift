@@ -11,11 +11,11 @@ import os
 
 // MARK: - Protocol
 
-/// Protocol defining the interface for device app monitoring
+/// The seam that lets a view model take a monitoring service without starting real FSEvents
+/// watches in tests. The service needs no calls from its owner — it follows
+/// `DeviceManaging.devices` on its own — so the protocol has no requirements.
 @MainActor
-public protocol DeviceAppMonitoring: AnyObject {
-    func resetMonitoring()
-}
+public protocol DeviceAppMonitoring: AnyObject {}
 
 /// Service that monitors simulator app changes and integrates with DeviceManager.
 /// All monitor callbacks are delivered on the main queue, so the whole service is main-actor-isolated.
@@ -39,13 +39,6 @@ public class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
 
     public init(deviceManager: DeviceManaging) {
         self.deviceManager = deviceManager
-        setupDeviceMonitoring()
-    }
-
-    // MARK: - Public Methods
-
-    public func resetMonitoring() {
-        stopMonitoring()
         setupDeviceMonitoring()
     }
 
@@ -109,11 +102,6 @@ public class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
     }
 
     // MARK: - Private Methods
-
-    private func stopMonitoring() {
-        devicesSubscription = nil
-        monitoredDevices.removeAll()
-    }
 
     private func setupDeviceMonitoring() {
         // Monitor device changes to update folder monitors

@@ -36,7 +36,7 @@ struct SimulatorManagerViewModelTests {
     func initialState() {
         #expect(viewModel.devices.isEmpty)
         #expect(viewModel.deviceTypes.isEmpty)
-        #expect(viewModel.recentAppChanges.isEmpty)
+        #expect(viewModel.recentInstalledApps.isEmpty)
     }
     
     @Test("ViewModel binds to device manager publishers on initialization")
@@ -57,11 +57,11 @@ struct SimulatorManagerViewModelTests {
         // Then
         #expect(viewModel.devices.count == 3)
         #expect(viewModel.deviceTypes.count == 3)
-        #expect(viewModel.recentAppChanges.count == 2)
+        #expect(viewModel.recentInstalledApps.count == 2)
         
         #expect(viewModel.devices.first?.name == "iPhone 15")
         #expect(viewModel.deviceTypes.first?.id == "iPhone 15")
-        #expect(viewModel.recentAppChanges.first?.app.displayName == "App 1")
+        #expect(viewModel.recentInstalledApps.first?.app.displayName == "App 1")
     }
     
     // MARK: - Device Management Tests
@@ -123,10 +123,9 @@ struct SimulatorManagerViewModelTests {
         #expect(viewModel.deviceTypes.map(\.id).contains("Apple Watch"))
     }
     
-    @Test("ViewModel forwards publisher values to both recentAppChanges and recentInstalledApps")
-    func recentAppChangesUpdate() async {
+    @Test("ViewModel forwards publisher values to recentInstalledApps")
+    func recentInstalledAppsUpdate() async {
         // Given - Start with empty changes
-        #expect(viewModel.recentAppChanges.isEmpty)
         #expect(viewModel.recentInstalledApps.isEmpty)
 
         // When - Push values directly through the publisher
@@ -136,9 +135,8 @@ struct SimulatorManagerViewModelTests {
         // Allow Combine to process
         try? await Task.sleep(nanoseconds: 200_000_000)
 
-        // Then - Both properties mirror the publisher value (ViewModel applies no filtering)
+        // Then - The property mirrors the publisher value (ViewModel applies no filtering)
         #expect(viewModel.recentInstalledApps.count == appChanges.count)
-        #expect(viewModel.recentAppChanges.count == appChanges.count)
 
         let appIdentifiers = viewModel.recentInstalledApps.map(\.app.bundleIdentifier)
         #expect(appIdentifiers.contains("com.test.app1"))
@@ -165,7 +163,7 @@ struct SimulatorManagerViewModelTests {
         // Then - All should be updated correctly
         #expect(viewModel.devices.count == 3)
         #expect(viewModel.deviceTypes.count == 3)
-        #expect(viewModel.recentAppChanges.count == 2)
+        #expect(viewModel.recentInstalledApps.count == 2)
         
         // Verify data integrity
         #expect(viewModel.devices.map(\.udid).sorted() == ["device-1", "device-2", "device-3"])

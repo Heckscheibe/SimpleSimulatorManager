@@ -19,7 +19,6 @@ public protocol DeviceManaging: AnyObject, Sendable {
     var devices: AnyPublisher<[Device], Never> { get }
     var recentInstalledApps: AnyPublisher<[AppChange], Never> { get }
 
-    func updateDevices()
     /// Reloads every device from disk off the main thread and publishes the result.
     /// Returns once the reloaded devices have been published, so callers can keep a
     /// progress indicator up for as long as the list is still stale.
@@ -76,10 +75,6 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
         self.deviceLoader = DeviceLoader(devicesDirectoryURL: devicesDirectoryURL)
         loadDevices()
         bindDeviceTypes()
-    }
-    
-    public func updateDevices() {
-        loadDevices()
     }
     
     public func resetAndLoadDevices() async {
