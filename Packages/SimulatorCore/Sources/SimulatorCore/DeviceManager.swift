@@ -25,7 +25,9 @@ public protocol DeviceManaging: AnyObject, Sendable {
     /// progress indicator up for as long as the list is still stale.
     func resetAndLoadDevices() async
     /// Reloads the given device from disk off the main thread, publishes the result,
-    /// and returns the refreshed device (or nil if reloading failed).
+    /// and returns the refreshed device (or nil if reloading failed). The apps that were installed,
+    /// updated or removed since the previously published snapshot are applied to the recent-apps
+    /// list here, whoever asked for the refresh.
     @discardableResult
     func refreshDevice(_ device: Device) async -> Device?
     func getDevice(withUdid udid: String) -> Device?
@@ -125,12 +127,24 @@ public class DeviceManager: ObservableObject, DeviceManaging, @unchecked Sendabl
         // resurrect it — publish nothing and report the refresh as failed so callers
         // stop tracking it instead of recreating monitors for a gone device.
         let didApply = await MainActor.run { () -> Bool in
-            guard devicesPublisher.value.contains(where: { $0.udid == refreshedDevice.udid }) else {
+            guard let previousDevice = devicesPublisher.value.first(where: { $0.udid == refreshedDevice.udid }) else {
                 return false
             }
 
             devicesPublisher.value = devicesPublisher.value.map { device in
                 device.udid == refreshedDevice.udid ? refreshedDevice : device
+            }
+
+            // Diff against what was published, not against a snapshot some caller kept: Erase
+            // Simulator refreshes the device itself, which advances the folder monitor's snapshot
+            // before its debounce fires, so a diff there saw empty against empty and the erased
+            // apps stayed in Recent Apps. Deriving the changes here makes every refresh report
+            // them exactly once.
+            let changes = DeviceAppMonitoringService.computeAppChanges(previousApps: previousDevice.apps,
+                                                                       currentApps: refreshedDevice.apps,
+                                                                       device: refreshedDevice)
+            if !changes.isEmpty {
+                updateRecentApps(changes)
             }
             return true
         }

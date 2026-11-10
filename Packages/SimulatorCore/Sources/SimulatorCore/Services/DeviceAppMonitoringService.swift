@@ -54,6 +54,9 @@ public class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
     /// Diffs two app snapshots of a device into installed/updated/removed changes.
     /// An app only counts as updated when its content modification date moved forward,
     /// so unrelated apps on the same device don't flood the recent-apps list.
+    ///
+    /// `DeviceManager.refreshDevice` applies it to every single-device refresh; this service only
+    /// triggers those refreshes and must not diff a second time.
     nonisolated static func computeAppChanges(
         previousApps: [any SimulatorApp],
         currentApps: [any SimulatorApp],
@@ -176,16 +179,15 @@ public class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
 
     private func handleDeviceAppFolderChange(_ device: Device) {
         // The monitor stays alive across the refresh (FSEvents survives folder changes), so there
-        // is no unmonitored window. `device` is the monitor's current snapshot, so its apps are the
-        // correct baseline for the diff.
-        let previousApps = device.apps
-
+        // is no unmonitored window.
         Task { @MainActor [weak self] in
             guard let self else {
                 return
             }
 
-            // Refresh only the specific device's apps when its app container folder changes.
+            // Refresh only the specific device's apps when its app container folder changes. The
+            // refresh itself diffs against the published device and updates Recent Apps, so this
+            // service does not compute the changes again.
             guard let updatedDevice = await self.deviceManager.refreshDevice(device) else {
                 // Device was removed or could not be reloaded; leave the existing monitor as-is.
                 // A genuinely removed device's monitor is torn down on the next device-list publish.
@@ -193,14 +195,6 @@ public class DeviceAppMonitoringService: ObservableObject, DeviceAppMonitoring {
             }
 
             self.refreshMonitor(for: updatedDevice)
-
-            let changes = Self.computeAppChanges(previousApps: previousApps,
-                                                 currentApps: updatedDevice.apps,
-                                                 device: updatedDevice)
-
-            if !changes.isEmpty {
-                self.deviceManager.updateRecentApps(changes)
-            }
         }
     }
 
