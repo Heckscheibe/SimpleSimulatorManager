@@ -12,9 +12,11 @@ import SimulatorCore
 
 /// The panel's search state: the query, and the ranked hits for it.
 ///
-/// The index follows the same publishers the menu itself is built from, so it is rebuilt when
-/// devices, recent apps or platform visibility change — never per keystroke, and never by
-/// rescanning the filesystem.
+/// The index follows the same publishers the menu itself is built from, but rebuilding it is not
+/// free, and those publishers fire at launch, on every reload and on every FSEvents-driven device
+/// refresh — almost always while nobody is searching. So a change only marks the index stale, and
+/// it is rebuilt lazily: on the next query, or once per burst of changes while a query is live.
+/// Never per keystroke, and never by rescanning the filesystem.
 @MainActor
 @Observable
 final class MenuSearchViewModel {
@@ -36,6 +38,10 @@ final class MenuSearchViewModel {
     @ObservationIgnored private var recentApps: [AppChange] = []
     @ObservationIgnored private var visiblePlatforms: Set<SimulatorPlatform> = []
     @ObservationIgnored private var hidesTestRunnerApps = false
+    /// Starts out stale, so the first query builds the index even if nothing was ever published —
+    /// the device manager loads in the background and may not have emitted yet.
+    @ObservationIgnored private var isIndexStale = true
+    @ObservationIgnored private var isLiveRefreshScheduled = false
 
     init(
         deviceManager: DeviceManaging,
@@ -82,7 +88,7 @@ private extension MenuSearchViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] devices in
                 self?.devices = devices
-                self?.rebuildIndex()
+                self?.indexInputsChanged()
             }
             .store(in: &cancellables)
 
@@ -90,7 +96,7 @@ private extension MenuSearchViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] recentApps in
                 self?.recentApps = recentApps
-                self?.rebuildIndex()
+                self?.indexInputsChanged()
             }
             .store(in: &cancellables)
 
@@ -98,7 +104,7 @@ private extension MenuSearchViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] visiblePlatforms in
                 self?.visiblePlatforms = visiblePlatforms
-                self?.rebuildIndex()
+                self?.indexInputsChanged()
             }
             .store(in: &cancellables)
 
@@ -106,9 +112,44 @@ private extension MenuSearchViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] hidesTestRunnerApps in
                 self?.hidesTestRunnerApps = hidesTestRunnerApps
-                self?.rebuildIndex()
+                self?.indexInputsChanged()
             }
             .store(in: &cancellables)
+    }
+
+    /// Marks the index stale. With no query that is all a change costs; with a live query the
+    /// visible results are refreshed on the next main-queue turn, so the emissions of one reload
+    /// (devices, then recent apps) share a single rebuild.
+    func indexInputsChanged() {
+        isIndexStale = true
+
+        guard hasQuery, !isLiveRefreshScheduled else {
+            return
+        }
+
+        isLiveRefreshScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else {
+                return
+            }
+
+            isLiveRefreshScheduled = false
+            // An app installed while the panel is open with a live query has to show up in the
+            // results, not just in the index.
+            if hasQuery {
+                refreshResults()
+            }
+        }
+    }
+
+    /// Synchronous on purpose: `MenuPanelView.queryChanged` reads `results` straight after the
+    /// query changes, so a stale index has to be rebuilt here rather than on a later turn.
+    func refreshResults() {
+        if hasQuery, isIndexStale {
+            rebuildIndex()
+        }
+
+        results = searchService.results(for: query)
     }
 
     func rebuildIndex() {
@@ -116,12 +157,6 @@ private extension MenuSearchViewModel {
                                   recentApps: recentApps,
                                   visiblePlatforms: visiblePlatforms,
                                   hidesTestRunnerApps: hidesTestRunnerApps)
-        // An app installed while the panel is open with a live query has to show up in the results,
-        // not just in the index.
-        refreshResults()
-    }
-
-    func refreshResults() {
-        results = searchService.results(for: query)
+        isIndexStale = false
     }
 }
