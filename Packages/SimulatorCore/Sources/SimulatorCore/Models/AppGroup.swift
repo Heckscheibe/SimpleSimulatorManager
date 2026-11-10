@@ -32,13 +32,25 @@ public class AppGroup {
 
     public var url: URL?
 
-    /// Whether this group belongs to the app with `bundleIdentifier`: the bundle identifier is the
-    /// group's name or starts with it as a whole dot-separated prefix — so `group.com.example.notes`
-    /// belongs to `com.example.notes` and `com.example.notes.widget`, but not to `com.example.notesplus`.
-    public func belongs(toAppWithBundleIdentifier bundleIdentifier: String) -> Bool {
-        !name.isEmpty && (bundleIdentifier == name || bundleIdentifier.hasPrefix(name + "."))
+    /// Whether this group shares a container with `app` — the one association rule discovery,
+    /// snapshots and the MCP server all use.
+    ///
+    /// When discovery could read the app's entitlements, the group belongs to it exactly when its
+    /// `com.apple.security.application-groups` lists the group's identifier, however the group is
+    /// named: `group.com.example.notes.shared` belongs to `com.example.notes` if the app claims it,
+    /// and a parent group such as `group.com.example` belongs only to the sibling apps that claim it.
+    ///
+    /// When they could not be read, the name decides: the bundle identifier is the group's name or
+    /// starts with it as a whole dot-separated prefix — so `group.com.example.notes` belongs to
+    /// `com.example.notes` and `com.example.notes.widget`, but not to `com.example.notesplus`.
+    public func belongs(to app: any SimulatorApp) -> Bool {
+        if let applicationGroupIdentifiers = app.applicationGroupIdentifiers {
+            return applicationGroupIdentifiers.contains(identifier)
+        }
+
+        return !name.isEmpty && (app.bundleIdentifier == name || app.bundleIdentifier.hasPrefix(name + "."))
     }
-    
+
     public init(
         identifier: String,
         uuid: String,
@@ -60,9 +72,9 @@ extension AppGroup: Identifiable {
 
 extension AppGroup {
     /// The groups that share a container with `app`, by the same rule discovery and the MCP server
-    /// use — see ``belongs(toAppWithBundleIdentifier:)``. Snapshots need the answer per app, and
+    /// use — see ``belongs(to:)``. Snapshots need the answer per app, and
     /// the callers must not drift apart, so it lives here rather than in any one of them.
     static func groups(in appGroups: [AppGroup], associatedWith app: any SimulatorApp) -> [AppGroup] {
-        appGroups.filter { $0.belongs(toAppWithBundleIdentifier: app.bundleIdentifier) }
+        appGroups.filter { $0.belongs(to: app) }
     }
 }

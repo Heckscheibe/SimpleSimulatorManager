@@ -154,7 +154,7 @@ public struct SimulatorQueryService: SimulatorQuerying {
             let device = try loadDevice(withUdid: udid)
             let app = try Self.app(withBundleIdentifier: bundleIdentifier, on: device)
             let appGroups = device.appGroups
-                .filter { $0.belongs(toAppWithBundleIdentifier: app.bundleIdentifier) }
+                .filter { $0.belongs(to: app) }
                 .sorted { $0.identifier < $1.identifier }
 
             return AppContainersDTO(udid: device.udid, app: app, appGroups: appGroups)
