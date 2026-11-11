@@ -17,7 +17,8 @@ import os
 /// and recreated (simulator erase), delivers kernel-coalesced events, and does not
 /// consume a file descriptor per watched folder. Because the watch is inherently
 /// recursive, the monitor signals on any change beneath `url`; callers scope what they
-/// watch by choosing an appropriately narrow `url`.
+/// watch by choosing an appropriately narrow `url`, or, when the folder they care about does
+/// not exist yet, by passing an `eventFilter` that drops events about the rest of the tree.
 final class FolderMonitor: @unchecked Sendable {
     // MARK: - Types
 
@@ -32,12 +33,25 @@ final class FolderMonitor: @unchecked Sendable {
     /// can never touch deallocated memory even while the monitor itself is being torn down.
     private final class EventSink {
         private let subject: PassthroughSubject<Void, Never>
+        let filter: FolderEventPathFilter?
 
-        init(subject: PassthroughSubject<Void, Never>) {
+        init(subject: PassthroughSubject<Void, Never>, filter: FolderEventPathFilter?) {
             self.subject = subject
+            self.filter = filter
         }
 
-        func handleEvents() {
+        /// - Parameter eventPaths: The callback's raw path list. It is only read when there is a
+        ///   filter, in which case the stream was created with `kFSEventStreamCreateFlagUseCFTypes`
+        ///   and the list is a `CFArray` of `CFString`.
+        func handleEvents(eventPaths: UnsafeMutableRawPointer) {
+            if let filter {
+                let paths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue() as? [String] ?? []
+                // An unreadable path list is forwarded: a spurious refresh beats a missed install.
+                guard paths.isEmpty || paths.contains(where: filter.isRelevant(eventPath:)) else {
+                    return
+                }
+            }
+
             subject.send(())
         }
     }
@@ -47,7 +61,8 @@ final class FolderMonitor: @unchecked Sendable {
     /// URL for the directory being monitored.
     let url: URL
 
-    /// Emits on the main queue whenever a change is detected anywhere under `url`.
+    /// Emits on the main queue whenever a change is detected anywhere under `url` (or, with an
+    /// `eventFilter`, anywhere it considers relevant).
     /// Delivery is hopped to main (restoring the pre-FSEvents contract) so subscribers can
     /// update UI/`@Published` state directly, even though FSEvents fires on a private queue.
     let folderDidChange: AnyPublisher<Void, Never>
@@ -61,13 +76,15 @@ final class FolderMonitor: @unchecked Sendable {
 
     // MARK: - Initializers
 
-    init(url: URL, latency: TimeInterval = 1.0) {
+    /// - Parameter eventFilter: When set, a batch of FSEvents is only signalled if at least one
+    ///   of its paths passes the filter. Without one, every change under `url` is signalled.
+    init(url: URL, latency: TimeInterval = 1.0, eventFilter: FolderEventPathFilter? = nil) {
         let subject = PassthroughSubject<Void, Never>()
         self.url = url
         self.latency = latency
         self.changeSubject = subject
         self.folderDidChange = subject.receive(on: DispatchQueue.main).eraseToAnyPublisher()
-        self.sink = EventSink(subject: subject)
+        self.sink = EventSink(subject: subject, filter: eventFilter)
     }
 
     deinit {
@@ -106,13 +123,20 @@ final class FolderMonitor: @unchecked Sendable {
             copyDescription: nil
         )
 
-        let callback: FSEventStreamCallback = { _, info, _, _, _, _ in
+        let callback: FSEventStreamCallback = { _, info, _, eventPaths, _, _ in
             guard let info else {
                 return
             }
 
             let sink = Unmanaged<EventSink>.fromOpaque(info).takeUnretainedValue()
-            sink.handleEvents()
+            sink.handleEvents(eventPaths: eventPaths)
+        }
+
+        // Paths are only needed to filter, and bridging them costs on every batch, so the
+        // unfiltered stream keeps the cheaper C-string form it never reads.
+        var flags = FSEventStreamCreateFlags(kFSEventStreamCreateFlagNoDefer)
+        if sink.filter != nil {
+            flags |= FSEventStreamCreateFlags(kFSEventStreamCreateFlagUseCFTypes)
         }
 
         guard let newStream = FSEventStreamCreate(
@@ -122,7 +146,7 @@ final class FolderMonitor: @unchecked Sendable {
             [url.path] as CFArray,
             FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
             latency,
-            FSEventStreamCreateFlags(kFSEventStreamCreateFlagNoDefer)
+            flags
         ) else {
             throw MonitorError.failedToStartMonitoring(path: url.path)
         }
