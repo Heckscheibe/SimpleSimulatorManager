@@ -10,15 +10,29 @@ import Foundation
 import os
 
 final class AppFolderMonitor {
+    /// What a monitor watches for a device, and how narrowly.
+    struct WatchTarget: Equatable {
+        /// The folder handed to FSEvents. It must exist when the watch starts to be useful.
+        let url: URL
+
+        /// Set for the fallback watch only: events are forwarded when they concern this folder,
+        /// which does not exist yet, and dropped when they concern the rest of `url`.
+        let relevantFolder: URL?
+
+        var isFallback: Bool {
+            relevantFolder != nil
+        }
+    }
+
     let appfolderDidChange: PassthroughSubject<Device, Never> = .init()
 
     /// The most recent device snapshot. Updated in place after each refresh (see `update(device:)`)
     /// so the change is emitted with fresh state without recreating the underlying FSEvents watch.
     private(set) var device: Device
 
-    /// True while no app is installed yet and we are watching the whole data folder.
-    /// Once the dedicated app-packages folder appears, the owner should recreate the monitor
-    /// to switch to the narrower watch.
+    /// True while no app is installed yet and we are watching the data folder, filtered to the
+    /// app-packages folder. Once that folder appears, the owner should recreate the monitor
+    /// to switch to the direct, unfiltered watch.
     let isWatchingFallback: Bool
 
     /// Whether the underlying folder watch actually started. The owner should not cache a
@@ -31,29 +45,28 @@ final class AppFolderMonitor {
     init(device: Device) {
         self.device = device
 
-        let url: URL?
-        let watchingFallback: Bool
-        if let appPackagesFolder = device.appPackagesFolder,
-           FileManager.default.directoryExistsAtURL(appPackagesFolder) {
-            url = appPackagesFolder
-            watchingFallback = false
-        } else {
-            // The app packages folder only exists once the first app is installed.
-            // Until then, watch the whole data folder so we notice the install.
-            url = device.dataFolder
-            watchingFallback = true
-        }
-        self.isWatchingFallback = watchingFallback
+        let target = Self.watchTarget(for: device)
+        self.isWatchingFallback = target?.isFallback ?? true
 
-        guard let url else {
+        guard let target else {
             folderMonitor = nil
             os_log("No folder to monitor for device %@", device.udid)
             return
         }
 
+        let url = target.url
+        let eventFilter = target.relevantFolder.flatMap {
+            FolderEventPathFilter(watchedRoot: target.url, relevantFolder: $0)
+        }
+        if target.isFallback, eventFilter == nil {
+            os_log("Watching %@ unfiltered for device %@; installs may be reported late while it is busy",
+                   url.path,
+                   device.udid)
+        }
+
         // Keep the FSEvents latency small: the 3s debounce below is the coalescing window, so a
         // large FSEvents latency would stack on top of it (~4s notification delay) for no benefit.
-        let monitor = FolderMonitor(url: url, latency: 0.1)
+        let monitor = FolderMonitor(url: url, latency: 0.1, eventFilter: eventFilter)
         folderMonitor = monitor
 
         monitor.folderDidChange
@@ -76,6 +89,29 @@ final class AppFolderMonitor {
                    device.udid,
                    String(describing: error))
         }
+    }
+
+    /// Chooses what to watch for `device`.
+    ///
+    /// The app-packages folder (`data/Containers/Bundle/Application`) is watched directly when it
+    /// exists. It is only created by the first install, so a device with no apps, such as one just
+    /// erased, has to be watched from its `data` folder instead. That folder is the wrong thing to
+    /// debounce on: a booted simulator changes hundreds of paths under it every couple of seconds,
+    /// each restarting the debounce, so the install it should report would wait until the simulator
+    /// goes quiet. No narrower folder helps either, because `Containers/Bundle` does not exist before
+    /// the first install and `Containers` holds the system apps' busy data containers. The fallback
+    /// therefore watches `data` but only reacts to events about the app-packages folder.
+    static func watchTarget(for device: Device, fileManager: FileManager = .default) -> WatchTarget? {
+        guard let appPackagesFolder = device.appPackagesFolder,
+              let dataFolder = device.dataFolder else {
+            return nil
+        }
+
+        if fileManager.directoryExistsAtURL(appPackagesFolder) {
+            return WatchTarget(url: appPackagesFolder, relevantFolder: nil)
+        }
+
+        return WatchTarget(url: dataFolder, relevantFolder: appPackagesFolder)
     }
 
     /// Refresh the captured device snapshot without touching the underlying folder watch,
