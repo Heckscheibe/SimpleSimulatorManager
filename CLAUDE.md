@@ -128,7 +128,7 @@ Pull requests:
 - Mocks live in `SimulatorManagerTests/Mocks`, test data factories in `SimulatorManagerTests/Helpers/TestDataHelpers`
 - Combine-driven tests need to await async propagation (e.g. `try? await Task.sleep(...)`) before asserting on `@Published` state
 - When changing `DeviceManager` or view models, cover sorting, deduplication, and edge cases
-- `MenuBarPanelIntegrationTests` runs inside the host app against the **real** status item and panel, so it catches a SwiftUI change that would otherwise leave the shortcut silently doing nothing, or a macOS release where a flyout dismisses the panel it hangs off. Every suite that drives the panel is nested inside it, because that outer `.serialized` is what stops two of them opening and closing the one panel at the same time
+- `MenuBarPanelIntegrationTests` runs inside the host app against the **real** status item and panel, so it catches a SwiftUI change that would otherwise leave the shortcut silently doing nothing, or a macOS release where a flyout dismisses the panel it hangs off. Every suite that drives the panel is nested inside it, because that outer `.serialized` is what stops two of them opening and closing the one panel at the same time. Open the panel there through `MenuBarPanelTestSupport.openSettledPanel(with:)`: a panel closed in the turn it appeared makes macOS 27 drop the next open request, which fails whichever test comes after it
 - Full testing conventions and rationale: [SimulatorManagerTests/README.md](SimulatorManagerTests/README.md)
 
 ## Change guidance
