@@ -69,10 +69,7 @@ extension MenuBarPanelIntegrationTests {
 
             #expect(!MenuBarMenuPresenter.isShowingPanel(button))
 
-            presenter.openMenu()
-            await waitUntil { presenter.panelWindow() != nil }
-
-            let window = try #require(presenter.panelWindow(),
+            let window = try #require(await MenuBarPanelTestSupport.openSettledPanel(with: presenter),
                                       "The `.window`-style MenuBarExtra did not produce a panel window")
 
             #expect(window.isVisible)
@@ -88,15 +85,10 @@ extension MenuBarPanelIntegrationTests {
             let presenter = MenuBarMenuPresenter()
             defer { presenter.closeMenu() }
 
-            presenter.openMenu()
             // From macOS 27 the panel is put on screen before its rows have been measured, so it
-            // only reaches its size a few frames later. A panel that never measures them still
-            // fails below once this gives up.
-            await waitUntil {
-                (presenter.panelWindow()?.contentView?.bounds.height ?? 0) > MenuPanelStyle.rowMinimumHeight * 4
-            }
-
-            let window = try #require(presenter.panelWindow())
+            // only reaches its size a few frames later. The helper waits for that; a panel that
+            // never measures them comes back unsettled and fails below.
+            let window = try #require(await MenuBarPanelTestSupport.openSettledPanel(with: presenter))
             let contentView = try #require(window.contentView)
 
             #expect(contentView.bounds.width == MenuPanelStyle.width)
@@ -120,10 +112,7 @@ extension MenuBarPanelIntegrationTests {
             let button = try #require(presenter.statusItemButton())
             defer { presenter.closeMenu() }
 
-            presenter.openMenu()
-            await waitUntil { presenter.panelWindow() != nil }
-
-            let window = try #require(presenter.panelWindow())
+            let window = try #require(await MenuBarPanelTestSupport.openSettledPanel(with: presenter))
 
             #expect(presenter.closeMenu())
             await waitUntil { !window.isVisible }

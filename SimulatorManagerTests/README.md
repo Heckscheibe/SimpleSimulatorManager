@@ -79,6 +79,22 @@ await waitUntil { viewModel.devices.count == expectedCount }
 (`isLoadingCleanupCandidates`, `deletingCandidateIDs`); `SettingsMenuVisibilityTests` drains
 main-queue turns for Combine bindings. Pick whichever matches the layer under test.
 
+### Driving the real menu bar panel
+
+`MenuBarPanelIntegrationTests` runs against the application's one real status item and panel.
+Open the panel only through `MenuBarPanelTestSupport.openSettledPanel(with:)`, never with
+`openMenu()` followed by a wait for `panelWindow() != nil`.
+
+From macOS 27 the panel comes up a few frames after the request, and closing it in the same
+main-queue turn it became visible makes the menu bar system drop the **next** request for a
+session about one time in three. The test that closed too early passes. The one after it times out
+waiting for a panel that never comes, so the failure moves from run to run. The helper returns only
+once the session is up, the rows are measured and the frame has stopped changing. That also keeps
+flyouts from being placed against a panel that is still growing.
+
+Check for leaked windows by identity, as `hidingLeavesNoWindowsBehind` does, rather than by
+counting `NSApp.windows`: AppKit opens windows of its own while the panel is up.
+
 ### Never index a collection whose size has not been proven
 
 `#expect` **records a failure and keeps going**, so it cannot guard a subscript. An out-of-range

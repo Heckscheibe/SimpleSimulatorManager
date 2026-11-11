@@ -134,27 +134,28 @@ extension MenuBarPanelIntegrationTests {
             defer { menuPresenter.closeMenu() }
 
             let panel = try await Self.openPanel(with: menuPresenter)
-            // Windows closed by an earlier case in this suite can still be on their way out, so the
-            // baseline is what the application settles at rather than what it holds this instant.
-            await drainMainQueue(turns: 10)
-
-            let windowCount = NSApp.windows.count
 
             Self.show(flyouts, atIndex: 0, rootWindow: panel)
             await waitUntil { flyouts.flyoutFrames.first != .zero }
             Self.show(flyouts, atIndex: 1, rootWindow: panel)
-            await waitUntil { flyouts.flyoutFrames.count == 2 }
+            await waitUntil { flyouts.flyoutFrames.count == 2 && flyouts.flyoutFrames[1] != .zero }
+
+            // The chain's own windows, rather than a count of every window in the application:
+            // AppKit puts up windows of its own while the panel is open, and one arriving in the
+            // middle of this case is not a leak. Held weakly, so the test is not what keeps them alive.
+            let chain = MenuBarPanelTestSupport.flyoutWindows(of: flyouts, besides: panel).map(WeakWindow.init)
+
+            try #require(chain.count == 2, "Expected the two flyouts on screen, found \(chain.count) windows")
+
+            let leftBehind = { chain.filter(\.isInApplicationWindowList) }
 
             flyouts.hideAll()
-            await waitUntil { NSApp.windows.count <= windowCount }
+            await waitUntil { leftBehind().isEmpty }
 
             #expect(flyouts.flyoutFrames.isEmpty)
-            // Not equality: a window from an earlier case draining in the meantime takes the count
-            // *below* the baseline, which is not a failure. A leak is what takes it above — a panel
-            // opened and dismissed all day would otherwise accumulate a window per submenu ever
-            // hovered.
-            #expect(NSApp.windows.count <= windowCount,
-                    "\(NSApp.windows.count - windowCount) flyout windows outlived the chain")
+            // A panel opened and dismissed all day would otherwise accumulate a window per submenu
+            // ever hovered.
+            #expect(leftBehind().isEmpty, "\(leftBehind().count) flyout windows outlived the chain")
         }
     }
 }
@@ -164,11 +165,8 @@ private extension MenuBarPanelIntegrationTests.MenuFlyoutPresenterTests {
     static let anchorRowFrame = CGRect(x: 0, y: 60, width: MenuPanelStyle.width, height: 22)
 
     static func openPanel(with presenter: MenuBarMenuPresenter) async throws -> NSWindow {
-        presenter.openMenu()
-        await waitUntil { presenter.panelWindow() != nil }
-
-        return try #require(presenter.panelWindow(),
-                            "The `.window`-style MenuBarExtra did not produce a panel window")
+        try #require(await MenuBarPanelTestSupport.openSettledPanel(with: presenter),
+                     "The `.window`-style MenuBarExtra did not produce a panel window")
     }
 
     static func show(_ presenter: MenuFlyoutPresenter, atIndex index: Int, rootWindow: NSWindow) {
