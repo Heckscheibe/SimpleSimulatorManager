@@ -37,7 +37,25 @@ public protocol SimulatorResetServing: AnyObject, Sendable {
 }
 
 public final class SimulatorResetService: SimulatorResetServing, Sendable {
-    public init() {}
+    /// Blocking `simctl` calls stay off the Swift concurrency cooperative pool — `erase all` can
+    /// hold a thread for minutes, and in the MCP server that pool also serves the stdio transport.
+    /// Serial, because shut down and erase are issued one after the other anyway.
+    private static let workQueue = DispatchQueue(
+        label: "SimulatorResetService.workQueue",
+        qos: .userInitiated
+    )
+
+    /// `xcrun`, through which every command reaches `simctl`. Tests substitute an executable that
+    /// ignores its arguments, so the real path runs without erasing anything.
+    private let simctlLauncherPath: String
+
+    public convenience init() {
+        self.init(simctlLauncherPath: "/usr/bin/xcrun")
+    }
+
+    init(simctlLauncherPath: String) {
+        self.simctlLauncherPath = simctlLauncherPath
+    }
 
     public var didResetAllSimulators: AnyPublisher<Void, Never> {
         didResetAllSimulatorsPublisher.eraseToAnyPublisher()
@@ -79,9 +97,13 @@ public final class SimulatorResetService: SimulatorResetServing, Sendable {
         try await resetAllSimulators()
     }
 
+    /// Unbounded: `erase` and `shutdown` legitimately take a long time on a busy machine, and
+    /// stopping one halfway leaves the simulator in a worse state than waiting.
     private func runSimctlCommand(arguments: [String]) async throws -> String {
-        try await Task {
-            try Process.execute(command: "/usr/bin/xcrun", arguments: ["simctl"] + arguments)
-        }.value
+        let launcherPath = simctlLauncherPath
+
+        return try await Self.workQueue.perform {
+            try Process.execute(command: launcherPath, arguments: ["simctl"] + arguments)
+        }
     }
 }

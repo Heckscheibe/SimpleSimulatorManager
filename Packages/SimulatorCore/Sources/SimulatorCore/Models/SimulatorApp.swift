@@ -30,6 +30,11 @@ public protocol SimulatorApp: Identifiable, Sendable {
     var shortVersion: String? { get }
     /// `CFBundleVersion` as the app's `Info.plist` recorded it.
     var buildVersion: String? { get }
+    /// The app groups the app's `com.apple.security.application-groups` entitlement lists, read
+    /// from its executable by discovery. `nil` when the entitlements could not be read, so the
+    /// app's groups are unknown; an empty set when it has entitlements but no app groups. See
+    /// ``AppGroup/belongs(to:)``.
+    var applicationGroupIdentifiers: Set<String>? { get }
 }
 
 extension SimulatorApp {
@@ -82,6 +87,10 @@ extension SimulatorApp {
     public var isTestRunner: Bool {
         false
     }
+
+    public var applicationGroupIdentifiers: Set<String>? {
+        nil
+    }
 }
 
 /// How an app is recognised as a generated UI test runner.
@@ -117,6 +126,7 @@ public final class SimulatoriOSApp: SimulatorApp {
     public let shortVersion: String?
     public let buildVersion: String?
     public let isTestRunner: Bool
+    public let applicationGroupIdentifiers: Set<String>?
     public let iconName = "iphone.gen3"
 
     public let hasWatchApp: Bool
@@ -132,7 +142,8 @@ public final class SimulatoriOSApp: SimulatorApp {
         bundleModifiedAt: Date? = nil,
         shortVersion: String? = nil,
         buildVersion: String? = nil,
-        isTestRunner: Bool = false
+        isTestRunner: Bool = false,
+        applicationGroupIdentifiers: Set<String>? = nil
     ) {
         self.displayName = displayName
         self.bundleIdentifier = bundleIdentifier
@@ -145,6 +156,7 @@ public final class SimulatoriOSApp: SimulatorApp {
         self.shortVersion = shortVersion
         self.buildVersion = buildVersion
         self.isTestRunner = isTestRunner
+        self.applicationGroupIdentifiers = applicationGroupIdentifiers
     }
 }
 
@@ -159,6 +171,7 @@ public final class SimulatorWatchOSApp: SimulatorApp {
     public let shortVersion: String?
     public let buildVersion: String?
     public let isTestRunner: Bool
+    public let applicationGroupIdentifiers: Set<String>?
     public let iconName = "applewatch"
 
     public let companioniOSAppBundleIdentifier: String?
@@ -174,7 +187,8 @@ public final class SimulatorWatchOSApp: SimulatorApp {
         bundleModifiedAt: Date? = nil,
         shortVersion: String? = nil,
         buildVersion: String? = nil,
-        isTestRunner: Bool = false
+        isTestRunner: Bool = false,
+        applicationGroupIdentifiers: Set<String>? = nil
     ) {
         self.displayName = displayName
         self.bundleIdentifier = bundleIdentifier
@@ -187,5 +201,6 @@ public final class SimulatorWatchOSApp: SimulatorApp {
         self.shortVersion = shortVersion
         self.buildVersion = buildVersion
         self.isTestRunner = isTestRunner
+        self.applicationGroupIdentifiers = applicationGroupIdentifiers
     }
 }

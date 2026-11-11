@@ -9,14 +9,5 @@ import Foundation
 @testable import SimulatorManager
 @testable import SimulatorCore
 
-class MockDeviceAppMonitoringService: DeviceAppMonitoring {
-    // MARK: - Call Tracking
-    
-    var resetMonitoringCalled = false
-    
-    // MARK: - DeviceAppMonitoring Implementation
-    
-    func resetMonitoring() {
-        resetMonitoringCalled = true
-    }
-}
+/// Stands in for `DeviceAppMonitoringService` so a view model under test starts no FSEvents watches.
+class MockDeviceAppMonitoringService: DeviceAppMonitoring {}

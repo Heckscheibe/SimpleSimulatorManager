@@ -16,6 +16,9 @@ class MockDeviceManager: DeviceManaging {
     private let deviceTypesSubject = CurrentValueSubject<[DeviceType], Never>([])
     private let devicesSubject = CurrentValueSubject<[Device], Never>([])
     private let recentInstalledAppsSubject = CurrentValueSubject<[AppChange], Never>([])
+    /// `false` by default: a mock has nothing to load, and tests that build the menu straight away
+    /// expect the loaded state.
+    private let isLoadingInitialDevicesSubject = CurrentValueSubject<Bool, Never>(false)
     
     var deviceTypes: AnyPublisher<[DeviceType], Never> {
         deviceTypesSubject.eraseToAnyPublisher()
@@ -28,17 +31,19 @@ class MockDeviceManager: DeviceManaging {
     var recentInstalledApps: AnyPublisher<[AppChange], Never> {
         recentInstalledAppsSubject.eraseToAnyPublisher()
     }
+
+    var isLoadingInitialDevices: AnyPublisher<Bool, Never> {
+        isLoadingInitialDevicesSubject.eraseToAnyPublisher()
+    }
     
     // MARK: - Mock Data
     
     private var mockDevices: [Device] = []
     private var mockDeviceTypes: [DeviceType] = []
-    private var mockRecentAppChanges: [AppChange] = []
     private var mockRecentInstalledApps: [AppChange] = []
     
     // MARK: - Call Tracking
     
-    var updateDevicesCalled = false
     var resetAndLoadDevicesCalled = false
     var refreshDeviceCalled = false
     var getDeviceCalled = false
@@ -62,14 +67,16 @@ class MockDeviceManager: DeviceManaging {
         deviceTypesSubject.send(deviceTypes)
     }
     
+    func setMockIsLoadingInitialDevices(_ isLoading: Bool) {
+        isLoadingInitialDevicesSubject.send(isLoading)
+    }
+
     func setMockRecentInstalledApps(_ apps: [AppChange]) {
         mockRecentInstalledApps = apps
         recentInstalledAppsSubject.send(apps)
     }
     
     func simulateAppChanges(_ changes: [AppChange]) {
-        mockRecentAppChanges.append(contentsOf: changes)
-        
         // Simulate the lifecycle management for installed apps
         var currentInstalled = mockRecentInstalledApps
         for change in changes {
@@ -100,10 +107,6 @@ class MockDeviceManager: DeviceManaging {
     
     // MARK: - DeviceManagerProtocol Implementation
     
-    func updateDevices() {
-        updateDevicesCalled = true
-    }
-
     func resetAndLoadDevices() async {
         // Nonisolated async, so this would otherwise run on a generic executor: mutate state and
         // publish on the main queue, matching what the real DeviceManager does and keeping the
@@ -143,7 +146,6 @@ class MockDeviceManager: DeviceManaging {
     func updateRecentApps(_ changes: [AppChange]) {
         updateRecentAppsCalled = true
         lastAddedChanges = changes
-        mockRecentAppChanges.append(contentsOf: changes)
     }
 
     func setHidesTestRunnerApps(_ hides: Bool) {
@@ -151,7 +153,6 @@ class MockDeviceManager: DeviceManaging {
     }
 
     func setMockRecentAppChanges(_ changes: [AppChange]) {
-        mockRecentAppChanges = changes
         recentInstalledAppsSubject.send(changes)
     }
 }

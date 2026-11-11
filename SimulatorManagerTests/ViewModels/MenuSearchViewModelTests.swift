@@ -75,6 +75,7 @@ struct MenuSearchViewModelTests {
         context.deviceManager.setMockDevices([device])
         context.deviceManager.setMockRecentInstalledApps([recentApp])
         await context.settle()
+        context.viewModel.query = "weather"
 
         #expect(context.searchService.lastDevices.map(\.udid) == ["device-1"])
         #expect(context.searchService.lastRecentApps.count == 1)
@@ -84,6 +85,87 @@ struct MenuSearchViewModelTests {
         await context.settle()
 
         #expect(!context.searchService.lastVisiblePlatforms.contains(.iPhone))
+    }
+
+    @Test("Changes with no query only mark the index stale; the first query rebuilds it once")
+    func changesWithoutAQueryDoNotRebuild() async {
+        let context = Context()
+        defer { context.tearDown() }
+
+        let device = TestDataHelpers.createMockDevice(udid: "device-1", name: "iPhone 16")
+
+        // Launch, a full reload (devices then recent apps), a single-device refresh and a
+        // preference change, all while nobody is searching.
+        await context.settle()
+        context.deviceManager.setMockDevices([device])
+        context.deviceManager.setMockRecentInstalledApps([TestDataHelpers.createMockAppChange(device: device)])
+        await context.settle()
+        context.deviceManager.setMockDevices([device])
+        context.settings.hideTestRunnerApps = true
+        context.settings.showIOS = false
+        await context.settle()
+
+        #expect(context.searchService.indexUpdateCount == 0)
+
+        context.viewModel.query = "w"
+
+        #expect(context.searchService.indexUpdateCount == 1)
+        #expect(context.searchService.lastDevices.map(\.udid) == ["device-1"])
+        #expect(context.searchService.lastRecentApps.count == 1)
+        #expect(context.searchService.lastHidesTestRunnerApps)
+        #expect(!context.searchService.lastVisiblePlatforms.contains(.iPhone))
+
+        // Further keystrokes match against the index already built.
+        context.viewModel.query = "we"
+        context.viewModel.query = "wea"
+        context.viewModel.clear()
+
+        #expect(context.searchService.indexUpdateCount == 1)
+    }
+
+    @Test("A query typed before the first device load still sees the devices once they arrive")
+    func devicesArrivingAfterTheFirstQueryAreSearched() async {
+        let context = Context()
+        defer { context.tearDown() }
+
+        // The device manager loads in the background, so the panel can be searched before
+        // anything has been published.
+        context.viewModel.query = "iphone"
+        #expect(context.searchService.lastDevices.isEmpty)
+
+        context.searchService.stubbedResults = [context.appResult()]
+        context.deviceManager.setMockDevices([TestDataHelpers.createMockDevice(udid: "device-1")])
+        await context.settle()
+
+        #expect(context.searchService.lastDevices.map(\.udid) == ["device-1"])
+        #expect(context.viewModel.results.map(\.title) == ["Weather Station"])
+
+        context.viewModel.clear()
+        context.deviceManager.setMockDevices([TestDataHelpers.createMockDevice(udid: "device-2")])
+        await context.settle()
+        let rebuilds = context.searchService.indexUpdateCount
+        context.viewModel.query = "iphone"
+
+        #expect(context.searchService.indexUpdateCount == rebuilds + 1)
+        #expect(context.searchService.lastDevices.map(\.udid) == ["device-2"])
+    }
+
+    @Test("A burst of changes while a query is live rebuilds the index once")
+    func burstWithALiveQueryRebuildsOnce() async {
+        let context = Context()
+        defer { context.tearDown() }
+
+        await context.settle()
+        context.viewModel.query = "weather"
+        let rebuilds = context.searchService.indexUpdateCount
+
+        let device = TestDataHelpers.createMockDevice(udid: "device-1")
+        context.deviceManager.setMockDevices([device])
+        context.deviceManager.setMockRecentInstalledApps([TestDataHelpers.createMockAppChange(device: device)])
+        await context.settle()
+
+        #expect(context.searchService.indexUpdateCount == rebuilds + 1)
+        #expect(context.searchService.lastRecentApps.count == 1)
     }
 
     @Test("A device change while a query is live refreshes the results")

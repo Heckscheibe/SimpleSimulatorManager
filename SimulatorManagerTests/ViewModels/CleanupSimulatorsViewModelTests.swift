@@ -242,6 +242,34 @@ struct CleanupSimulatorsViewModelTests {
         #expect(viewModel.deletingCandidateIDs.isEmpty)
     }
 
+    @Test("When the rescan after a deletion fails, the deleted simulator does not stay listed")
+    func failedRescanDropsDeletedCandidates() async {
+        let deviceManager = MockDeviceManager()
+        let cleanupService = MockSimulatorCleanupService()
+        let deletedCandidate = makeCandidate(id: "rescan-deleted")
+        let keptCandidate = makeCandidate(id: "rescan-kept")
+
+        await cleanupService.setCleanupCandidates([deletedCandidate, keptCandidate])
+        await cleanupService.setFailLoadsAfterDelete(true)
+
+        let viewModel = makeViewModel(
+            cleanupService: cleanupService,
+            deviceManager: deviceManager,
+            confirmer: MockDestructiveActionConfirmer()
+        )
+
+        viewModel.refreshCleanupCandidates()
+        await waitForRefreshToFinish(viewModel)
+        viewModel.delete(deletedCandidate)
+        await waitForDeletionsToFinish(viewModel)
+
+        // The deletion succeeded even though the rescan did not: a row left behind would offer to
+        // delete a simulator that is already gone, and fail with a more confusing error.
+        #expect(await cleanupService.deletedCandidateIDs == [deletedCandidate.id])
+        #expect(viewModel.cleanupCandidates == [keptCandidate])
+        #expect(viewModel.errorMessage == "Mock delete failure for rescan")
+    }
+
     // MARK: - Confirmation of irreversible deletions
 
     @Test("Declining the confirmation deletes nothing")
@@ -398,5 +426,9 @@ private extension MockSimulatorCleanupService {
 
     func setFailingCandidateIDs(_ failingCandidateIDs: Set<String>) {
         self.failingCandidateIDs = failingCandidateIDs
+    }
+
+    func setFailLoadsAfterDelete(_ failLoadsAfterDelete: Bool) {
+        self.failLoadsAfterDelete = failLoadsAfterDelete
     }
 }

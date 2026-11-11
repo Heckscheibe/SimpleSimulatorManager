@@ -19,6 +19,7 @@ struct AppInfoPlist: DecodableURLContainer, Sendable {
         case cfBundleDisplayName = "CFBundleDisplayName"
         case cfBundleName = "CFBundleName"
         case cfBundleIdentifier = "CFBundleIdentifier"
+        case cfBundleExecutable = "CFBundleExecutable"
         case cfBundleShortVersionString = "CFBundleShortVersionString"
         case cfBundleVersion = "CFBundleVersion"
         case platform = "DTPlatformName"
@@ -33,6 +34,8 @@ struct AppInfoPlist: DecodableURLContainer, Sendable {
     let cfBundleDisplayName: String?
     let cfBundleName: String
     let cfBundleIdentifier: String
+    /// The main executable's file name, which is where a simulator build keeps its entitlements.
+    let cfBundleExecutable: String?
     /// The marketing and build versions, as the bundle recorded them. Snapshots put both in their
     /// manifest so a restore can warn when the installed app is no longer the one captured.
     let cfBundleShortVersionString: String?
@@ -50,6 +53,17 @@ struct AppInfoPlist: DecodableURLContainer, Sendable {
     var hasCompanionWatchApp = false
     var url: URL?
 
+    /// The bundle's main executable, `nil` when the bundle names none or names something that is
+    /// not a file directly inside it.
+    var executableURL: URL? {
+        guard let url, let cfBundleExecutable, !cfBundleExecutable.isEmpty,
+              !cfBundleExecutable.contains("/"), cfBundleExecutable != "..", cfBundleExecutable != "." else {
+            return nil
+        }
+
+        return url.appendingPathComponent(cfBundleExecutable)
+    }
+
     /// Decoded by hand only for the two version keys: both are strings by convention, but a build
     /// that wrote either as a number would fail the synthesised decode and drop the app from
     /// discovery entirely. A version this app cannot read is worth losing; the app is not.
@@ -59,6 +73,7 @@ struct AppInfoPlist: DecodableURLContainer, Sendable {
         cfBundleDisplayName = try container.decodeIfPresent(String.self, forKey: .cfBundleDisplayName)
         cfBundleName = try container.decode(String.self, forKey: .cfBundleName)
         cfBundleIdentifier = try container.decode(String.self, forKey: .cfBundleIdentifier)
+        cfBundleExecutable = try? container.decodeIfPresent(String.self, forKey: .cfBundleExecutable)
         platform = try container.decode(AppTargetPlatform.self, forKey: .platform)
         wkCompanionAppBundleIdentifier = try container.decodeIfPresent(String.self, forKey: .wkCompanionAppBundleIdentifier)
         cfBundleShortVersionString = Self.decodeVersion(from: container, forKey: .cfBundleShortVersionString)

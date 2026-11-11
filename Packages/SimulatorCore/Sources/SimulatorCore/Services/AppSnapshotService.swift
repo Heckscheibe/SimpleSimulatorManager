@@ -211,10 +211,11 @@ public final class AppSnapshotService: AppSnapshotting {
         }
 
         // Every payload is checked before a single byte is written. A restore that fails halfway
-        // leaves a container that is neither the old state nor the new one.
+        // leaves a container that is neither the old state nor the new one. A payload reached
+        // through a symlink counts as missing: it is not the snapshot's data.
         try await Self.workQueue.perform {
             for container in manifest.containers {
-                guard FileManager.default.directoryExistsAtURL(snapshot.payloadURL(for: container)) else {
+                guard snapshot.hasPayloadDirectory(for: container) else {
                     throw AppSnapshotError.missingPayload(containerName: container.kind.displayName)
                 }
             }
@@ -301,8 +302,8 @@ public final class AppSnapshotService: AppSnapshotting {
     // MARK: - Diff
 
     public func diff(_ snapshot: AppSnapshot, against other: AppSnapshot) async throws -> AppSnapshotDiff {
-        let oldContainers = Self.payloadURLsByKind(of: snapshot)
-        let newContainers = Self.payloadURLsByKind(of: other)
+        let oldContainers = try Self.payloadURLsByKind(of: snapshot)
+        let newContainers = try Self.payloadURLsByKind(of: other)
         // A payload only ever holds what its snapshot captured, so only what both hold is compared:
         // otherwise a database-only snapshot would report every document of a full one as removed,
         // and every cache file one side captured would show up as a change.
@@ -325,7 +326,7 @@ public final class AppSnapshotService: AppSnapshotting {
     }
 
     public func diff(_ snapshot: AppSnapshot, againstLiveContainersOf target: AppSnapshotTarget) async throws -> AppSnapshotDiff {
-        let oldContainers = Self.payloadURLsByKind(of: snapshot)
+        let oldContainers = try Self.payloadURLsByKind(of: snapshot)
         let newContainers = Self.destinationURLsByKind(for: target)
         // The live container still holds whatever the snapshot left out, so the same scope is
         // applied to it. Otherwise every cache file the app has written since would be reported as
@@ -430,6 +431,9 @@ private extension AppSnapshotService {
 
     /// What ``capture(_:label:scope:isSafetySnapshot:progress:)`` would refuse, found without copying:
     /// no container at all, or a narrower scope with nothing in it.
+    ///
+    /// Runs before the app is stopped, so its walk is only an existence check; the capture lists
+    /// the containers again afterwards.
     static func checkCapturable(_ target: AppSnapshotTarget, scope: SnapshotScope) throws {
         let containerURLs = ([target.dataContainerURL] + target.appGroupContainers.map(\.url))
             .filter { FileManager.default.directoryExistsAtURL($0) }
@@ -467,18 +471,21 @@ private extension AppSnapshotService {
             sources.append((.appGroup(identifier: group.identifier), group.url, "app-group-\(index)"))
         }
 
-        // Sizing up front costs one extra walk but is what makes progress a fraction rather than a
-        // spinner, and a container large enough to need progress is large enough to warrant it.
-        // The same walk also counts the files, which is how a narrower snapshot that found nothing
-        // is caught before a manifest is written for it.
-        let sizes = sources.map { SnapshotContainerFiles.fileSizesByRelativePath(in: $0.url, scope: scope) }
-        let totalByteCount = sizes.reduce(Int64(0)) { $0 + $1.values.reduce(0, +) }
+        // Every container is listed before anything is copied, which is what makes progress a
+        // fraction rather than a spinner. The copy then works through that same list, so a scoped
+        // capture reads each file's header once. The listing also counts the files, which is how a
+        // narrower snapshot that found nothing is caught before a manifest is written for it.
+        //
+        // Listed here, after any terminate, and never reused from ``checkCapturable(_:scope:)``:
+        // stopping the app changes the very files being captured — a SQLite `-wal` or `-shm`
+        // appearing or going, Realm's auxiliary files.
+        let listings = sources.map { SnapshotContainerFiles.listContainer(at: $0.url, scope: scope) }
+        let totalByteCount = listings.reduce(Int64(0)) { $0 + $1.fileByteCount }
 
-        let containers = try sources.map { source in
+        let containers = try zip(sources, listings).map { source, listing in
             let byteSize = try SnapshotContainerFiles.copyContainer(
-                at: source.url,
+                listing,
                 to: containersDirectoryURL.appendingPathComponent(source.payloadDirectoryName, isDirectory: true),
-                scope: scope,
                 totalByteCount: totalByteCount,
                 progress: progress
             )
@@ -488,7 +495,7 @@ private extension AppSnapshotService {
                                      byteSize: byteSize)
         }
 
-        return (containers, sizes.reduce(0) { $0 + $1.count })
+        return (containers, listings.reduce(0) { $0 + $1.fileCount })
     }
 }
 
@@ -553,10 +560,16 @@ private extension AppSnapshotService {
         return urlsByKind
     }
 
-    static func payloadURLsByKind(of snapshot: AppSnapshot) -> [SnapshotContainerKind: URL] {
+    /// The same payload check a restore makes: a diff lists file names and sizes, so a payload that
+    /// is missing or symlinked out of the snapshot is refused rather than walked.
+    static func payloadURLsByKind(of snapshot: AppSnapshot) throws -> [SnapshotContainerKind: URL] {
         var urlsByKind: [SnapshotContainerKind: URL] = [:]
 
         for container in snapshot.manifest.containers {
+            guard snapshot.hasPayloadDirectory(for: container) else {
+                throw AppSnapshotError.missingPayload(containerName: container.kind.displayName)
+            }
+
             urlsByKind[container.kind] = snapshot.payloadURL(for: container)
         }
 

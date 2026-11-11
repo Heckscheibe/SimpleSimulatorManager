@@ -104,7 +104,7 @@ struct DeviceLoaderTests {
 
     @Test("Full load matches what DeviceManager publishes")
     @MainActor
-    func fullLoadMatchesDeviceManager() throws {
+    func fullLoadMatchesDeviceManager() async throws {
         let fixture = try DeviceFixtureDirectory()
         defer { fixture.remove() }
 
@@ -118,6 +118,7 @@ struct DeviceLoaderTests {
         let loaded = try #require(DeviceLoader(devicesDirectoryURL: fixture.url).loadDevices())
 
         let deviceManager = DeviceManager(devicesDirectoryURL: fixture.url)
+        await deviceManager.waitForInitialLoad()
         var cancellables: Set<AnyCancellable> = []
         var publishedDevices: [Device] = []
         var publishedRecentApps: [AppChange] = []
