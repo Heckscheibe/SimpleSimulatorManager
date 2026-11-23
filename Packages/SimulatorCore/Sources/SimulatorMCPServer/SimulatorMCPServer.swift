@@ -14,7 +14,7 @@ public enum SimulatorMCPServer {
     public static let executableName = MCPServerLaunch.executableName
     /// The app's `MARKETING_VERSION`. fastlane's `release` lane rewrites this line when it bumps the
     /// version; `LaunchCommandTests` fails if the two ever drift.
-    public static let version = "1.4.0"
+    public static let version = "1.5.0"
 
     static let instructions = """
     Answers questions about the apps installed in local Apple simulators: where their data, \

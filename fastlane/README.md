@@ -53,7 +53,23 @@ Write the GitHub release notes for a version: GitHub's generated pull request li
 [bundle exec] fastlane mac github_release
 ```
 
-Create the GitHub release v<version> from release/SimulatorManager.zip after confirming version and notes. Reuses release/RELEASE_NOTES-<version>.md if present (regenerate:true to rewrite). Options: version, target, previous_tag, regenerate, dry_run. Returns whether it was published
+Create the GitHub release v<version> from release/SimulatorManager-<version>.zip after confirming version and notes. Reuses release/RELEASE_NOTES-<version>.md if present (regenerate:true to rewrite). Options: version, target, previous_tag, regenerate, dry_run. Returns whether it was published
+
+### mac generate_appcast
+
+```sh
+[bundle exec] fastlane mac generate_appcast
+```
+
+Add a release ZIP to the archive and regenerate the signed Sparkle appcast (release/appcast.xml)
+
+### mac publish_appcast
+
+```sh
+[bundle exec] fastlane mac publish_appcast
+```
+
+Publish release/appcast.xml to the develop branch, which SUFeedURL points at
 
 ### mac bump_homebrew_cask
 

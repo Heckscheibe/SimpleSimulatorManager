@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3C99C0F22F00000100C0DE99 /* DeviceFixtureDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C99C0F12F00000100C0DE99 /* DeviceFixtureDirectory.swift */; };
 		3C99C0032F00000100C0DE99 /* SimulatorCore in Frameworks */ = {isa = PBXBuildFile; productRef = 3C99C0022F00000100C0DE99 /* SimulatorCore */; };
+		3C99C0F22F00000100C0DE99 /* DeviceFixtureDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C99C0F12F00000100C0DE99 /* DeviceFixtureDirectory.swift */; };
 		3C99C1072F00000100C0DE99 /* SimulatorMCPServer in Frameworks */ = {isa = PBXBuildFile; productRef = 3C99C1062F00000100C0DE99 /* SimulatorMCPServer */; };
 		3C99C10E2F00000100C0DE99 /* simple-simulator-mcp in Embed MCP Server */ = {isa = PBXBuildFile; fileRef = 3C99C1022F00000100C0DE99 /* simple-simulator-mcp */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		3C99C2032F00000100C0DE99 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 3C99C2022F00000100C0DE99 /* Sparkle */; };
@@ -54,10 +54,10 @@
 
 /* Begin PBXFileReference section */
 		3750F9272B2D07AD00F578ED /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		3C99C0F12F00000100C0DE99 /* DeviceFixtureDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeviceFixtureDirectory.swift; path = Packages/SimulatorCore/Tests/SimulatorCoreTestSupport/DeviceFixtureDirectory.swift; sourceTree = SOURCE_ROOT; };
 		37F1DA532AD6E48F00C059DB /* Simulator Manager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Simulator Manager.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA642AD6E49000C059DB /* SimulatorManagerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		37F1DA6E2AD6E49000C059DB /* SimulatorManagerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C99C0F12F00000100C0DE99 /* DeviceFixtureDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeviceFixtureDirectory.swift; path = Packages/SimulatorCore/Tests/SimulatorCoreTestSupport/DeviceFixtureDirectory.swift; sourceTree = SOURCE_ROOT; };
 		3C99C1022F00000100C0DE99 /* simple-simulator-mcp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "simple-simulator-mcp"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -78,6 +78,8 @@
 		};
 		3C99C1012F00000100C0DE99 /* SimulatorManagerMCP */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = SimulatorManagerMCP;
 			sourceTree = "<group>";
 		};
@@ -268,7 +270,7 @@
 			);
 			mainGroup = 37F1DA4A2AD6E48E00C059DB;
 			packageReferences = (
-				3C99C0012F00000100C0DE99 /* XCLocalSwiftPackageReference "Packages/SimulatorCore" */,
+				3C99C0012F00000100C0DE99 /* XCLocalSwiftPackageReference "SimulatorCore" */,
 				3C99C2012F00000100C0DE99 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -529,7 +531,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 59;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
@@ -552,7 +554,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.5.0;
 				MERGEABLE_LIBRARY = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
 				PRODUCT_MODULE_NAME = SimulatorManager;
@@ -583,7 +585,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 59;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
@@ -606,7 +608,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.5.0;
 				MERGEABLE_LIBRARY = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager;
 				PRODUCT_MODULE_NAME = SimulatorManager;
@@ -632,12 +634,12 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 59;
 				DEAD_CODE_STRIPPING = YES;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = C26VF67R9C;
 				INFOPLIST_FILE = SimulatorManagerTests/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimulatorManagerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -652,12 +654,12 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 59;
 				DEAD_CODE_STRIPPING = YES;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = C26VF67R9C;
 				INFOPLIST_FILE = SimulatorManagerTests/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimulatorManagerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -670,10 +672,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 59;
 				DEAD_CODE_STRIPPING = YES;
 				INFOPLIST_FILE = SimulatorManagerUITests/Info.plist;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimulatorManagerUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -686,10 +688,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 59;
 				DEAD_CODE_STRIPPING = YES;
 				INFOPLIST_FILE = SimulatorManagerUITests/Info.plist;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimulatorManagerUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -704,14 +706,14 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 59;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = C26VF67R9C;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager.mcp;
 				PRODUCT_NAME = "simple-simulator-mcp";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -728,14 +730,14 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 59;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = C26VF67R9C;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nicolashiller.SimpleSimulatorManager.mcp;
 				PRODUCT_NAME = "simple-simulator-mcp";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -797,7 +799,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		3C99C0012F00000100C0DE99 /* XCLocalSwiftPackageReference "Packages/SimulatorCore" */ = {
+		3C99C0012F00000100C0DE99 /* XCLocalSwiftPackageReference "SimulatorCore" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SimulatorCore;
 		};
@@ -815,11 +817,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		3C99C2022F00000100C0DE99 /* Sparkle */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3C99C2012F00000100C0DE99 /* XCRemoteSwiftPackageReference "Sparkle" */;
-			productName = Sparkle;
-		};
 		3C99C0022F00000100C0DE99 /* SimulatorCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SimulatorCore;
@@ -827,6 +824,11 @@
 		3C99C1062F00000100C0DE99 /* SimulatorMCPServer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SimulatorMCPServer;
+		};
+		3C99C2022F00000100C0DE99 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3C99C2012F00000100C0DE99 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
