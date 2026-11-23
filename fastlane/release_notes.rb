@@ -7,7 +7,8 @@ require "tmpdir"
 
 # Builds the GitHub release notes: GitHub's own auto-generated "What's Changed" lines (merge
 # message, PR link, committer — kept verbatim) grouped into Features / Improvements / Bugfixes,
-# each with a short user-facing summary written by Claude.
+# each with a short user-facing summary written by Claude. Pull requests with no effect a user of the
+# app would notice (docs, version bumps, CI, dependency updates, refactors, test fixes) are left out.
 #
 # Pure Ruby, no fastlane dependency, so it can be exercised outside a lane
 # (`ruby -r ./fastlane/release_notes.rb -e '...'`). Errors are raised as ReleaseNotes::Error and
@@ -21,6 +22,8 @@ module ReleaseNotes
     { key: "bugfix", heading: "Bugfixes" }
   ].freeze
   FALLBACK_CATEGORY = "improvement"
+  # Claude's verdict for a pull request that does not belong in the notes. Not a section: render() drops it.
+  INTERNAL_CATEGORY = "internal"
   MAX_SENTENCES = 3
   # Keeps the prompt bounded when a PR body carries a pasted log or a huge checklist.
   MAX_PR_BODY_CHARS = 4000
@@ -78,13 +81,17 @@ module ReleaseNotes
       - "category": one of
           "feature"     a new user-visible capability,
           "improvement" a better, faster, more reliable or more polished existing behaviour,
-          "bugfix"      a fix for something that was broken.
-        Maintenance with no visible effect (CI, dependency bumps, docs, refactors, tests) is "improvement".
+          "bugfix"      a fix for something that was broken,
+          "internal"    NOT shown in the release notes: nothing a user of the app would notice. This covers
+                        README and other documentation, version or build number bumps, release tooling, CI,
+                        dependency updates, refactors, code style, and added or repaired tests. A fix for a
+                        flaky or failing test is "internal", not "bugfix". When in doubt about whether a user
+                        would notice, choose "internal".
+        Describe only what a user of the app sees or can do; never mention the repository, its tooling or tests.
       - "summary": AT MOST #{MAX_SENTENCES} short sentences, in English, saying what this adds or improves FOR THE USER of the app.
         Plain language, present tense, no implementation details unless the user would notice them, no PR
         numbers, no headings, no bullet points. Inline `code` and **bold** are fine for UI names and shortcuts.
-        For maintenance with no visible effect, say so in one sentence (for example "Internal change with no
-        user-visible effect.").
+        For "internal" pull requests use an empty string.
 
       Answer with ONE JSON object and nothing else (no code fence, no commentary), keyed by pull request number:
       {"123": {"category": "feature", "summary": "..."}, "124": {"category": "bugfix", "summary": "..."}}
@@ -108,7 +115,11 @@ module ReleaseNotes
       output, error, status = Open3.capture3(*args, stdin_data: prompt, chdir: dir, binmode: true)
       output.force_encoding(Encoding::UTF_8)
       error.force_encoding(Encoding::UTF_8)
-      raise Error, "`#{command} -p` failed (exit #{status.exitstatus}): #{error.strip}" unless status.success?
+      unless status.success?
+        # `claude -p` reports some failures (an expired login, for one) on stdout, not stderr.
+        detail = [error, output].map(&:strip).reject(&:empty?).join("\n")
+        raise Error, "`#{command} -p` failed (exit #{status.exitstatus}): #{detail}"
+      end
 
       output
     end
@@ -124,7 +135,7 @@ module ReleaseNotes
     parsed = JSON.parse(json)
     raise Error, "Claude's answer was not a JSON object:\n#{answer}" unless parsed.is_a?(Hash)
 
-    valid = CATEGORIES.map { |category| category[:key] }
+    valid = CATEGORIES.map { |category| category[:key] } + [INTERNAL_CATEGORY]
     parsed.each_with_object({}) do |(number, value), result|
       next unless number.to_s.match?(/\A\d+\z/) && value.is_a?(Hash)
 
@@ -143,9 +154,16 @@ module ReleaseNotes
     text.to_s.strip.split(/(?<=[.!?])\s+(?=[A-Z0-9`*"'(])/).size
   end
 
-  # Pull requests whose summary is missing or longer than the three sentences asked for.
+  def internal?(classification, entry)
+    classification.dig(entry.number, :category) == INTERNAL_CATEGORY
+  end
+
+  # Pull requests whose summary is missing or longer than the three sentences asked for. Internal
+  # ones are not shown, so they need no summary.
   def problems(generated, classification)
     generated.entries.filter_map do |entry|
+      next if internal?(classification, entry)
+
       summary = classification.dig(entry.number, :summary)
       if summary.nil?
         "##{entry.number} has no summary"
@@ -157,7 +175,7 @@ module ReleaseNotes
 
   def render(generated, classification)
     sections = CATEGORIES.filter_map do |category|
-      entries = generated.entries.select do |entry|
+      entries = generated.entries.reject { |entry| internal?(classification, entry) }.select do |entry|
         (classification.dig(entry.number, :category) || FALLBACK_CATEGORY) == category[:key]
       end
       next if entries.empty?

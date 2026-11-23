@@ -46,6 +46,39 @@ class ReleaseNotesHtmlTest < Minitest::Test
   end
 end
 
+class ReleaseNotesInternalTest < Minitest::Test
+  BODY = <<~MD
+    ## What's Changed
+    * Add search by @a in https://github.com/o/r/pull/1
+    * Update README by @a in https://github.com/o/r/pull/2
+    * Bump version to 1.5.0 by @a in https://github.com/o/r/pull/3
+
+    **Full Changelog**: https://github.com/o/r/compare/v1.4.0...v1.5.0
+  MD
+
+  ANSWER = <<~JSON
+    {"1": {"category": "feature", "summary": "Search the menu."},
+     "2": {"category": "internal", "summary": ""},
+     "3": {"category": "internal", "summary": ""}}
+  JSON
+
+  def generated = ReleaseNotes.parse_generated(BODY)
+  def classification = ReleaseNotes.parse_classification(ANSWER)
+
+  def test_internal_pull_requests_are_left_out
+    notes = ReleaseNotes.render(generated, classification)
+
+    assert_includes notes, "Add search"
+    refute_includes notes, "README"
+    refute_includes notes, "Bump version"
+    assert_includes notes, "**Full Changelog**"
+  end
+
+  def test_internal_pull_requests_need_no_summary
+    assert_empty ReleaseNotes.problems(generated, classification)
+  end
+end
+
 class AppcastTest < Minitest::Test
   PREFIX = "https://github.com/o/r/releases/download/"
 
