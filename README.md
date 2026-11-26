@@ -6,9 +6,10 @@
 
 **A macOS menu bar app that gets you straight to the files inside your Xcode simulators.**
 
-Open any simulator app's data container, `.app` package, Documents folder, `UserDefaults` or shared
-App Group in Finder — without hunting through CoreSimulator UUIDs. Then clean up the dead simulators
-quietly eating your disk.
+Type to find any simulator or app, then open its data container, `.app` package, Documents folder,
+`UserDefaults` or shared App Group in Finder — without hunting through CoreSimulator UUIDs. Snapshot
+an app's database to test a migration, let a coding agent query your simulators, and clean up the
+dead simulators and runtimes quietly eating your disk.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat)](LICENSE)
 [![Platform](https://img.shields.io/badge/macOS-15.0%2B-lightgrey?style=flat&logo=apple)](#requirements)
@@ -22,7 +23,9 @@ quietly eating your disk.
 brew install --cask heckscheibe/tap/simple-simulator-manager
 ```
 
-<img width="380" alt="The Simple Simulator Manager menu, showing recent apps with an app submenu open, the simulator list grouped by device, the section visibility toggles, Settings… and the cleanup and reset actions" src="Screenshots/Screenshot 2.jpeg" />
+<img width="620" alt="Animated tour: opening the panel, hovering an app, and browsing its Copy Path, Copy UserDefaults as JSON and Save Snapshot to Folder options" src="Screenshots/usage.gif" />
+
+<img width="340" alt="The Simple Simulator Manager panel with its search field, Recent Apps showing how long ago each app was installed, the simulator list, the section toggles, Settings… and the cleanup and reset actions" src="Screenshots/menu-panel.jpeg" />
 
 ---
 
@@ -41,40 +44,64 @@ Simple Simulator Manager puts it two clicks from the menu bar.
 
 ## Features
 
+**Find it by typing**
+- The panel opens with its search field focused: type to filter devices and apps by name, bundle
+  identifier or OS version, and press **↩** to open the top hit
+- A global shortcut opens it from anywhere — **⌃⌥⌘S** by default
+- Submenus open as flyouts beside the panel, like a native menu
+
 **Reach any app's files**
 - Every installed simulator, grouped by device type and OS version
 - Per app: **App Folder**, **Documents Folder**, **App Package** and **User Defaults**
 - Per app group: **Group Folder** and **Group UserDefaults**
 - **Simulator Folder** for the device's own directory
+- **Copy Path** puts a container's folder path on the clipboard, with spaces escaped so it pastes
+  straight into a terminal
+- **Copy UserDefaults as JSON** copies an app's or app group's preferences, for all domains at once
+  or a single one
 
 **Recent apps**
 - The most recently installed and updated apps across *all* simulators, with device context
+- Each row shows how long ago the app was installed, and installs older than a threshold are
+  flagged as stale (7 days by default, adjustable in Settings…)
 - Updates live as you build and install — no manual refresh
-- Can be hidden if you don't want it
+- UI test runner apps are hidden by default; Recent Apps itself can be hidden too
 
 **Snapshots for database migration testing**
-- **Save Snapshot to Folder** copies an app's data — everything, only its database (SQLite, Core
+- **Save Snapshot to Folder…** copies an app's data — everything, only its database (SQLite, Core
   Data, SwiftData, GRDB, Realm), only its UserDefaults, or both — so you keep exactly what an older
-  build left behind
+  build left behind. It shows progress in the menu and reveals the result in Finder
 - Built for testing migrations: save the old build's database before installing the new build, and
   the migrated one before trying a downgrade
 - With the [MCP server](#use-with-ai-agents-mcp), an agent captures, restores and diffs the data
   itself, so it can run a migration, a relaunch or a downgrade again and again from the same data
 
+**Use with AI agents (MCP)**
+- A built-in [MCP server](#use-with-ai-agents-mcp) lets Claude Code, VS Code Copilot, Codex or Cursor
+  list your simulators and apps, find their containers and clean up. Reading UserDefaults,
+  destructive actions and snapshots stay off until you opt in
+- **Settings… → Agent Integration (MCP)** gives you a ready-to-paste config for each agent
+
 **Cleanup**
-- Detects unavailable, orphaned and otherwise invalid simulators
-- Shows the deletion reason, disk usage and last boot time before you remove anything
-- Delete individually, grouped by OS version, or all at once
+- **Cleanup Simulators** detects unavailable, orphaned and otherwise invalid simulators, and shows
+  the deletion reason, disk usage and last boot time before you remove anything. Delete
+  individually, grouped by OS version, or all at once
+- **Cleanup Runtimes** offers stale simulator runtimes for removal: unusable ones, ones superseded
+  by a newer build, and ones unused for 90 days. Deletion is always confirmed and shows the space
+  freed
 
 **Reset**
 - Erase a single simulator from its own menu
 - Bulk **Reset All Simulators** with progress and a confirmation step
 
 **Keyboard and settings**
-- A global shortcut opens the menu from anywhere — **⌃⌥⌘S** by default
-- Once the menu is open, the arrow keys navigate it, Return activates and typing jumps to an entry
-- **Settings…** opens a window to rebind or clear the shortcut, and to show or hide Recent Apps and
-  the individual platform sections
+- The whole panel works from the keyboard: arrow keys move and enter or leave submenus, **↩**
+  activates, **⌘↩** and **⌥↩** run a row's secondary action, and **esc** clears the search before it
+  closes the panel
+- Destructive rows, such as erasing a simulator, need a second **↩** to confirm
+- **Settings…** opens a window to rebind or clear the shortcut, choose which platforms and sections
+  the menu shows, set the install-age threshold, pick where snapshots are saved and switch automatic
+  update checks on or off
 
 **Other**
 - Only platforms you actually have simulators for appear
@@ -123,22 +150,51 @@ the update is downloaded, its signature verified, and the app relaunches once yo
 
 The app lives in the menu bar — there is no main window.
 
-1. Click the menu bar icon — or press **⌃⌥⌘S** from anywhere — to see your simulators, grouped by
-   platform and device.
+1. Click the menu bar icon — or press **⌃⌥⌘S** from anywhere. The search field is focused, so you
+   can start typing right away, or browse your simulators, grouped by platform and device.
 2. Hover a simulator for **Simulator Folder**, **Apps**, **AppGroups** and **Erase Simulator**.
-3. Hover an app for **App Folder**, **Documents Folder**, **App Package** and **User Defaults**. Any
-   of them opens directly in Finder — point a tool like [DB Browser for SQLite](https://sqlitebrowser.org/)
-   at the result.
+3. Hover an app for **App Folder**, **Documents Folder**, **App Package** and **User Defaults**, or
+   for **Copy Path**, **Copy UserDefaults as JSON** and **Save Snapshot to Folder…**. The folders
+   open directly in Finder — point a tool like [DB Browser for SQLite](https://sqlitebrowser.org/)
+   at the result. The bottom of the submenu says when the app was installed and when it was last
+   active.
 4. **Recent Apps** at the top of the menu tracks what you've most recently installed or rebuilt.
 5. **Cleanup Simulators** scans for invalid simulators and shows why each one qualifies, plus its
-   disk usage, before you delete it.
+   disk usage, before you delete it. **Cleanup Runtimes** does the same for stale runtimes.
 6. **Settings…** — or ⌘, while the menu is open — opens a window where you can record a different
-   global shortcut, clear it if you would rather not have one, or reset it to the default, and
-   choose which sections the menu shows.
+   global shortcut, choose which sections the menu shows, and set up the MCP server for your agent.
 
-<img width="860" alt="The cleanup view listing deletable simulators grouped by OS version, with a detail popover showing the deletion reason, platform, OS, disk usage and UDID" src="Screenshots/Screenshot 1.jpeg" />
+<img width="620" alt="An app's submenu next to the panel, listing Documents Folder, App Package, User Defaults, Copy Path, Copy UserDefaults as JSON and Save Snapshot to Folder…, with when the app was installed and last active" src="Screenshots/app-flyout.jpeg" />
 
-<img width="460" alt="The Settings window, showing the Global Shortcut section with the recorder set to ⌃⌥⌘S alongside Clear and Reset buttons, and the Menu Contents section with toggles for Recent Apps and each platform" src="Screenshots/Screenshot 3.jpeg" />
+**Copy Path** puts a container's folder path on the clipboard, with spaces escaped so it pastes
+straight into a terminal. **Copy UserDefaults as JSON** copies an app's preferences, for all domains
+at once or a single one.
+
+<img width="620" alt="The Copy Path submenu next to an app's submenu, offering Documents Folder, App Package and User Defaults" src="Screenshots/copy-path.jpeg" />
+
+<img width="620" alt="An app's submenu with Copy UserDefaults as JSON highlighted" src="Screenshots/copy-userdefaults.jpeg" />
+
+Typing filters devices and apps as you go; **↩** opens the top hit.
+
+<img width="340" alt="The panel filtered by the search term ultra, showing the matching Apple Watch simulators" src="Screenshots/search.jpeg" />
+
+**Save Snapshot to Folder…** asks what to keep: everything, the database and UserDefaults, only the
+database, or only UserDefaults. The snapshot is a folder named after the device, OS, app and time,
+holding a `manifest.json` and the app's container data. It is saved to `~/Downloads` unless you
+choose another folder in **Settings…**, and Finder opens on it when it is done.
+
+<img width="620" alt="The Save Snapshot to Folder submenu offering Everything, Database and UserDefaults, Database, and UserDefaults" src="Screenshots/snapshot-menu.jpeg" />
+
+Cleanup lists what it found, grouped by OS version, with an explanation of each reason. Nothing is
+deleted until you confirm.
+
+<img width="620" alt="The Cleanup Simulators submenu offering Cleanup All Simulators with a count, a group per OS version, Refresh Cleanup Scan and an explanation of each deletion reason" src="Screenshots/cleanup.jpeg" />
+
+**Cleanup Runtimes** reports how many runtimes it checked, and why a runtime counts as stale.
+
+<img width="500" alt="The Cleanup Runtimes submenu reporting that no stale runtimes were found, with Refresh Runtime Scan and an explanation of unusable, superseded and unused runtimes" src="Screenshots/cleanup-runtimes.jpeg" />
+
+<img width="460" alt="The Settings window, showing the Global Shortcut, Menu Contents, Install Age, Updates and Snapshots sections" src="Screenshots/settings.png" />
 
 ## Use with AI agents (MCP)
 
@@ -214,7 +270,11 @@ The server ships inside the app at
 with it. The Homebrew cask also puts it on your `PATH` as `simple-simulator-mcp`.
 
 The easiest way to set it up is **Settings → Agent Integration (MCP)**. Choose your agent, tick
-the flags you want, and copy the ready-made config. To set it up by hand instead:
+the flags you want, and copy the ready-made config.
+
+<img width="460" alt="The Agent Integration (MCP) section of Settings, showing the server path, toggles for reading UserDefaults, destructive actions and app snapshots, an agent picker and a copyable Claude Code command" src="Screenshots/settings-agent-integration.png" />
+
+To set it up by hand instead:
 
 **Claude Code**
 
@@ -282,8 +342,10 @@ The global shortcut is registered through Carbon's `RegisterEventHotKey`, which 
 before the keystroke reaches any app. It is not a keyboard monitor: the app never sees your other
 keystrokes and needs no Accessibility permission.
 
-The app works entirely offline. The only network request it makes is a check against the GitHub
-Releases API for a newer version. Nothing is collected, and nothing is sent anywhere.
+The app works entirely offline apart from its update check: [Sparkle](https://sparkle-project.org)
+fetches `appcast.xml` from this repository on GitHub, and downloads the release from GitHub only
+when you accept an update. You can switch the automatic check off in **Settings…**. Nothing is
+collected, and nothing is sent anywhere.
 
 ## Building from source
 
