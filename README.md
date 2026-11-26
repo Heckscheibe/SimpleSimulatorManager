@@ -25,8 +25,6 @@ brew install --cask heckscheibe/tap/simple-simulator-manager
 
 <img width="620" alt="Animated tour: opening the panel, hovering an app, and browsing its Copy Path, Copy UserDefaults as JSON and Save Snapshot to Folder options" src="Screenshots/usage.gif" />
 
-<img width="340" alt="The Simple Simulator Manager panel with its search field, Recent Apps showing how long ago each app was installed, the simulator list, the section toggles, Settings… and the cleanup and reset actions" src="Screenshots/menu-panel.jpeg" />
-
 ---
 
 ## The problem
